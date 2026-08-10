@@ -1,0 +1,30 @@
+; Engine configuration file.
+; BGi Desktop Windows foundation.
+config_version=5
+
+[application]
+config/name="BGi Desktop"
+run/main_scene="res://scenes/desktop_shell.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+
+[autoload]
+DesktopWindowController="*res://scripts/desktop_window_controller.gd"
+
+[display]
+
+[display/window]
+size/viewport_width=1280
+size/viewport_height=260
+size/window_width_override=1280
+size/window_height_override=260
+size/resizable=false
+size/borderless=true
+size/transparent=true
+handheld/orientation=1
+stretch/mode="canvas_items"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0, 0, 0, 0)
+

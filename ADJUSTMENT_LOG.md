@@ -9,6 +9,12 @@
 
 | 日期時間（Asia/Taipei） | 類型 | 目標 | 檔案相對位置 | 行號與摘要 | 驗證結果 | Git commit |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-10 15:03 | 策劃 | 核准目前設計規格為製作基準 | `docs/superpowers/specs/2026-08-10-bgi-desktop-territory-exploration-design.md` | 3–5：標示規格已核准、數值 placeholder 與非 Godot 實作範圍；192–203：納入驗收準則；205–211：版本紀錄。 | 交接內容載明使用者明確確認；本次設計規格暫存區 `git diff --cached --check` 通過；提交僅包含 1 個 Markdown 規格檔，未含 Godot 程式。 | `24c5eb1` |
+| 2026-08-10 15:01 | 策劃 | 新手與第一地盤任務節奏 | `docs/superpowers/specs/2026-08-10-bgi-desktop-territory-exploration-design.md` | 77–95：固定 23 個新手任務、未接受任務不受手動刷新替換、常規任務為 15 分鐘 N／1 小時 X／2 小時 Y，第一地盤上限 2 小時；173–174：調校假設。 | 交接內容載明使用者明確指定；規格表格數量加總為 23，指定時長與第一地盤上限均已核對。 | `24c5eb1` |
+| 2026-08-10 14:52 | 策劃 | 桌面常駐型 UI 與 Steam Cloud 邊界 | `docs/superpowers/specs/2026-08-10-bgi-desktop-territory-exploration-design.md` | 150–158：無一般視窗裝飾、錨定工作列上方、透明區不攔截桌面；162–163：首版本機存檔與 Steam 正式發行前 Steam Cloud；201–202：驗收準則。 | 交接內容載明使用者依參考圖與明確要求核准；相關 UI、本機存檔與 Steam Cloud 條文已核對。 | `24c5eb1` |
+| 2026-08-10 14:52 | 策劃 | 多人派遣與團隊報酬倍率 | `docs/superpowers/specs/2026-08-10-bgi-desktop-territory-exploration-design.md` | 55–61：每人單一任務、任務最低／最多人數與明示團隊倍率；107–116：任務卡顯示與報酬結算；194：驗收準則。 | 交接內容載明使用者明確要求；`min_assignees`、`max_assignees`、`crew_reward_multiplier` 及單人不可並行條文均已核對。 | `24c5eb1` |
+| 2026-08-10 14:29 | 策劃 | 地盤觸及解鎖新人物 | `docs/superpowers/specs/2026-08-10-bgi-desktop-territory-exploration-design.md` | 43–51：5 名同外觀初始小弟；49–50：首次觸及新地盤解鎖 1 名人物，屬本機進度而非付費內容；126–130、200：地盤狀態與驗收準則。 | 交接內容載明使用者明確指定；初始人數、解鎖時機與非付費邊界已核對。 | `24c5eb1` |
+| 2026-08-10 14:29 | 策劃 | 地盤＋探索混合核心循環 | `docs/superpowers/specs/2026-08-10-bgi-desktop-territory-exploration-design.md` | 9–13：產品定位與非付費／本機邊界；35–37：長期循環；97–103：任務產出；120–140：地盤、影響力、分級貨幣標籤與收藏。 | 交接內容載明使用者選擇 C；核心循環、範圍與 `[PLACEHOLDER]` 標示均已核對。 | `24c5eb1` |
 | 2026-08-10 14:26 | 維運 | 初始化桌面版 GitHub 儲存庫 | `.gitignore`；`.git/config`；`ADJUSTMENT_LOG.md` | `.gitignore` 1–15：排除 `.codegraph/`、Godot 產物與匯出檔；`.git/config`：僅此 repository 設定 `chev <chevalier1216@users.noreply.github.com>`；未修改產品功能。 | `git diff --cached --check` 通過；已推送 `origin/main`。 | `6129029` |
 | 2026-08-10 14:22 | 維運 | 啟用持續更新的調整日誌 | `ADJUSTMENT_LOG.md` | 5–8：建立記錄規則；10–12：建立欄位與首筆紀錄；未修改產品功能。 | 已確認啟用前工作目錄未初始化為 Git repository，且僅含 `.codegraph/` 索引資料。 | 不適用：尚無 Git repository。 |
 

@@ -12,12 +12,13 @@
 
 ## 小目標
 
-1. 在 `G:\\Projects\\Godot\\BGiDesktop` 建立 Godot 專案與 Windows 視窗控制層。
+1. 在 `godot\\BGiDesktop` 建立並以 Git 追蹤 Godot 專案與 Windows 視窗控制層。
 2. 建立底部桌面 UI 場景：左側地盤／布置、中央地盤狀態、右側任務面板與設定按鈕。
 3. 將視窗定位到 `DisplayServer.screen_get_usable_rect()` 底端，使其不覆蓋 Windows 工作列；預設不置頂，並持久化使用者的置頂偏好。
 4. 在 Godot 無介面模式載入專案，檢查場景與 GDScript 可解析；再進行 Windows 執行檔啟動檢查。
+5. 建立本機初始狀態：5 名相同小弟，並以非文字狀態指示呈現可用、派遣中與已完成待收取三種狀態。
+6. 建立固定 23 項的新手任務目錄，僅含識別碼、時長與是否接受；未接受任務的刷新不可替換此目錄。
 
 ## 已知限制
 
 Godot 的一般 Windows 視窗無法單靠內建 API 保證附著於 Windows 桌面圖示層（WorkerW）。本基礎版採「無框、透明、位於可用工作區底部、預設不置頂」模式，符合不遮擋工作列與一般工作視窗的要求；若日後要求固定嵌入桌面圖示層，需另行核准 Windows 原生 Shell 整合。
-

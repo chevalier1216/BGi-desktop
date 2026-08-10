@@ -79,9 +79,15 @@ theme_override_font_sizes/font_size = 22
 
 [node name="Summary" type="Label" parent="Margin/Columns/ScenePanel/Content"]
 layout_mode = 2
-text = "5 名可用小弟\n在此呈現地盤、收藏與勢力變化"
+text = "初始勢力\n在此呈現地盤、收藏與勢力變化"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="CrewIndicators" type="HBoxContainer" parent="Margin/Columns/ScenePanel/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
 
 [node name="MissionPanel" type="PanelContainer" parent="Margin/Columns"]
 custom_minimum_size = Vector2(330, 0)
@@ -108,12 +114,18 @@ text = "緊湊／標準"
 
 [node name="MissionStatus" type="Label" parent="Margin/Columns/MissionPanel/Content"]
 layout_mode = 2
-text = "目前沒有待收取成果\n任務資料將於下一小目標加入"
+text = "新手固定任務目錄（23 項）"
 autowrap_mode = 2
+
+[node name="MissionList" type="ItemList" parent="Margin/Columns/MissionPanel/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 96)
+size_flags_vertical = 3
+layout_mode = 2
+mouse_filter = 2
 
 [node name="TopmostToggle" type="CheckButton" parent="Margin/Columns/MissionPanel/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "開啟後，桌面介面會保持在其他視窗上方。"
 text = "置頂顯示"
-

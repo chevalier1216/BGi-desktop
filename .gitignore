@@ -1,0 +1,15 @@
+# Generated CodeGraph index; recreate locally rather than versioning it.
+.codegraph/
+
+# Godot generated/editor-local artifacts.
+.godot/
+*.tmp
+*.temp
+*.import
+*.log
+
+# Exported builds and local editor settings are not source.
+build/
+Builds/
+*.exe
+*.pck

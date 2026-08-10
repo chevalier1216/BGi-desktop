@@ -10,6 +10,7 @@
 
 | 日期時間（Asia/Taipei） | 類型 | 目標 | 檔案相對位置 | 行號與摘要 | 驗證結果 | Git commit |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-10 15:40 | 程式 | 為 GameState 加入可用／已配置的受控狀態切換 | `godot/BGiDesktop/scripts/game_state.gd`；`godot/BGiDesktop/tests/game_state_mutation_test.gd` | `game_state.gd` 9–34：保留既有派遣中狀態作為 `ASSIGNED_STATUS`；依 crew id 只允許可用與已配置切換，拒絕未知 id 與不支援狀態。`game_state_mutation_test.gd` 10–44：驗證正常切換、未知 id 與不支援狀態不變性，以及取得複本隔離。 | Godot 4.7.1 以 `--headless --path G:\\Projects\\BGi-Desktop\\godot\\BGiDesktop --script res://tests/game_state_mutation_test.gd` 執行，結束碼 0；GameState 變更與新增測試檔通過 Git whitespace 檢查。 | `c6e2227` |
 | 2026-08-10 15:41 | 維運 | 納入跨專案回覆語法規範 | `AGENTS.md` | 1–5：限制「不是……而是……」句式僅用於必要且實質的對比或誤解釐清；一般說明、結論與狀態回報改用直接句。 | 已核對 BGi-Desktop 文件內容與行號；Git whitespace 檢查通過。上層 `G:\\Projects\\BGi-Codex\\AGENTS.md` 不屬本 repository，本提交未碰觸。 | `ebfa595` |
 | 2026-08-10 15:39 | 策劃 | 寫入方案 A 的背景收藏與獨立前景掛件規格 | `docs/superpowers/specs/2026-08-10-bgi-desktop-territory-exploration-design.md` | 146–153：完整背景解鎖、收藏、套用確認、暫不更換、手動切換、提示佇列與掛件不變性；165：UI 入口與確認切換；175：本機存檔欄位；192：調校失衡訊號；215–216：驗收準則；226：版本 0.4。首張背景主題為高架線與霧金天際線。 | 已核對文件內容與實際行號；`git diff --check` 通過，未發現衝突標記。提交僅含規格檔，未改 C 槽副本、Godot 或素材。 | `fbe1a41` |
 | 2026-08-10 15:38 | 測試 | 驗證實際新手任務與 5 名小弟複本可端到端派遣並釋放 | `godot/BGiDesktop/tests/mission_assignment_integration_test.gd` | 3–56：取得實際未接受任務、配置兩名小弟、驗證派遣狀態與任務配置、釋放後確認全數可用及配置為空。 | Godot 4.7.1 以 `--headless --path G:\\Projects\\BGi-Desktop\\godot\\BGiDesktop --script res://tests/mission_assignment_integration_test.gd` 執行，結束碼 0；新增整合測試檔通過 Git whitespace 檢查。 | `a11f575` |

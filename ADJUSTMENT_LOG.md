@@ -10,6 +10,7 @@
 
 | 日期時間（Asia/Taipei） | 類型 | 目標 | 檔案相對位置 | 行號與摘要 | 驗證結果 | Git commit |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-10 16:58 | 美術研究 | 新增 Kenney CC0 灰盒 intake 研究 | `docs/superpowers/research/2026-08-10-kenney-cc0-greybox-intake.md` | 1–31：記錄方案 M 下 Kenney CC0 灰盒候選的採用前提、權利核對與未導入邊界。 | PM 授權僅清理尾端空白與檔尾空白行；清理後 Git whitespace 檢查通過。未下載或導入素材。 | `6fa80ed` |
 | 2026-08-10 16:58 | 美術研究 | 新增素材採用閘門與權利追溯研究 | `docs/superpowers/research/2026-08-10-bgi-desktop-asset-adoption-gates-and-provenance.md` | 1–69：記錄 Phosphor MIT、Kenney CC0、GameArt2D 與 itch.io 的採用閘門、權利追溯與 M/P/O 最小決策。 | PM 授權僅清理尾端空白與檔尾空白行；清理後 Git whitespace 檢查通過。未下載、導入或改 Godot。 | `8785a61` |
 | 2026-08-10 16:58 | 設計補充 | 新增文字暫代 UI 狀態與錯誤規格 | `docs/superpowers/specs/2026-08-10-bgi-desktop-text-placeholder-ui-state-and-error-spec.md` | 1–143：定義八組文字暫代 UI 狀態、共通錯誤、文字鍵、第一版取消阻擋與無美術驗收。 | PM 授權僅清理尾端空白與檔尾空白行；清理後 Git whitespace 檢查通過，並與完整循環契約的權威邊界交叉核對。 | `4fe70ae` |
 | 2026-08-10 16:58 | 設計補充 | 新增完整循環契約補充規格 | `docs/superpowers/specs/2026-08-10-bgi-desktop-full-loop-contract-supplement.md` | 1–148：整理任務、離線完成、收取、地盤觸及與人物解鎖的最小序列化與驗收契約。 | PM 授權僅清理尾端空白與檔尾空白行；清理後 Git whitespace 檢查通過，語意內容未變更。 | `b8eaa5b` |

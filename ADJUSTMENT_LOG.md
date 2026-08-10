@@ -10,6 +10,7 @@
 
 | 日期時間（Asia/Taipei） | 類型 | 目標 | 檔案相對位置 | 行號與摘要 | 驗證結果 | Git commit |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-10 16:58 | 設計補充 | 新增完整循環契約補充規格 | `docs/superpowers/specs/2026-08-10-bgi-desktop-full-loop-contract-supplement.md` | 1–148：整理任務、離線完成、收取、地盤觸及與人物解鎖的最小序列化與驗收契約。 | PM 授權僅清理尾端空白與檔尾空白行；清理後 Git whitespace 檢查通過，語意內容未變更。 | `b8eaa5b` |
 | 2026-08-10 16:25 | 程式 | 建立完成任務的冪等領取服務 | `godot/BGiDesktop/scripts/mission_result_claim_service.gd`、`godot/BGiDesktop/tests/mission_result_claim_service_test.gd` | `mission_result_claim_service.gd` 6–34：首次回傳既有鎖定結果；重複、未完成與 task ID 不符皆拒絕，無重骰或數值修改。`mission_result_claim_service_test.gd` 9–40：驗證首次領取、重複拒絕、未完成與 task ID 不符拒絕。 | Godot 4.7.1 隔離 headless 測試結束碼 0；兩個新增檔案通過 Git whitespace 檢查。 | `059a4e1` |
 | 2026-08-10 16:47 | 操作規範結構調整 | 將環境細節、Godot 測試、素材政策與額度交接移入操作手冊 | `AGENTS.md`、`docs/operations/PROJECT_CONTEXT.md`、`GODOT_TESTING.md`、`ASSET_POLICY.md`、`USAGE_HANDOFF.md` | `AGENTS.md` 3–34 保留跨環境行為原則；操作手冊分別記錄工作站脈絡、測試程序、素材方案 M 與使用額度交接。 | UTF-8 讀回、章節與 Git whitespace 檢查通過；未改程式或素材。 | `1e7ce14` |
 | 2026-08-10 16:47 | 美術研究 | 新增美術授權決策、原創美術交付、UI icon 語意與 UI 視覺層級研究 | `docs/superpowers/research/2026-08-10-bgi-desktop-asset-license-and-import-decision.md`、`2026-08-10-bgi-desktop-original-art-delivery-spec.md`、`2026-08-10-bgi-desktop-ui-icon-semantics-and-source-candidates.md`、`2026-08-10-bgi-desktop-ui-visual-hierarchy-and-state-colors.md` | 授權決策第 12–13、62、66–80 行記錄 M 路線；其餘文件分別定義原創交付、icon 語意與狀態色彩／視覺層級。 | 四份研究文件均通過 Git whitespace 檢查；未改 Godot 或素材。 | `50665da` |

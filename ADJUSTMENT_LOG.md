@@ -6,9 +6,13 @@
 - 每筆記錄須包含日期時間、目標、檔案相對位置、行號與摘要、驗證結果、Git commit。
 - 若不適用，填寫 `不適用` 並說明原因；不得臆測 commit、行號或驗證結果。
 - GitHub repository 尚未建立前，不建立 repository，亦不修改產品功能。
+- `G:\Projects\BGi-Desktop` 為唯一 canonical repository；`C:\Users\phil\Documents\ChatGPT\BGi-Desktop_codex` 僅保留副本，禁止寫入、清理或刪除。
 
 | 日期時間（Asia/Taipei） | 類型 | 目標 | 檔案相對位置 | 行號與摘要 | 驗證結果 | Git commit |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-10 15:19 | 維運 | 確立 canonical repository 路徑政策 | `ADJUSTMENT_LOG.md` | 9：指定 `G:\\Projects\\BGi-Desktop` 為所有日誌、Git 與程式操作的唯一 canonical repository；C 槽副本僅保留且不得寫入、清理或刪除。 | 交接內容載明此路徑政策；本輪操作均在 `G:\\Projects\\BGi-Desktop` 執行。 | `7afa4b1` |
+| 2026-08-10 15:19 | 維運 | 遷移 repository 至 `G:\\Projects\\BGi-Desktop` 並併入 Godot 原始碼 | `docs/superpowers/plans/2026-08-10-bgi-desktop-foundation-plan.md`；`godot/BGiDesktop/` | 計畫 5–22：定義 Windows 優先、工作列上方視窗與 Godot 載入驗證範圍；Godot 專案現存於 `godot/BGiDesktop/`，未納入其 `.godot/` 產物。 | `git rev-parse --show-toplevel` 回傳 `G:/Projects/BGi-Desktop`；`git check-ignore -v godot/BGiDesktop/.godot/editor/project_metadata.cfg` 命中 `.gitignore` 第 5 行。 | `c04b009` |
+| 2026-08-10 15:19 | 程式 | 納入 Godot 桌面 UI 基礎框架 | `godot/BGiDesktop/project.godot`；`scenes/desktop_shell.tscn`；`scripts/desktop_shell.gd`；`scripts/desktop_window_controller.gd` | `project.godot` 5–29：主場景、Autoload、無框透明不可縮放視窗；`desktop_shell.tscn` 17–118：地盤、場景、任務 UI 結構；`desktop_shell.gd` 1–10：控制項繫結；`desktop_window_controller.gd` 3–46：工作列上方定位、置頂偏好與緊湊配置。 | 使用 Godot 4.7.1 以 `--headless --path G:\\Projects\\BGi-Desktop\\godot\\BGiDesktop --editor --quit` 載入，結束碼 0。提交前 `git diff --cached --check` 指出計畫、`project.godot`、場景與 `desktop_shell.gd` 各有 1 個檔尾空白行；未宣稱 whitespace 檢查通過。 | `c04b009` |
 | 2026-08-10 15:03 | 策劃 | 核准目前設計規格為製作基準 | `docs/superpowers/specs/2026-08-10-bgi-desktop-territory-exploration-design.md` | 3–5：標示規格已核准、數值 placeholder 與非 Godot 實作範圍；192–203：納入驗收準則；205–211：版本紀錄。 | 交接內容載明使用者明確確認；本次設計規格暫存區 `git diff --cached --check` 通過；提交僅包含 1 個 Markdown 規格檔，未含 Godot 程式。 | `24c5eb1` |
 | 2026-08-10 15:01 | 策劃 | 新手與第一地盤任務節奏 | `docs/superpowers/specs/2026-08-10-bgi-desktop-territory-exploration-design.md` | 77–95：固定 23 個新手任務、未接受任務不受手動刷新替換、常規任務為 15 分鐘 N／1 小時 X／2 小時 Y，第一地盤上限 2 小時；173–174：調校假設。 | 交接內容載明使用者明確指定；規格表格數量加總為 23，指定時長與第一地盤上限均已核對。 | `24c5eb1` |
 | 2026-08-10 14:52 | 策劃 | 桌面常駐型 UI 與 Steam Cloud 邊界 | `docs/superpowers/specs/2026-08-10-bgi-desktop-territory-exploration-design.md` | 150–158：無一般視窗裝飾、錨定工作列上方、透明區不攔截桌面；162–163：首版本機存檔與 Steam 正式發行前 Steam Cloud；201–202：驗收準則。 | 交接內容載明使用者依參考圖與明確要求核准；相關 UI、本機存檔與 Steam Cloud 條文已核對。 | `24c5eb1` |

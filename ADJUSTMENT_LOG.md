@@ -10,6 +10,7 @@
 
 | 日期時間（Asia/Taipei） | 類型 | 目標 | 檔案相對位置 | 行號與摘要 | 驗證結果 | Git commit |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-10 17:04 | UI／UI 接線 | 建立任務生命週期文字面板並接入單一 `starter_01` 測試流程 | `mission_lifecycle_panel.gd` 4–55、`mission_lifecycle_panel.tscn` 5–48、`mission_lifecycle_demo_controller.gd` 11–55、`desktop_shell.tscn`、`project.godot` 18–21，以及兩份對應測試 | 文字面板提供四種狀態與按鈕規則；接入單一測試流程，視窗高度調整為 330 容納面板。 | Godot project load、面板實例化與按鈕接線測試均結束碼 0；手動啟動可操作；Git whitespace 檢查通過。 | `fe58d3a` |
 | 2026-08-10 16:34 | 測試 | 驗證離線任務完成後的復原與冪等領取 | `godot/BGiDesktop/tests/mission_offline_completion_recovery_test.gd` | 12–46：隔離 `user://` 寫入、關閉後讀回、到期、結果固定與首次／重複領取。 | Godot 4.7.1 隔離 headless 測試結束碼 0；新增測試檔通過 Git whitespace 檢查。 | `ecd4419` |
 | 2026-08-10 16:34 | 程式 | 建立任務生命週期協調器 | `godot/BGiDesktop/scripts/mission_lifecycle_coordinator.gd`、`godot/BGiDesktop/tests/mission_lifecycle_coordinator_test.gd` | `mission_lifecycle_coordinator.gd` 19–74：串接接受、時計快照、到期結果鎖定、首次領取、重複拒絕與人物／配置釋放。`mission_lifecycle_coordinator_test.gd` 16–64：驗證完整生命週期與拒絕情境。 | Godot 4.7.1 隔離 headless 測試結束碼 0；兩個新增檔案通過 Git whitespace 檢查。 | `97ee1cb` |
 | 2026-08-10 16:58 | 美術研究 | 新增 Kenney CC0 灰盒 intake 研究 | `docs/superpowers/research/2026-08-10-kenney-cc0-greybox-intake.md` | 1–31：記錄方案 M 下 Kenney CC0 灰盒候選的採用前提、權利核對與未導入邊界。 | PM 授權僅清理尾端空白與檔尾空白行；清理後 Git whitespace 檢查通過。未下載或導入素材。 | `6fa80ed` |

@@ -64,3 +64,9 @@
 ## 使用額度交接
 
 - 使用額度到達停止門檻時，必須遵循 `docs/operations/USAGE_HANDOFF.md`。
+
+## Gap-to-work rule
+
+- When a user asks what requirements are still missing, or asks for an equivalent gap inventory, the PM must classify the gaps.
+- For every gap that is covered by an approved specification, can be safely derived, and does not require a user decision, file deletion, movement, or rename, Windows system configuration, external-account authorization, or irreversible external action, the PM must immediately assign the smallest verifiable task to the existing branch thread without waiting for another instruction.
+- Only concrete items that require a human decision may be reported back to the user.

@@ -10,7 +10,8 @@ var _compact_layout := false
 var _always_on_top := false
 
 func _ready() -> void:
-	_load_preferences()
+	# Startup must never cover other Windows; users can opt in through the UI toggle.
+	_always_on_top = false
 	_apply_window_mode()
 
 func set_always_on_top(enabled: bool) -> void:

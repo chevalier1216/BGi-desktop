@@ -10,6 +10,8 @@ const SnapshotCollectionScript = preload("res://scripts/mission_execution_snapsh
 const MissionLifecycleCoordinatorScript = preload("res://scripts/mission_lifecycle_coordinator.gd")
 const MissionRefreshAllowanceScript = preload("res://scripts/mission_refresh_allowance.gd")
 const MissionRefreshServiceScript = preload("res://scripts/mission_refresh_service.gd")
+const TerritoryFirstTouchUnlockScript = preload("res://scripts/territory_first_touch_unlock.gd")
+const TerritoryProgressModelScript = preload("res://scripts/territory_progress_model.gd")
 
 @onready var task_label: Label = %TaskLabel
 @onready var requirement_label: Label = %RequirementLabel
@@ -18,6 +20,10 @@ const MissionRefreshServiceScript = preload("res://scripts/mission_refresh_servi
 @onready var start_button: Button = %StartButton
 @onready var refresh_allowance_label: Label = %RefreshAllowanceLabel
 @onready var refresh_button: Button = %RefreshButton
+@onready var territory_progress_label: Label = %TerritoryProgressLabel
+@onready var exploration_collection_label: Label = %ExplorationCollectionLabel
+@onready var environment_decoration_label: Label = %EnvironmentDecorationLabel
+@onready var explore_territory_button: Button = %ExploreTerritoryButton
 
 var _task_id: String = ""
 var _duration_seconds: int = 0
@@ -29,6 +35,8 @@ var _lifecycle: RefCounted
 var _snapshot_collection: RefCounted
 var _refresh_allowance: RefCounted
 var _refresh_service: RefCounted
+var _touched_territory_ids: Dictionary = {}
+var _territory_data: Dictionary = {}
 var _is_waiting: bool = false
 var _is_completed: bool = false
 
@@ -45,12 +53,15 @@ func _ready() -> void:
 	_refresh_allowance = MissionRefreshAllowanceScript.new(current_time_seconds - MissionRefreshAllowanceScript.REFILL_INTERVAL_SECONDS)
 	_refresh_allowance.update(current_time_seconds)
 	_refresh_service = MissionRefreshServiceScript.new(_refresh_allowance)
+	_territory_data = TerritoryProgressModelScript.create("territory_01")
 	_load_first_starter_mission()
 	_render_crew_choices()
 	start_button.pressed.connect(_on_start_pressed)
 	refresh_button.pressed.connect(_on_refresh_pressed)
+	explore_territory_button.pressed.connect(_on_explore_territory_pressed)
 	_refresh_selection_state()
 	_refresh_refresh_state()
+	_refresh_territory_growth_display()
 
 func _load_first_starter_mission() -> void:
 	_current_missions = _starter_mission_catalog.get_missions()
@@ -110,6 +121,19 @@ func _on_start_pressed() -> void:
 
 func _on_refresh_pressed() -> void:
 	refresh_current_mission(int(Time.get_unix_time_from_system()))
+
+func _on_explore_territory_pressed() -> void:
+	var touch_result: Dictionary = TerritoryFirstTouchUnlockScript.touch(str(_territory_data["territory_id"]), _touched_territory_ids)
+	_touched_territory_ids = Dictionary(touch_result["touched_territory_ids"]).duplicate(true)
+	if bool(touch_result["is_unlock_granted"]):
+		status_label.text = "首次觸及：已解鎖 1 名新人物"
+		return
+	status_label.text = "已探索此地盤：不重複解鎖"
+
+func _refresh_territory_growth_display() -> void:
+	territory_progress_label.text = "地盤進度：%s" % _territory_data["territory_progress"]
+	exploration_collection_label.text = "探索收藏：%s" % _territory_data["exploration_collection_count"]
+	environment_decoration_label.text = "環境布置：%s" % _territory_data["environment_decoration_owned_count"]
 
 ## Refreshes only the displayed unaccepted mission using an explicit existing catalog entry.
 func refresh_current_mission(current_time_seconds: int) -> void:

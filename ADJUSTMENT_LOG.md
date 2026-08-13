@@ -10,6 +10,7 @@
 
 | 日期時間（Asia/Taipei） | 類型 | 目標 | 檔案相對位置 | 行號與摘要 | 驗證結果 | Git commit |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-13 | 程式／UI | 鎖定完成後的新手任務控制項與事件入口 | `godot/BGiDesktop/scripts/starter_mission_flow_panel.gd`、`godot/BGiDesktop/tests/starter_mission_flow_panel_test.gd` | 等待或完成時禁用小弟選取與開始按鈕；事件入口拒絕程式化二次開始，完成文案與既有固定結果維持不變。 | Godot 4.7.1 headless editor 載入與面板測試通過，結束碼 0；Git whitespace 檢查通過，未開可見視窗。 | `ac91309` |
 | 2026-08-13 | 程式／UI | 新增新手任務刷新可視化流程 | `godot/BGiDesktop/scripts/starter_mission_flow_panel.gd`、`godot/BGiDesktop/scenes/starter_mission_flow_panel.tscn`、`godot/BGiDesktop/tests/starter_mission_flow_panel_test.gd` | 顯示刷新額度 1/1；只替換未接受任務，成功時消耗額度，6 小時回補且上限為 1；等待或完成任務拒絕刷新且不耗額度。 | Godot 4.7.1 headless editor 載入與面板測試通過，結束碼 0；Git whitespace 檢查通過，未開可見視窗。 | `b0cb123` |
 | 2026-08-13 | 程式／UI | 顯示新手任務等待倒數與完成待定報酬狀態 | `godot/BGiDesktop/scripts/starter_mission_flow_panel.gd`、`godot/BGiDesktop/tests/starter_mission_flow_panel_test.gd` | 等待中顯示剩餘秒數；5 秒到期後透過既有結果鎖定服務顯示「已完成／保底報酬待定」，完成後重複更新維持既有快照且不重複結算。 | Godot 4.7.1 headless editor 載入與面板測試通過，結束碼 0；Git whitespace 檢查通過，未開可見視窗。 | `246a5cd` |
 | 2026-08-13 | 程式／UI | 建立最小新手任務可視化派遣流程 | `starter_mission_flow_panel.gd`、`starter_mission_flow_panel.tscn`、`desktop_shell.tscn`、`desktop_window_controller.gd`、`project.godot`、`starter_mission_flow_panel_test.gd` | 文字化顯示五名小弟與 `starter_01` 5 秒任務；限制 1–5 人，零人不可開始，派遣後顯示等待並鎖定選擇與開始按鈕；視窗工作列避讓定位維持。 | Godot 4.7.1 headless editor 載入與面板測試均通過，結束碼 0；Git whitespace 檢查通過，未開可見視窗。 | `467976e` |

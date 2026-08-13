@@ -153,7 +153,8 @@ func _refresh_reward_disclosure_display() -> void:
 ## Refreshes only the displayed unaccepted mission using an explicit existing catalog entry.
 func refresh_current_mission(current_time_seconds: int) -> void:
 	if _is_waiting or _is_completed:
-		status_label.text = "無法刷新：任務已接受"
+		if not _is_completed:
+			status_label.text = "無法刷新：任務已接受"
 		_refresh_refresh_state()
 		return
 	if _current_missions.size() < 2:

@@ -28,13 +28,16 @@ func _run() -> void:
 	_expect(panel.status_label.text == "已探索此地盤：不重複解鎖", "repeated territory touch must not grant another crew member")
 	_expect(panel._touched_territory_ids.size() == 1, "repeated territory touch must not add a duplicate territory state")
 	_expect(panel.refresh_allowance_label.text == "刷新額度：1/1", "starter flow must show one available refresh")
+	_expect(not panel.refresh_button.disabled, "unaccepted task with one allowance must enable refresh")
 	var initial_task_id: String = panel._task_id
 	var initial_time_seconds: int = int(Time.get_unix_time_from_system())
 	panel.refresh_current_mission(initial_time_seconds)
 	_expect(panel._task_id != initial_task_id, "refresh must replace an unaccepted task with explicit catalog data")
 	_expect(panel.refresh_allowance_label.text == "刷新額度：0/1", "successful refresh must consume the only allowance")
+	_expect(panel.refresh_button.disabled, "zero allowance must disable refresh")
 	panel.update_refresh_allowance(initial_time_seconds + 6 * 60 * 60)
 	_expect(panel.refresh_allowance_label.text == "刷新額度：1/1", "refresh allowance must refill after six hours without exceeding one")
+	_expect(not panel.refresh_button.disabled, "refilled allowance must enable refresh without exceeding one")
 
 	var first_choice: CheckButton = panel.crew_selector.get_child(0) as CheckButton
 	first_choice.button_pressed = true
@@ -54,6 +57,7 @@ func _run() -> void:
 	panel.start_button.emit_signal("pressed")
 	_expect(panel.status_label.text == "等待中：已派遣 5 名小弟", "started task must retain the selected crew count")
 	_expect(panel.start_button.disabled, "waiting task must disable a second start")
+	_expect(panel.refresh_button.disabled, "waiting task must disable refresh")
 	for choice: CheckButton in panel.crew_selector.get_children():
 		_expect(choice.disabled, "waiting task must lock all crew choices")
 	panel._on_crew_toggled(false, "crew_01")
@@ -71,10 +75,16 @@ func _run() -> void:
 	var completed_text: String = panel.status_label.text
 	var locked_result: Dictionary = Dictionary(panel._lifecycle._locked_results_by_task_id[panel._task_id]).duplicate(true)
 	_expect(panel.start_button.disabled, "completed task must keep the start control disabled")
+	_expect(panel.refresh_button.disabled, "completed task must disable refresh")
 	for choice: CheckButton in panel.crew_selector.get_children():
 		_expect(choice.disabled, "completed task must keep every crew choice disabled")
 	panel._on_crew_toggled(false, "crew_01")
 	_expect(panel._selected_crew_ids.size() == 5, "completed task must not allow its dispatched crew count to change")
+	var completed_task_id: String = panel._task_id
+	panel.refresh_current_mission(initial_time_seconds + 12 * 60 * 60)
+	_expect(panel._task_id == completed_task_id, "completed task must not be refreshed")
+	_expect(panel.refresh_allowance_label.text == "刷新額度：1/1", "completed refresh attempt must not consume allowance")
+	_expect(panel.status_label.text == completed_text, "completed refresh attempt must keep the fixed completed presentation")
 	panel.start_button.emit_signal("pressed")
 	_expect(panel.status_label.text == completed_text, "completed task must not replace its fixed result after a second start attempt")
 	_expect(Dictionary(panel._lifecycle._locked_results_by_task_id[panel._task_id]) == locked_result, "completed task must not resolve a second result after a second start attempt")

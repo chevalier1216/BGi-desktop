@@ -10,6 +10,7 @@
 
 | 日期時間（Asia/Taipei） | 類型 | 目標 | 檔案相對位置 | 行號與摘要 | 驗證結果 | Git commit |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-13 | 程式／UI | 顯示地盤首次觸及解鎖與長期成長文字狀態 | `godot/BGiDesktop/scripts/starter_mission_flow_panel.gd`、`godot/BGiDesktop/scenes/starter_mission_flow_panel.tscn`、`godot/BGiDesktop/tests/starter_mission_flow_panel_test.gd` | 首次觸及 `territory_01` 顯示解鎖 1 名人物，重複觸及不再解鎖；地盤進度、探索收藏與環境布置欄位皆維持 `[PLACEHOLDER]`。 | Godot 4.7.1 headless editor 載入與面板測試通過，結束碼 0；Git whitespace 檢查通過，未開可見視窗。 | `0211ae4` |
 | 2026-08-13 | 程式／UI | 鎖定完成後的新手任務控制項與事件入口 | `godot/BGiDesktop/scripts/starter_mission_flow_panel.gd`、`godot/BGiDesktop/tests/starter_mission_flow_panel_test.gd` | 等待或完成時禁用小弟選取與開始按鈕；事件入口拒絕程式化二次開始，完成文案與既有固定結果維持不變。 | Godot 4.7.1 headless editor 載入與面板測試通過，結束碼 0；Git whitespace 檢查通過，未開可見視窗。 | `ac91309` |
 | 2026-08-13 | 程式／UI | 新增新手任務刷新可視化流程 | `godot/BGiDesktop/scripts/starter_mission_flow_panel.gd`、`godot/BGiDesktop/scenes/starter_mission_flow_panel.tscn`、`godot/BGiDesktop/tests/starter_mission_flow_panel_test.gd` | 顯示刷新額度 1/1；只替換未接受任務，成功時消耗額度，6 小時回補且上限為 1；等待或完成任務拒絕刷新且不耗額度。 | Godot 4.7.1 headless editor 載入與面板測試通過，結束碼 0；Git whitespace 檢查通過，未開可見視窗。 | `b0cb123` |
 | 2026-08-13 | 程式／UI | 顯示新手任務等待倒數與完成待定報酬狀態 | `godot/BGiDesktop/scripts/starter_mission_flow_panel.gd`、`godot/BGiDesktop/tests/starter_mission_flow_panel_test.gd` | 等待中顯示剩餘秒數；5 秒到期後透過既有結果鎖定服務顯示「已完成／保底報酬待定」，完成後重複更新維持既有快照且不重複結算。 | Godot 4.7.1 headless editor 載入與面板測試通過，結束碼 0；Git whitespace 檢查通過，未開可見視窗。 | `246a5cd` |

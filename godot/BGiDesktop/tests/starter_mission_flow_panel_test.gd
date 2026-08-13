@@ -12,6 +12,7 @@ func _run() -> void:
 	root.add_child(panel)
 	_expect(panel.crew_selector.get_child_count() == 5, "starter flow must display exactly five crew choices")
 	_expect(panel.start_button.disabled, "task must not start without the minimum crew")
+	_expect(panel.status_label.text == "已選 0/5 名小弟", "zero selected crew members must be visibly shown and cannot start")
 	_expect(panel.territory_progress_label.text == "地盤進度：[PLACEHOLDER]", "territory progress must remain a placeholder")
 	_expect(panel.exploration_collection_label.text == "探索收藏：[PLACEHOLDER]", "exploration collection must remain a placeholder")
 	_expect(panel.environment_decoration_label.text == "環境布置：[PLACEHOLDER]", "environment decoration must remain a placeholder")
@@ -38,12 +39,25 @@ func _run() -> void:
 	var first_choice: CheckButton = panel.crew_selector.get_child(0) as CheckButton
 	first_choice.button_pressed = true
 	first_choice.emit_signal("toggled", true)
+	_expect(panel.status_label.text == "已選 1/5 名小弟", "one selected crew member must be visibly shown")
 	_expect(not panel.start_button.disabled, "one selected crew member must satisfy the minimum")
+	for index: int in range(1, 3):
+		var choice: CheckButton = panel.crew_selector.get_child(index) as CheckButton
+		choice.button_pressed = true
+		choice.emit_signal("toggled", true)
+	_expect(panel.status_label.text == "已選 3/5 名小弟", "three selected crew members must be visibly shown")
+	for index: int in range(3, 5):
+		var choice: CheckButton = panel.crew_selector.get_child(index) as CheckButton
+		choice.button_pressed = true
+		choice.emit_signal("toggled", true)
+	_expect(panel.status_label.text == "已選 5/5 名小弟", "five selected crew members must be visibly shown")
 	panel.start_button.emit_signal("pressed")
-	_expect(panel.status_label.text.begins_with("等待中："), "started task must display waiting state")
+	_expect(panel.status_label.text == "等待中：已派遣 5 名小弟", "started task must retain the selected crew count")
 	_expect(panel.start_button.disabled, "waiting task must disable a second start")
 	for choice: CheckButton in panel.crew_selector.get_children():
 		_expect(choice.disabled, "waiting task must lock all crew choices")
+	panel._on_crew_toggled(false, "crew_01")
+	_expect(panel._selected_crew_ids.size() == 5, "waiting task must not allow its dispatched crew count to change")
 	var waiting_task_id: String = panel._task_id
 	panel.refresh_current_mission(initial_time_seconds + 6 * 60 * 60)
 	_expect(panel._task_id == waiting_task_id, "accepted waiting task must not be replaced")
@@ -59,6 +73,8 @@ func _run() -> void:
 	_expect(panel.start_button.disabled, "completed task must keep the start control disabled")
 	for choice: CheckButton in panel.crew_selector.get_children():
 		_expect(choice.disabled, "completed task must keep every crew choice disabled")
+	panel._on_crew_toggled(false, "crew_01")
+	_expect(panel._selected_crew_ids.size() == 5, "completed task must not allow its dispatched crew count to change")
 	panel.start_button.emit_signal("pressed")
 	_expect(panel.status_label.text == completed_text, "completed task must not replace its fixed result after a second start attempt")
 	_expect(Dictionary(panel._lifecycle._locked_results_by_task_id[panel._task_id]) == locked_result, "completed task must not resolve a second result after a second start attempt")

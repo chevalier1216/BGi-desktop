@@ -79,7 +79,7 @@ func _render_crew_choices() -> void:
 		crew_selector.add_child(choice)
 
 func _on_crew_toggled(pressed: bool, crew_id: String) -> void:
-	if _is_waiting:
+	if _is_waiting or _is_completed:
 		return
 	if pressed:
 		if not _selected_crew_ids.has(crew_id):
@@ -90,11 +90,13 @@ func _on_crew_toggled(pressed: bool, crew_id: String) -> void:
 
 func _refresh_selection_state() -> void:
 	var selected_count: int = _selected_crew_ids.size()
-	start_button.disabled = _is_waiting or selected_count < DispatchRules.MIN_ASSIGNEES or selected_count > DispatchRules.MAX_ASSIGNEES
-	if not _is_waiting:
+	start_button.disabled = _is_waiting or _is_completed or selected_count < DispatchRules.MIN_ASSIGNEES or selected_count > DispatchRules.MAX_ASSIGNEES
+	if not _is_waiting and not _is_completed:
 		status_label.text = "已選 %d/%d 名小弟" % [selected_count, DispatchRules.MAX_ASSIGNEES]
 
 func _on_start_pressed() -> void:
+	if _is_waiting or _is_completed:
+		return
 	var result: Dictionary = _lifecycle.accept_execution(_task_id, _selected_crew_ids, int(Time.get_unix_time_from_system()), _duration_seconds)
 	if not bool(result["is_accepted"]):
 		status_label.text = "無法開始：%s" % result["error_code"]
@@ -162,4 +164,7 @@ func refresh_execution_status(current_time_seconds: int) -> void:
 		return
 	_is_waiting = false
 	_is_completed = true
+	for choice: CheckButton in crew_selector.get_children():
+		choice.disabled = true
+	start_button.disabled = true
 	status_label.text = "已完成／保底報酬待定"

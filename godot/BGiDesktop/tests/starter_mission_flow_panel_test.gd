@@ -42,6 +42,12 @@ func _run() -> void:
 	_expect(panel.status_label.text == "已完成／保底報酬待定", "expired task must show a guaranteed pending reward state")
 	var completed_text: String = panel.status_label.text
 	var locked_result: Dictionary = Dictionary(panel._lifecycle._locked_results_by_task_id[panel._task_id]).duplicate(true)
+	_expect(panel.start_button.disabled, "completed task must keep the start control disabled")
+	for choice: CheckButton in panel.crew_selector.get_children():
+		_expect(choice.disabled, "completed task must keep every crew choice disabled")
+	panel.start_button.emit_signal("pressed")
+	_expect(panel.status_label.text == completed_text, "completed task must not replace its fixed result after a second start attempt")
+	_expect(Dictionary(panel._lifecycle._locked_results_by_task_id[panel._task_id]) == locked_result, "completed task must not resolve a second result after a second start attempt")
 	panel.refresh_execution_status(started_at_seconds + 20)
 	_expect(panel.status_label.text == completed_text, "repeated completion updates must keep the settled state")
 	_expect(Dictionary(panel._lifecycle._locked_results_by_task_id[panel._task_id]) == locked_result, "repeated completion updates must not resolve a second result")

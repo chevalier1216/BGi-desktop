@@ -10,6 +10,7 @@
 
 | 日期時間（Asia/Taipei） | 類型 | 目標 | 檔案相對位置 | 行號與摘要 | 驗證結果 | Git commit |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-13 | 測試 | 驗證未接受任務不因時間經過失效 | `godot/BGiDesktop/tests/mission_refresh_service_test.gd` | 以可控時間前進 6 小時與 30 天後驗證：無明確替換資料時，未接受任務清單完整不變。 | Godot 4.7.1 headless editor 載入與指定測試通過，結束碼 0；Git whitespace 檢查通過。 | `70a2325` |
 | 2026-08-13 | 程式／UI | 強化新手任務刷新介面防護 | `godot/BGiDesktop/scripts/starter_mission_flow_panel.gd`、`godot/BGiDesktop/tests/starter_mission_flow_panel_test.gd` | 驗證初始 1/1、成功後 0/1、6 小時最多回補 1/1；等待／完成時刷新按鈕禁用且不耗額度，完成文案不被刷新入口覆寫。 | Godot 4.7.1 headless editor 載入與面板測試通過，結束碼 0；Git whitespace 檢查通過。 | `7ba11a7` |
 | 2026-08-13 | 測試 | 驗證新手任務可派遣人數互動與鎖定 | `godot/BGiDesktop/tests/starter_mission_flow_panel_test.gd` | 驗證 0 人顯示且不可開始，選取 1／3／5 人時顯示相同人數；等待與完成後皆不可改變已派遣人數。 | Godot 4.7.1 headless editor 載入與指定測試通過，結束碼 0；Git whitespace 檢查通過。 | `ed5f6b9` |
 | 2026-08-13 | 程式／UI | 顯示新手任務卡報酬揭露 | `godot/BGiDesktop/scripts/starter_mission_flow_panel.gd`、`godot/BGiDesktop/scenes/starter_mission_flow_panel.tscn`、`godot/BGiDesktop/tests/starter_mission_flow_panel_test.gd` | 顯示保底報酬、額外報酬範圍與額外機率三個 `[PLACEHOLDER]` 欄位；額外為 0 時採中性文案，完成文案維持「已完成／保底報酬待定」。 | Godot 4.7.1 headless editor 載入與面板測試通過，結束碼 0；Git whitespace 檢查通過。 | `d090964` |

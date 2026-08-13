@@ -56,6 +56,9 @@
 ## Git、日誌與交付
 
 - 每一項已核對變更先提交來源檔，再以獨立提交更新 `ADJUSTMENT_LOG.md`，再推送。
+- Every pushed version update must, in addition to `ADJUSTMENT_LOG.md`, create or update a human-readable version-update Google Doc in the BGi Desktop Google Drive `03_Operation_Log` folder. The Doc must include the covered commit, change summary, file categories, verification, uncommitted items, and blockers/next steps.
+- Both the commit and Google Doc write result must be read back and verified. The OPLOG_HANDOFF must include the Google Doc URL and revision.
+- Failed or uncommitted work must never be recorded as a released version.
 - 暫存時只列出明確檔案；不得使用廣泛 stage，也不得混入無關未追蹤檔或未交接內容。
 - 若 Git、ACL 或測試環境阻塞，保留工作樹，記錄證據與最小處置方案；不得自行破壞性排除。
 

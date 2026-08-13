@@ -14,6 +14,7 @@ const MissionRefreshAllowanceScript = preload("res://scripts/mission_refresh_all
 const MissionRefreshServiceScript = preload("res://scripts/mission_refresh_service.gd")
 const TerritoryFirstTouchUnlockScript = preload("res://scripts/territory_first_touch_unlock.gd")
 const TerritoryProgressModelScript = preload("res://scripts/territory_progress_model.gd")
+const TerritoryFirstTouchStateStoreScript = preload("res://scripts/territory_first_touch_state_store.gd")
 const MissionRewardDisclosureModelScript = preload("res://scripts/mission_reward_disclosure_model.gd")
 const TutorialTaskProgressionScript = preload("res://scripts/tutorial_task_progression.gd")
 const TutorialMissionCompletionCoordinatorScript = preload("res://scripts/tutorial_mission_completion_coordinator.gd")
@@ -36,6 +37,7 @@ const TutorialMissionCompletionCoordinatorScript = preload("res://scripts/tutori
 @onready var next_tutorial_task_label: Label = %NextTutorialTaskLabel
 
 @export var execution_state_store_path: String = "user://starter_mission_flow_state.json"
+@export var territory_state_store_path: String = "user://starter_mission_territory_state.json"
 @export var current_time_override: int = -1
 
 var _task_id: String = ""
@@ -56,7 +58,9 @@ var _crew_ids_by_task: Dictionary = {}
 var _refresh_allowance: RefCounted
 var _refresh_service: RefCounted
 var _touched_territory_ids: Dictionary = {}
+var _unlocked_crew_ids_by_territory: Dictionary = {}
 var _territory_data: Dictionary = {}
+var _territory_state_store: RefCounted
 var _reward_disclosure_data: Dictionary = {}
 var _is_waiting: bool = false
 var _is_completed: bool = false
@@ -80,6 +84,11 @@ func _ready() -> void:
 	_refresh_allowance.update(current_time_seconds)
 	_refresh_service = MissionRefreshServiceScript.new(_refresh_allowance)
 	_territory_data = TerritoryProgressModelScript.create("territory_01")
+	_territory_state_store = TerritoryFirstTouchStateStoreScript.new(territory_state_store_path)
+	var territory_state_result: Dictionary = _territory_state_store.load()
+	_touched_territory_ids = Dictionary(territory_state_result["touched_territory_ids"]).duplicate(true)
+	_unlocked_crew_ids_by_territory = Dictionary(territory_state_result["unlocked_crew_ids_by_territory"]).duplicate(true)
+	_restore_unlocked_crew()
 	_load_first_starter_mission()
 	_tutorial_progression = TutorialTaskProgressionScript.new(_current_missions)
 	_tutorial_completion_coordinator = TutorialMissionCompletionCoordinatorScript.new(_tutorial_progression, _assignment_state, validity_query)
@@ -113,13 +122,16 @@ func _load_current_mission() -> void:
 
 func _render_crew_choices() -> void:
 	for crew_member: Dictionary in _game_state.get_crew():
-		var crew_id: String = str(crew_member["id"])
-		var choice: CheckButton = CheckButton.new()
-		choice.text = "小弟 %s" % crew_id.trim_prefix("crew_")
-		choice.tooltip_text = "可用" if int(crew_member["status"]) == GameStateScript.CrewStatus.AVAILABLE else "派遣中"
-		choice.disabled = int(crew_member["status"]) != GameStateScript.CrewStatus.AVAILABLE
-		choice.toggled.connect(_on_crew_toggled.bind(crew_id))
-		crew_selector.add_child(choice)
+		_append_crew_choice(crew_member)
+
+func _append_crew_choice(crew_member: Dictionary) -> void:
+	var crew_id: String = str(crew_member["id"])
+	var choice: CheckButton = CheckButton.new()
+	choice.text = "小弟 %s" % crew_id.trim_prefix("crew_")
+	choice.tooltip_text = "可用" if int(crew_member["status"]) == GameStateScript.CrewStatus.AVAILABLE else "派遣中"
+	choice.disabled = int(crew_member["status"]) != GameStateScript.CrewStatus.AVAILABLE
+	choice.toggled.connect(_on_crew_toggled.bind(crew_id))
+	crew_selector.add_child(choice)
 
 func _on_crew_toggled(pressed: bool, crew_id: String) -> void:
 	if _is_waiting or _is_completed:
@@ -164,11 +176,42 @@ func _on_refresh_pressed() -> void:
 
 func _on_explore_territory_pressed() -> void:
 	var touch_result: Dictionary = TerritoryFirstTouchUnlockScript.touch(str(_territory_data["territory_id"]), _touched_territory_ids)
-	_touched_territory_ids = Dictionary(touch_result["touched_territory_ids"]).duplicate(true)
-	if bool(touch_result["is_unlock_granted"]):
-		status_label.text = "首次觸及：已解鎖 1 名新人物"
+	if not bool(touch_result["is_unlock_granted"]):
+		status_label.text = "已探索此地盤：不重複解鎖"
 		return
-	status_label.text = "已探索此地盤：不重複解鎖"
+	var territory_id: String = str(_territory_data["territory_id"])
+	var unlocked_crew_id: String = _get_unlocked_crew_id(territory_id)
+	var saved_touches: Dictionary = Dictionary(touch_result["touched_territory_ids"]).duplicate(true)
+	var saved_unlocks: Dictionary = _unlocked_crew_ids_by_territory.duplicate(true)
+	saved_unlocks[territory_id] = unlocked_crew_id
+	var save_result: Dictionary = _territory_state_store.save(saved_touches, saved_unlocks)
+	if not bool(save_result["is_saved"]):
+		status_label.text = "首次觸及保存失敗：%s" % save_result["error_code"]
+		return
+	_touched_territory_ids = saved_touches
+	_unlocked_crew_ids_by_territory = saved_unlocks
+	if not _ensure_unlocked_crew(unlocked_crew_id, true):
+		status_label.text = "首次觸及成員還原失敗"
+		return
+	status_label.text = "首次觸及：已解鎖 1 名新人物"
+
+func _restore_unlocked_crew() -> void:
+	for territory_id_variant: Variant in _unlocked_crew_ids_by_territory:
+		_ensure_unlocked_crew(str(_unlocked_crew_ids_by_territory[territory_id_variant]))
+
+func _ensure_unlocked_crew(crew_id: String, append_choice: bool = false) -> bool:
+	for crew_member: Dictionary in _game_state.get_crew():
+		if str(crew_member["id"]) == crew_id:
+			return true
+	var add_result: Dictionary = _game_state.add_available_crew(crew_id)
+	if not bool(add_result["is_added"]):
+		return false
+	if append_choice:
+		_append_crew_choice({"id": crew_id, "status": GameStateScript.CrewStatus.AVAILABLE})
+	return true
+
+func _get_unlocked_crew_id(territory_id: String) -> String:
+	return "territory_%s_crew_01" % territory_id
 
 func _refresh_territory_growth_display() -> void:
 	territory_progress_label.text = "地盤進度：%s" % _territory_data["territory_progress"]

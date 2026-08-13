@@ -30,5 +30,18 @@ func set_crew_status(crew_id: String, status: int) -> Dictionary:
 			return {"is_updated": true, "error_code": ""}
 	return _rejected("crew_not_found")
 
+## Adds one uniquely identified crew member in the available state.
+func add_available_crew(crew_id: String) -> Dictionary:
+	if crew_id.is_empty():
+		return _rejected("crew_id_required")
+	for crew_member: Dictionary in _crew:
+		if str(crew_member["id"]) == crew_id:
+			return _rejected("crew_id_already_exists")
+	_crew.append({
+		"id": crew_id,
+		"status": CrewStatus.AVAILABLE,
+	})
+	return {"is_added": true, "error_code": ""}
+
 func _rejected(error_code: String) -> Dictionary:
 	return {"is_updated": false, "error_code": error_code}

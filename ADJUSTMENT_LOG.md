@@ -10,6 +10,7 @@
 
 | 日期時間（Asia/Taipei） | 類型 | 目標 | 檔案相對位置 | 行號與摘要 | 驗證結果 | Git commit |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-13 | 正式 operations 文件入口 | 在 AGENTS 新增 operations 文件入口與可變細節維護規則 | `AGENTS.md` 9–14 | 連結專案背景／canonical 路徑、跨裝置同步與手機至桌機交接文件；明定可變路徑、流程與交接細節只維護於 `docs/operations/`。 | 三個連結與說明已核對；Git whitespace 與格式檢查通過。 | `0946332` |
 | 2026-08-13 | 文件／手機至桌機交接模板 | 新增跨裝置工作階段交接模板 | `docs/operations/SESSION_HANDOFF_TEMPLATE.md` | 1–29：提供決策／需求、驗收條件、影響文件或模組、限制與未決項、來源討論連結、建議分支與日期欄位。 | 新增前確認目標不存在；欄位檢查與 Git whitespace 檢查通過。未改程式、既有文件或 Git 設定。 | `0304bfc` |
 | 2026-08-13 | 文件架構／ADR 決策紀錄入口 | 新增 ADR 用途、回寫與模板指引 | `docs/decisions/README.md` | 1–38：定義 ADR 用途、ChatGPT Project 決策回寫、檔名規則，以及背景、決策、替代方案、影響、Git commit、文件連結與狀態模板。 | 目標原先不存在；format check 與 Git whitespace 檢查通過。 | `c3d2f1d` |
 | 2026-08-13 | 素材台帳範本 | 新增可複製的素材包／素材檔台帳範本 | `docs/assets/ASSET_LEDGER_TEMPLATE.md` | 1–7：定義名稱、類型、來源與授權證據 URL、商用／修改條件、狀態、SHA-256、用途邊界、人工確認者與日期欄位。 | Git whitespace 檢查通過；未修改 Godot 或素材。 | `b18e753` |

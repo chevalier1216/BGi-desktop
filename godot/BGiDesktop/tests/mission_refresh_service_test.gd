@@ -31,6 +31,10 @@ func _run() -> void:
 	var no_replacement_result: Dictionary = RefreshServiceScript.new(no_replacement_allowance).refresh(missions, [], {}, 6 * 60 * 60)
 	_expect(not no_replacement_result["is_refreshed"], "沒有替換資料時不得刷新")
 	_expect(no_replacement_allowance.get_allowance() == 1, "沒有可替換任務時不得消耗額度")
+	_expect(no_replacement_result["missions"] == missions, "六小時後未接受任務不得因時間經過失效或被替換")
+	var far_future_result: Dictionary = RefreshServiceScript.new(no_replacement_allowance).refresh(missions, [], {}, 60 * 60 * 24 * 30)
+	_expect(not bool(far_future_result["is_refreshed"]), "更久的時間經過且沒有明確替換資料時不得刷新")
+	_expect(far_future_result["missions"] == missions, "更久的時間經過後未接受任務仍必須完整保留")
 
 	var accepted_only_allowance := AllowanceScript.new(0)
 	var accepted_only_result: Dictionary = RefreshServiceScript.new(accepted_only_allowance).refresh(missions, ["starter_01"], {"starter_01": replacement}, 6 * 60 * 60)

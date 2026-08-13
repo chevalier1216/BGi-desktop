@@ -10,6 +10,7 @@
 
 | 日期時間（Asia/Taipei） | 類型 | 目標 | 檔案相對位置 | 行號與摘要 | 驗證結果 | Git commit |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-13 | 程式／UI | 建立最小新手任務可視化派遣流程 | `starter_mission_flow_panel.gd`、`starter_mission_flow_panel.tscn`、`desktop_shell.tscn`、`desktop_window_controller.gd`、`project.godot`、`starter_mission_flow_panel_test.gd` | 文字化顯示五名小弟與 `starter_01` 5 秒任務；限制 1–5 人，零人不可開始，派遣後顯示等待並鎖定選擇與開始按鈕；視窗工作列避讓定位維持。 | Godot 4.7.1 headless editor 載入與面板測試均通過，結束碼 0；Git whitespace 檢查通過，未開可見視窗。 | `467976e` |
 | 2026-08-13 | 程式 | 修正桌面視窗啟動時預設非置頂 | `godot/BGiDesktop/scripts/desktop_window_controller.gd` 10–37 | 啟動時強制 `_always_on_top = false`；保留 `set_always_on_top()` 使用者切換介面與 `DisplayServer.screen_get_usable_rect()` 工作列避讓底部定位。 | Godot 4.7.1 headless editor 載入通過，結束碼 0；Git whitespace 檢查通過。 | `eafa226` |
 | 2026-08-13 | 正式 operations 文件入口 | 在 AGENTS 新增 operations 文件入口與可變細節維護規則 | `AGENTS.md` 9–14 | 連結專案背景／canonical 路徑、跨裝置同步與手機至桌機交接文件；明定可變路徑、流程與交接細節只維護於 `docs/operations/`。 | 三個連結與說明已核對；Git whitespace 與格式檢查通過。 | `0946332` |
 | 2026-08-13 | 文件／手機至桌機交接模板 | 新增跨裝置工作階段交接模板 | `docs/operations/SESSION_HANDOFF_TEMPLATE.md` | 1–29：提供決策／需求、驗收條件、影響文件或模組、限制與未決項、來源討論連結、建議分支與日期欄位。 | 新增前確認目標不存在；欄位檢查與 Git whitespace 檢查通過。未改程式、既有文件或 Git 設定。 | `0304bfc` |

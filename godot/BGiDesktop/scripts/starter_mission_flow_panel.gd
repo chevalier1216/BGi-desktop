@@ -12,6 +12,7 @@ const MissionExecutionStateStoreScript = preload("res://scripts/mission_executio
 const MissionResultStateSnapshotScript = preload("res://scripts/mission_result_state_snapshot.gd")
 const MissionRefreshAllowanceScript = preload("res://scripts/mission_refresh_allowance.gd")
 const MissionRefreshServiceScript = preload("res://scripts/mission_refresh_service.gd")
+const MissionRefreshStateStoreScript = preload("res://scripts/mission_refresh_state_store.gd")
 const TerritoryFirstTouchUnlockScript = preload("res://scripts/territory_first_touch_unlock.gd")
 const TerritoryProgressModelScript = preload("res://scripts/territory_progress_model.gd")
 const TerritoryFirstTouchStateStoreScript = preload("res://scripts/territory_first_touch_state_store.gd")
@@ -40,6 +41,7 @@ const TutorialMissionCompletionCoordinatorScript = preload("res://scripts/tutori
 @export var execution_state_store_path: String = "user://starter_mission_flow_state.json"
 @export var territory_state_store_path: String = "user://starter_mission_territory_state.json"
 @export var territory_progress_state_store_path: String = "user://starter_mission_territory_progress_state.json"
+@export var refresh_state_store_path: String = "user://starter_mission_refresh_state.json"
 @export var current_time_override: int = -1
 
 var _task_id: String = ""
@@ -59,6 +61,7 @@ var _result_state: RefCounted
 var _crew_ids_by_task: Dictionary = {}
 var _refresh_allowance: RefCounted
 var _refresh_service: RefCounted
+var _refresh_state_store: RefCounted
 var _touched_territory_ids: Dictionary = {}
 var _unlocked_crew_ids_by_territory: Dictionary = {}
 var _territory_data: Dictionary = {}
@@ -83,8 +86,12 @@ func _ready() -> void:
 	_lifecycle = MissionLifecycleCoordinatorScript.new(_assignment_coordinator, expired_release_service, _snapshot_collection)
 	_restore_result_state()
 	var current_time_seconds: int = _get_current_time_seconds()
-	_refresh_allowance = MissionRefreshAllowanceScript.new(current_time_seconds - MissionRefreshAllowanceScript.REFILL_INTERVAL_SECONDS)
+	_refresh_state_store = MissionRefreshStateStoreScript.new(refresh_state_store_path)
+	var refresh_state_result: Dictionary = _refresh_state_store.load(current_time_seconds - MissionRefreshAllowanceScript.REFILL_INTERVAL_SECONDS)
+	_refresh_allowance = refresh_state_result["allowance"]
 	_refresh_allowance.update(current_time_seconds)
+	if bool(refresh_state_result["was_missing"]):
+		_save_refresh_state()
 	_refresh_service = MissionRefreshServiceScript.new(_refresh_allowance)
 	_territory_data = TerritoryProgressModelScript.create("territory_01")
 	_territory_progress_state_store = TerritoryProgressStateStoreScript.new(territory_progress_state_store_path)
@@ -245,6 +252,7 @@ func refresh_current_mission(current_time_seconds: int) -> void:
 	var replacements_by_mission_id: Dictionary = {_task_id: _current_missions[1].duplicate(true)}
 	var accepted_mission_ids: Array[String] = []
 	var refresh_result: Dictionary = _refresh_service.refresh(_current_missions, accepted_mission_ids, replacements_by_mission_id, current_time_seconds)
+	_save_refresh_state()
 	_refresh_refresh_state()
 	if not bool(refresh_result["is_refreshed"]):
 		status_label.text = "無法刷新：%s" % refresh_result["error_code"]
@@ -257,12 +265,18 @@ func refresh_current_mission(current_time_seconds: int) -> void:
 
 ## Updates the visible allowance with an injected timestamp for deterministic UI tests.
 func update_refresh_allowance(current_time_seconds: int) -> void:
+	var previous_data: Dictionary = _refresh_allowance.to_data()
 	_refresh_allowance.update(current_time_seconds)
+	if _refresh_allowance.to_data() != previous_data:
+		_save_refresh_state()
 	_refresh_refresh_state()
 
 func _refresh_refresh_state() -> void:
 	refresh_allowance_label.text = "刷新額度：%d/%d" % [_refresh_allowance.get_allowance(), MissionRefreshAllowanceScript.MAX_ALLOWANCE]
 	refresh_button.disabled = _is_waiting or _is_completed or _refresh_allowance.get_allowance() == 0
+
+func _save_refresh_state() -> Dictionary:
+	return _refresh_state_store.save(_refresh_allowance)
 
 func _process(_delta: float) -> void:
 	refresh_execution_status(_get_current_time_seconds())
@@ -313,6 +327,7 @@ func _restore_saved_execution(current_time_seconds: int) -> void:
 	if not _result_state.get_locked_result(_task_id).is_empty():
 		_is_completed = true
 		start_button.disabled = true
+		_refresh_refresh_state()
 		status_label.text = "已完成／保底報酬待定"
 		return
 	if clock.is_completed(current_time_seconds):
@@ -321,6 +336,7 @@ func _restore_saved_execution(current_time_seconds: int) -> void:
 		return
 	_is_waiting = true
 	start_button.disabled = true
+	_refresh_refresh_state()
 	status_label.text = "等待中：剩餘 %d 秒" % clock.get_remaining_seconds(current_time_seconds)
 
 func _save_execution_state() -> Dictionary:

@@ -20,6 +20,7 @@ func _run() -> void:
 
 	var waiting_panel: StarterMissionFlowPanel = _create_panel(104)
 	_expect(waiting_panel.status_label.text == "等待中：剩餘 1 秒", "reopened unfinished task must restore its waiting state")
+	_expect(waiting_panel.refresh_button.disabled, "reopened accepted task must keep refresh unavailable")
 	_expect(waiting_panel._selected_crew_ids == ["crew_01", "crew_02", "crew_03"], "reopened task must restore its selected crew ids")
 	_expect(waiting_panel._assignment_state.get_assigned_crew_ids(waiting_panel._task_id) == ["crew_01", "crew_02", "crew_03"], "reopened task must restore its assignment state")
 	for choice: CheckButton in waiting_panel.crew_selector.get_children():

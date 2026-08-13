@@ -10,6 +10,7 @@
 
 | 日期時間（Asia/Taipei） | 類型 | 目標 | 檔案相對位置 | 行號與摘要 | 驗證結果 | Git commit |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-13 | 程式／保存契約 | 離線任務快照與固定結果 JSON 保存 | `godot/BGiDesktop/scripts/mission_execution_state_store.gd` 1–121；`godot/BGiDesktop/tests/mission_execution_state_store_test.gd` 1–51 | 以單一 `user://mission_execution_state.json` 保存任務開始／時長／到期資訊、首次鎖定結果（`resolved_at_seconds`、`guaranteed_reward`、`extra_reward`）與 `claimed_task_ids`；重開後未到期任務保持未解析，到期後讀取既有固定結果，不重算。 | Godot 4.7.1 headless 執行 `mission_execution_state_store_test.gd` 結束碼 0；兩個來源檔 whitespace check 通過。 | `94605ed` |
 | 2026-08-13 | 程式／UI | 接入新手任務進度並顯示下一固定任務 | `godot/BGiDesktop/scripts/starter_mission_flow_panel.gd`、`godot/BGiDesktop/scenes/starter_mission_flow_panel.tscn`、`godot/BGiDesktop/tests/starter_mission_progression_panel_test.gd` | `starter_01` 到期後維持「已完成／保底報酬待定」與既有報酬揭露，透過既有進度協調器顯示下一固定任務 `starter_02`。 | Godot 4.7.1 headless editor 載入、進度測試及既有面板迴歸均通過，結束碼 0；Git whitespace 檢查通過。 | `9cb3fcd` |
 | 2026-08-13 | 測試 | 驗證未接受任務不因時間經過失效 | `godot/BGiDesktop/tests/mission_refresh_service_test.gd` | 以可控時間前進 6 小時與 30 天後驗證：無明確替換資料時，未接受任務清單完整不變。 | Godot 4.7.1 headless editor 載入與指定測試通過，結束碼 0；Git whitespace 檢查通過。 | `70a2325` |
 | 2026-08-13 | 程式／UI | 強化新手任務刷新介面防護 | `godot/BGiDesktop/scripts/starter_mission_flow_panel.gd`、`godot/BGiDesktop/tests/starter_mission_flow_panel_test.gd` | 驗證初始 1/1、成功後 0/1、6 小時最多回補 1/1；等待／完成時刷新按鈕禁用且不耗額度，完成文案不被刷新入口覆寫。 | Godot 4.7.1 headless editor 載入與面板測試通過，結束碼 0；Git whitespace 檢查通過。 | `7ba11a7` |

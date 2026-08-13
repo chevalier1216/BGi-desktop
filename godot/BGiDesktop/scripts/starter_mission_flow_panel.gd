@@ -15,6 +15,7 @@ const MissionRefreshServiceScript = preload("res://scripts/mission_refresh_servi
 const TerritoryFirstTouchUnlockScript = preload("res://scripts/territory_first_touch_unlock.gd")
 const TerritoryProgressModelScript = preload("res://scripts/territory_progress_model.gd")
 const TerritoryFirstTouchStateStoreScript = preload("res://scripts/territory_first_touch_state_store.gd")
+const TerritoryProgressStateStoreScript = preload("res://scripts/territory_progress_state_store.gd")
 const MissionRewardDisclosureModelScript = preload("res://scripts/mission_reward_disclosure_model.gd")
 const TutorialTaskProgressionScript = preload("res://scripts/tutorial_task_progression.gd")
 const TutorialMissionCompletionCoordinatorScript = preload("res://scripts/tutorial_mission_completion_coordinator.gd")
@@ -38,6 +39,7 @@ const TutorialMissionCompletionCoordinatorScript = preload("res://scripts/tutori
 
 @export var execution_state_store_path: String = "user://starter_mission_flow_state.json"
 @export var territory_state_store_path: String = "user://starter_mission_territory_state.json"
+@export var territory_progress_state_store_path: String = "user://starter_mission_territory_progress_state.json"
 @export var current_time_override: int = -1
 
 var _task_id: String = ""
@@ -61,6 +63,7 @@ var _touched_territory_ids: Dictionary = {}
 var _unlocked_crew_ids_by_territory: Dictionary = {}
 var _territory_data: Dictionary = {}
 var _territory_state_store: RefCounted
+var _territory_progress_state_store: RefCounted
 var _reward_disclosure_data: Dictionary = {}
 var _is_waiting: bool = false
 var _is_completed: bool = false
@@ -84,6 +87,11 @@ func _ready() -> void:
 	_refresh_allowance.update(current_time_seconds)
 	_refresh_service = MissionRefreshServiceScript.new(_refresh_allowance)
 	_territory_data = TerritoryProgressModelScript.create("territory_01")
+	_territory_progress_state_store = TerritoryProgressStateStoreScript.new(territory_progress_state_store_path)
+	var territory_progress_result: Dictionary = _territory_progress_state_store.load(str(_territory_data["territory_id"]))
+	_territory_data = Dictionary(territory_progress_result["territory_data"]).duplicate(true)
+	if bool(territory_progress_result["was_missing"]):
+		_territory_progress_state_store.save(_territory_data)
 	_territory_state_store = TerritoryFirstTouchStateStoreScript.new(territory_state_store_path)
 	var territory_state_result: Dictionary = _territory_state_store.load()
 	_touched_territory_ids = Dictionary(territory_state_result["touched_territory_ids"]).duplicate(true)

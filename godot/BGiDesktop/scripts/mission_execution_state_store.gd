@@ -11,12 +11,14 @@ func _init(file_path: String = DEFAULT_FILE_PATH) -> void:
 	_file_path = file_path
 
 ## Saves each execution snapshot and its locked result state in one JSON envelope.
-func save(snapshot_collection: RefCounted, result_state: RefCounted) -> Dictionary:
+func save(snapshot_collection: RefCounted, result_state: RefCounted, crew_ids_by_task: Dictionary = {}) -> Dictionary:
 	if not _file_path.begins_with("user://"):
 		return _rejected("execution_state_store_path_invalid")
-	var executions: Dictionary = _to_execution_data(snapshot_collection)
+	var executions_result: Dictionary = _to_execution_data(snapshot_collection, crew_ids_by_task)
+	if not bool(executions_result["is_valid"]):
+		return _rejected("execution_state_store_crew_ids_invalid")
 	var payload: Dictionary = {
-		"executions": executions,
+		"executions": executions_result["executions"],
 		"result_state": result_state.to_data(),
 	}
 	var file: FileAccess = FileAccess.open(_file_path, FileAccess.WRITE)
@@ -57,40 +59,63 @@ func load() -> Dictionary:
 		"error_code": "",
 		"collection": snapshots_result["collection"],
 		"result_state": result_state_result["snapshot"],
+		"crew_ids_by_task": snapshots_result["crew_ids_by_task"],
 	}
 
-func _to_execution_data(snapshot_collection: RefCounted) -> Dictionary:
+func _to_execution_data(snapshot_collection: RefCounted, crew_ids_by_task: Dictionary) -> Dictionary:
 	var executions: Dictionary = {}
 	for task_id_variant: Variant in snapshot_collection.to_data():
 		var task_id: String = str(task_id_variant)
 		var snapshot: Dictionary = snapshot_collection.get_snapshot_data(task_id)
+		var crew_ids_variant: Variant = crew_ids_by_task.get(task_id, [])
+		if not _has_valid_crew_ids(crew_ids_variant):
+			return {"is_valid": false, "executions": {}}
 		executions[task_id] = {
 			"task_id": task_id,
 			"started_at_seconds": int(snapshot["started_at_seconds"]),
 			"duration_seconds": int(snapshot["duration_seconds"]),
 			"expires_at_seconds": int(snapshot["started_at_seconds"]) + int(snapshot["duration_seconds"]),
+			"crew_ids": Array(crew_ids_variant).duplicate(),
 		}
-	return executions
+	return {"is_valid": true, "executions": executions}
 
 func _restore_snapshot_collection(executions: Dictionary) -> Dictionary:
 	var collection_data: Dictionary = {}
+	var crew_ids_by_task: Dictionary = {}
 	for task_id_variant: Variant in executions:
 		var task_id: String = str(task_id_variant)
 		var execution: Dictionary = Dictionary(executions[task_id])
 		if task_id.is_empty() or str(execution.get("task_id", "")) != task_id:
 			return {"is_valid": false, "collection": SnapshotCollectionScript.new()}
-		if not execution.has("started_at_seconds") or not execution.has("duration_seconds") or not execution.has("expires_at_seconds"):
-			return {"is_valid": false, "collection": SnapshotCollectionScript.new()}
+		if not execution.has("started_at_seconds") or not execution.has("duration_seconds") or not execution.has("expires_at_seconds") or not execution.has("crew_ids"):
+			return {"is_valid": false, "collection": SnapshotCollectionScript.new(), "crew_ids_by_task": {}}
 		var started_at_seconds: int = int(execution["started_at_seconds"])
 		var duration_seconds: int = int(execution["duration_seconds"])
 		if duration_seconds < 0 or int(execution["expires_at_seconds"]) != started_at_seconds + duration_seconds:
-			return {"is_valid": false, "collection": SnapshotCollectionScript.new()}
+			return {"is_valid": false, "collection": SnapshotCollectionScript.new(), "crew_ids_by_task": {}}
+		if not _has_valid_crew_ids(execution["crew_ids"]):
+			return {"is_valid": false, "collection": SnapshotCollectionScript.new(), "crew_ids_by_task": {}}
 		collection_data[task_id] = {
 			"task_id": task_id,
 			"started_at_seconds": started_at_seconds,
 			"duration_seconds": duration_seconds,
 		}
-	return {"is_valid": true, "collection": SnapshotCollectionScript.from_data(collection_data)}
+		crew_ids_by_task[task_id] = Array(execution["crew_ids"]).duplicate()
+	return {"is_valid": true, "collection": SnapshotCollectionScript.from_data(collection_data), "crew_ids_by_task": crew_ids_by_task}
+
+func _has_valid_crew_ids(crew_ids_variant: Variant) -> bool:
+	if typeof(crew_ids_variant) != TYPE_ARRAY:
+		return false
+	var crew_ids: Array = Array(crew_ids_variant)
+	if crew_ids.is_empty() or crew_ids.size() > 5:
+		return false
+	var seen_crew_ids: Dictionary = {}
+	for crew_id_variant: Variant in crew_ids:
+		var crew_id: String = str(crew_id_variant)
+		if crew_id.is_empty() or seen_crew_ids.has(crew_id):
+			return false
+		seen_crew_ids[crew_id] = true
+	return true
 
 func _has_valid_locked_results(result_state: RefCounted) -> bool:
 	var result_data: Dictionary = result_state.to_data()
@@ -108,6 +133,7 @@ func _loaded_empty(was_missing: bool) -> Dictionary:
 		"error_code": "",
 		"collection": SnapshotCollectionScript.new(),
 		"result_state": ResultStateSnapshotScript.new(),
+		"crew_ids_by_task": {},
 	}
 
 func _rejected(error_code: String) -> Dictionary:
@@ -118,4 +144,5 @@ func _rejected(error_code: String) -> Dictionary:
 		"error_code": error_code,
 		"collection": SnapshotCollectionScript.new(),
 		"result_state": ResultStateSnapshotScript.new(),
+		"crew_ids_by_task": {},
 	}

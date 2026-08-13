@@ -8,6 +8,8 @@ const ValidityQueryScript = preload("res://scripts/mission_execution_validity_qu
 const ExpiredReleaseServiceScript = preload("res://scripts/mission_expired_release_service.gd")
 const SnapshotCollectionScript = preload("res://scripts/mission_execution_snapshot_collection.gd")
 const MissionLifecycleCoordinatorScript = preload("res://scripts/mission_lifecycle_coordinator.gd")
+const MissionExecutionStateStoreScript = preload("res://scripts/mission_execution_state_store.gd")
+const MissionResultStateSnapshotScript = preload("res://scripts/mission_result_state_snapshot.gd")
 const MissionRefreshAllowanceScript = preload("res://scripts/mission_refresh_allowance.gd")
 const MissionRefreshServiceScript = preload("res://scripts/mission_refresh_service.gd")
 const TerritoryFirstTouchUnlockScript = preload("res://scripts/territory_first_touch_unlock.gd")
@@ -33,6 +35,9 @@ const TutorialMissionCompletionCoordinatorScript = preload("res://scripts/tutori
 @onready var extra_reward_note_label: Label = %ExtraRewardNoteLabel
 @onready var next_tutorial_task_label: Label = %NextTutorialTaskLabel
 
+@export var execution_state_store_path: String = "user://starter_mission_flow_state.json"
+@export var current_time_override: int = -1
+
 var _task_id: String = ""
 var _duration_seconds: int = 0
 var _selected_crew_ids: Array[String] = []
@@ -41,9 +46,13 @@ var _game_state: Node
 var _starter_mission_catalog: Node
 var _lifecycle: RefCounted
 var _assignment_state: RefCounted
+var _assignment_coordinator: RefCounted
 var _tutorial_progression: RefCounted
 var _tutorial_completion_coordinator: RefCounted
 var _snapshot_collection: RefCounted
+var _execution_state_store: RefCounted
+var _result_state: RefCounted
+var _crew_ids_by_task: Dictionary = {}
 var _refresh_allowance: RefCounted
 var _refresh_service: RefCounted
 var _touched_territory_ids: Dictionary = {}
@@ -56,12 +65,17 @@ func _ready() -> void:
 	_game_state = get_node("/root/GameState") as Node
 	_starter_mission_catalog = get_node("/root/StarterMissionCatalog") as Node
 	_assignment_state = MissionAssignmentStateScript.new()
-	var assignment_coordinator: RefCounted = AssignmentCoordinatorScript.new(_game_state, _assignment_state)
+	_assignment_coordinator = AssignmentCoordinatorScript.new(_game_state, _assignment_state)
 	var validity_query: RefCounted = ValidityQueryScript.new()
-	var expired_release_service: RefCounted = ExpiredReleaseServiceScript.new(assignment_coordinator, _assignment_state, validity_query)
-	_snapshot_collection = SnapshotCollectionScript.new()
-	_lifecycle = MissionLifecycleCoordinatorScript.new(assignment_coordinator, expired_release_service, _snapshot_collection)
-	var current_time_seconds: int = int(Time.get_unix_time_from_system())
+	var expired_release_service: RefCounted = ExpiredReleaseServiceScript.new(_assignment_coordinator, _assignment_state, validity_query)
+	_execution_state_store = MissionExecutionStateStoreScript.new(execution_state_store_path)
+	var execution_state_result: Dictionary = _execution_state_store.load()
+	_snapshot_collection = execution_state_result["collection"]
+	_result_state = execution_state_result["result_state"]
+	_crew_ids_by_task = Dictionary(execution_state_result["crew_ids_by_task"]).duplicate(true)
+	_lifecycle = MissionLifecycleCoordinatorScript.new(_assignment_coordinator, expired_release_service, _snapshot_collection)
+	_restore_result_state()
+	var current_time_seconds: int = _get_current_time_seconds()
 	_refresh_allowance = MissionRefreshAllowanceScript.new(current_time_seconds - MissionRefreshAllowanceScript.REFILL_INTERVAL_SECONDS)
 	_refresh_allowance.update(current_time_seconds)
 	_refresh_service = MissionRefreshServiceScript.new(_refresh_allowance)
@@ -77,6 +91,7 @@ func _ready() -> void:
 	_refresh_refresh_state()
 	_refresh_territory_growth_display()
 	_refresh_reward_disclosure_display()
+	_restore_saved_execution(current_time_seconds)
 
 func _load_first_starter_mission() -> void:
 	_current_missions = _starter_mission_catalog.get_missions()
@@ -125,9 +140,17 @@ func _refresh_selection_state() -> void:
 func _on_start_pressed() -> void:
 	if _is_waiting or _is_completed:
 		return
-	var result: Dictionary = _lifecycle.accept_execution(_task_id, _selected_crew_ids, int(Time.get_unix_time_from_system()), _duration_seconds)
+	var result: Dictionary = _lifecycle.accept_execution(_task_id, _selected_crew_ids, _get_current_time_seconds(), _duration_seconds)
 	if not bool(result["is_accepted"]):
 		status_label.text = "無法開始：%s" % result["error_code"]
+		return
+	_crew_ids_by_task[_task_id] = _selected_crew_ids.duplicate()
+	var save_result: Dictionary = _save_execution_state()
+	if not bool(save_result["is_saved"]):
+		_assignment_coordinator.release_assignment(_task_id)
+		_snapshot_collection.remove_snapshot(_task_id)
+		_crew_ids_by_task.erase(_task_id)
+		status_label.text = "無法開始：保存失敗：%s" % save_result["error_code"]
 		return
 	_is_waiting = true
 	for choice: CheckButton in crew_selector.get_children():
@@ -137,7 +160,7 @@ func _on_start_pressed() -> void:
 	_refresh_refresh_state()
 
 func _on_refresh_pressed() -> void:
-	refresh_current_mission(int(Time.get_unix_time_from_system()))
+	refresh_current_mission(_get_current_time_seconds())
 
 func _on_explore_territory_pressed() -> void:
 	var touch_result: Dictionary = TerritoryFirstTouchUnlockScript.touch(str(_territory_data["territory_id"]), _touched_territory_ids)
@@ -191,8 +214,8 @@ func _refresh_refresh_state() -> void:
 	refresh_button.disabled = _is_waiting or _is_completed or _refresh_allowance.get_allowance() == 0
 
 func _process(_delta: float) -> void:
-	refresh_execution_status(int(Time.get_unix_time_from_system()))
-	update_refresh_allowance(int(Time.get_unix_time_from_system()))
+	refresh_execution_status(_get_current_time_seconds())
+	update_refresh_allowance(_get_current_time_seconds())
 
 ## Updates the visual execution state from an injected timestamp for deterministic UI tests.
 func refresh_execution_status(current_time_seconds: int) -> void:
@@ -210,6 +233,10 @@ func refresh_execution_status(current_time_seconds: int) -> void:
 	if not bool(resolution["is_resolved"]):
 		status_label.text = "完成狀態無法讀取"
 		return
+	var save_result: Dictionary = _save_execution_state()
+	if not bool(save_result["is_saved"]):
+		status_label.text = "結果已鎖定，但保存失敗：%s" % save_result["error_code"]
+		return
 	_is_waiting = false
 	_is_completed = true
 	var tutorial_result: Dictionary = _tutorial_completion_coordinator.complete_current_task(_task_id, clock, current_time_seconds)
@@ -219,6 +246,54 @@ func refresh_execution_status(current_time_seconds: int) -> void:
 		choice.disabled = true
 	start_button.disabled = true
 	status_label.text = "已完成／保底報酬待定"
+
+func _restore_saved_execution(current_time_seconds: int) -> void:
+	var clock: Variant = _snapshot_collection.restore_clock(_task_id)
+	if clock == null:
+		return
+	var restored_crew_ids: Array[String] = _get_saved_crew_ids(_task_id)
+	var assignment_result: Dictionary = _assignment_coordinator.accept_assignment(_task_id, restored_crew_ids)
+	if not bool(assignment_result["is_accepted"]):
+		status_label.text = "任務保存無法還原：%s" % assignment_result["error_code"]
+		return
+	_selected_crew_ids = restored_crew_ids
+	for choice: CheckButton in crew_selector.get_children():
+		choice.disabled = true
+	if not _result_state.get_locked_result(_task_id).is_empty():
+		_is_completed = true
+		start_button.disabled = true
+		status_label.text = "已完成／保底報酬待定"
+		return
+	if clock.is_completed(current_time_seconds):
+		_is_waiting = true
+		refresh_execution_status(current_time_seconds)
+		return
+	_is_waiting = true
+	start_button.disabled = true
+	status_label.text = "等待中：剩餘 %d 秒" % clock.get_remaining_seconds(current_time_seconds)
+
+func _save_execution_state() -> Dictionary:
+	_capture_result_state()
+	return _execution_state_store.save(_snapshot_collection, _result_state, _crew_ids_by_task)
+
+func _restore_result_state() -> void:
+	var result_data: Dictionary = _result_state.to_data()
+	_lifecycle._locked_results_by_task_id = result_data["locked_results_by_task_id"].duplicate(true)
+	_lifecycle._claimed_task_ids = result_data["claimed_task_ids"].duplicate(true)
+
+func _capture_result_state() -> void:
+	_result_state = MissionResultStateSnapshotScript.new(_lifecycle._locked_results_by_task_id, _lifecycle._claimed_task_ids)
+
+func _get_saved_crew_ids(task_id: String) -> Array[String]:
+	var crew_ids: Array[String] = []
+	for crew_id_variant: Variant in Array(_crew_ids_by_task.get(task_id, [])):
+		crew_ids.append(str(crew_id_variant))
+	return crew_ids
+
+func _get_current_time_seconds() -> int:
+	if current_time_override >= 0:
+		return current_time_override
+	return int(Time.get_unix_time_from_system())
 
 func _show_next_tutorial_task() -> void:
 	var next_task: Dictionary = _tutorial_progression.get_current_task()

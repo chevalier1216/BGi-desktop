@@ -26,6 +26,7 @@ var _snapshot_collection: RefCounted
 var _snapshot_store: RefCounted
 var _result_state: RefCounted
 var _crew_ids: Array[String] = ["crew_01"]
+var _crew_ids_by_task: Dictionary = {}
 
 func _ready() -> void:
 	_game_state = GameStateScript.new()
@@ -38,6 +39,7 @@ func _ready() -> void:
 	var load_result: Dictionary = _snapshot_store.load()
 	_snapshot_collection = load_result["collection"]
 	_result_state = load_result["result_state"]
+	_crew_ids_by_task = Dictionary(load_result["crew_ids_by_task"]).duplicate(true)
 	_lifecycle = MissionLifecycleCoordinatorScript.new(_assignment_coordinator, expired_release_service, _snapshot_collection)
 	_restore_result_state()
 	panel.accept_requested.connect(_on_accept_requested)
@@ -51,12 +53,14 @@ func _ready() -> void:
 func _on_accept_requested() -> void:
 	var result: Dictionary = _lifecycle.accept_execution(TEST_TASK_ID, _crew_ids, _get_current_time_seconds(), test_duration_seconds)
 	if bool(result["is_accepted"]):
+		_crew_ids_by_task[TEST_TASK_ID] = _crew_ids.duplicate()
 		var save_result: Dictionary = _save_execution_state()
 		if bool(save_result["is_saved"]):
 			panel.set_task_state(TEST_TASK_ID, MissionLifecyclePanel.STATE_DISPATCHED, "已派遣 1 名小弟；快照已保存")
 			return
 		_assignment_coordinator.release_assignment(TEST_TASK_ID)
 		_snapshot_collection.remove_snapshot(TEST_TASK_ID)
+		_crew_ids_by_task.erase(TEST_TASK_ID)
 		panel.set_task_state(TEST_TASK_ID, MissionLifecyclePanel.STATE_AVAILABLE, "快照保存失敗：%s" % save_result["error_code"])
 		return
 	panel.set_task_state(TEST_TASK_ID, MissionLifecyclePanel.STATE_AVAILABLE, "接受失敗：%s" % result["error_code"])
@@ -75,6 +79,7 @@ func _on_completion_check_requested() -> void:
 func _on_claim_requested() -> void:
 	var result: Dictionary = _lifecycle.claim_completed_result(TEST_TASK_ID, _get_current_time_seconds())
 	if bool(result["is_claimed"]):
+		_crew_ids_by_task.erase(TEST_TASK_ID)
 		var save_result: Dictionary = _save_execution_state()
 		if bool(save_result["is_saved"]):
 			panel.set_task_state(TEST_TASK_ID, MissionLifecyclePanel.STATE_CLAIMED, "已收取固定結果；快照已清除")
@@ -88,7 +93,8 @@ func _restore_execution() -> void:
 	if restored_clock == null:
 		panel.set_task_state(TEST_TASK_ID, MissionLifecyclePanel.STATE_AVAILABLE, "固定本地測試資料")
 		return
-	var assignment_result: Dictionary = _assignment_coordinator.accept_assignment(TEST_TASK_ID, _crew_ids)
+	var restored_crew_ids: Array[String] = _get_saved_crew_ids(TEST_TASK_ID)
+	var assignment_result: Dictionary = _assignment_coordinator.accept_assignment(TEST_TASK_ID, restored_crew_ids)
 	if not bool(assignment_result["is_accepted"]):
 		panel.set_task_state(TEST_TASK_ID, MissionLifecyclePanel.STATE_AVAILABLE, "快照復原失敗：%s" % assignment_result["error_code"])
 		return
@@ -110,7 +116,7 @@ func _restore_execution() -> void:
 
 func _save_execution_state() -> Dictionary:
 	_capture_result_state()
-	return _snapshot_store.save(_snapshot_collection, _result_state)
+	return _snapshot_store.save(_snapshot_collection, _result_state, _crew_ids_by_task)
 
 func _restore_result_state() -> void:
 	var result_data: Dictionary = _result_state.to_data()
@@ -122,6 +128,12 @@ func _capture_result_state() -> void:
 		_lifecycle._locked_results_by_task_id,
 		_lifecycle._claimed_task_ids
 	)
+
+func _get_saved_crew_ids(task_id: String) -> Array[String]:
+	var crew_ids: Array[String] = []
+	for crew_id_variant: Variant in Array(_crew_ids_by_task.get(task_id, [])):
+		crew_ids.append(str(crew_id_variant))
+	return crew_ids
 
 func _get_current_time_seconds() -> int:
 	if current_time_override >= 0:

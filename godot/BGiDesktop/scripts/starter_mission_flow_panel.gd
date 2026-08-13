@@ -8,20 +8,27 @@ const ValidityQueryScript = preload("res://scripts/mission_execution_validity_qu
 const ExpiredReleaseServiceScript = preload("res://scripts/mission_expired_release_service.gd")
 const SnapshotCollectionScript = preload("res://scripts/mission_execution_snapshot_collection.gd")
 const MissionLifecycleCoordinatorScript = preload("res://scripts/mission_lifecycle_coordinator.gd")
+const MissionRefreshAllowanceScript = preload("res://scripts/mission_refresh_allowance.gd")
+const MissionRefreshServiceScript = preload("res://scripts/mission_refresh_service.gd")
 
 @onready var task_label: Label = %TaskLabel
 @onready var requirement_label: Label = %RequirementLabel
 @onready var crew_selector: HBoxContainer = %CrewSelector
 @onready var status_label: Label = %StatusLabel
 @onready var start_button: Button = %StartButton
+@onready var refresh_allowance_label: Label = %RefreshAllowanceLabel
+@onready var refresh_button: Button = %RefreshButton
 
 var _task_id: String = ""
 var _duration_seconds: int = 0
 var _selected_crew_ids: Array[String] = []
+var _current_missions: Array[Dictionary] = []
 var _game_state: Node
 var _starter_mission_catalog: Node
 var _lifecycle: RefCounted
 var _snapshot_collection: RefCounted
+var _refresh_allowance: RefCounted
+var _refresh_service: RefCounted
 var _is_waiting: bool = false
 var _is_completed: bool = false
 
@@ -34,19 +41,28 @@ func _ready() -> void:
 	var expired_release_service: RefCounted = ExpiredReleaseServiceScript.new(assignment_coordinator, assignment_state, validity_query)
 	_snapshot_collection = SnapshotCollectionScript.new()
 	_lifecycle = MissionLifecycleCoordinatorScript.new(assignment_coordinator, expired_release_service, _snapshot_collection)
+	var current_time_seconds: int = int(Time.get_unix_time_from_system())
+	_refresh_allowance = MissionRefreshAllowanceScript.new(current_time_seconds - MissionRefreshAllowanceScript.REFILL_INTERVAL_SECONDS)
+	_refresh_allowance.update(current_time_seconds)
+	_refresh_service = MissionRefreshServiceScript.new(_refresh_allowance)
 	_load_first_starter_mission()
 	_render_crew_choices()
 	start_button.pressed.connect(_on_start_pressed)
+	refresh_button.pressed.connect(_on_refresh_pressed)
 	_refresh_selection_state()
+	_refresh_refresh_state()
 
 func _load_first_starter_mission() -> void:
-	var missions: Array[Dictionary] = _starter_mission_catalog.get_missions()
-	if missions.is_empty():
+	_current_missions = _starter_mission_catalog.get_missions()
+	_load_current_mission()
+
+func _load_current_mission() -> void:
+	if _current_missions.is_empty():
 		task_label.text = "新手任務：無可用任務"
 		status_label.text = "任務資料不可用"
 		start_button.disabled = true
 		return
-	var mission: Dictionary = missions[0]
+	var mission: Dictionary = _current_missions[0]
 	_task_id = str(mission["id"])
 	_duration_seconds = int(mission["duration_seconds"])
 	task_label.text = "新手任務：%s（%d 秒）" % [_task_id, _duration_seconds]
@@ -88,9 +104,45 @@ func _on_start_pressed() -> void:
 		choice.disabled = true
 	start_button.disabled = true
 	status_label.text = "等待中：已派遣 %d 名小弟" % _selected_crew_ids.size()
+	_refresh_refresh_state()
+
+func _on_refresh_pressed() -> void:
+	refresh_current_mission(int(Time.get_unix_time_from_system()))
+
+## Refreshes only the displayed unaccepted mission using an explicit existing catalog entry.
+func refresh_current_mission(current_time_seconds: int) -> void:
+	if _is_waiting or _is_completed:
+		status_label.text = "無法刷新：任務已接受"
+		_refresh_refresh_state()
+		return
+	if _current_missions.size() < 2:
+		status_label.text = "無法刷新：缺少替換任務"
+		return
+	var replacements_by_mission_id: Dictionary = {_task_id: _current_missions[1].duplicate(true)}
+	var accepted_mission_ids: Array[String] = []
+	var refresh_result: Dictionary = _refresh_service.refresh(_current_missions, accepted_mission_ids, replacements_by_mission_id, current_time_seconds)
+	_refresh_refresh_state()
+	if not bool(refresh_result["is_refreshed"]):
+		status_label.text = "無法刷新：%s" % refresh_result["error_code"]
+		return
+	_current_missions = Array(refresh_result["missions"])
+	_selected_crew_ids.clear()
+	_load_current_mission()
+	_refresh_selection_state()
+	status_label.text = "任務已刷新"
+
+## Updates the visible allowance with an injected timestamp for deterministic UI tests.
+func update_refresh_allowance(current_time_seconds: int) -> void:
+	_refresh_allowance.update(current_time_seconds)
+	_refresh_refresh_state()
+
+func _refresh_refresh_state() -> void:
+	refresh_allowance_label.text = "刷新額度：%d/%d" % [_refresh_allowance.get_allowance(), MissionRefreshAllowanceScript.MAX_ALLOWANCE]
+	refresh_button.disabled = _is_waiting or _is_completed or _refresh_allowance.get_allowance() == 0
 
 func _process(_delta: float) -> void:
 	refresh_execution_status(int(Time.get_unix_time_from_system()))
+	update_refresh_allowance(int(Time.get_unix_time_from_system()))
 
 ## Updates the visual execution state from an injected timestamp for deterministic UI tests.
 func refresh_execution_status(current_time_seconds: int) -> void:

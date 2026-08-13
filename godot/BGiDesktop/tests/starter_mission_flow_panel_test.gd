@@ -12,6 +12,14 @@ func _run() -> void:
 	root.add_child(panel)
 	_expect(panel.crew_selector.get_child_count() == 5, "starter flow must display exactly five crew choices")
 	_expect(panel.start_button.disabled, "task must not start without the minimum crew")
+	_expect(panel.refresh_allowance_label.text == "刷新額度：1/1", "starter flow must show one available refresh")
+	var initial_task_id: String = panel._task_id
+	var initial_time_seconds: int = int(Time.get_unix_time_from_system())
+	panel.refresh_current_mission(initial_time_seconds)
+	_expect(panel._task_id != initial_task_id, "refresh must replace an unaccepted task with explicit catalog data")
+	_expect(panel.refresh_allowance_label.text == "刷新額度：0/1", "successful refresh must consume the only allowance")
+	panel.update_refresh_allowance(initial_time_seconds + 6 * 60 * 60)
+	_expect(panel.refresh_allowance_label.text == "刷新額度：1/1", "refresh allowance must refill after six hours without exceeding one")
 
 	var first_choice: CheckButton = panel.crew_selector.get_child(0) as CheckButton
 	first_choice.button_pressed = true
@@ -22,6 +30,10 @@ func _run() -> void:
 	_expect(panel.start_button.disabled, "waiting task must disable a second start")
 	for choice: CheckButton in panel.crew_selector.get_children():
 		_expect(choice.disabled, "waiting task must lock all crew choices")
+	var waiting_task_id: String = panel._task_id
+	panel.refresh_current_mission(initial_time_seconds + 6 * 60 * 60)
+	_expect(panel._task_id == waiting_task_id, "accepted waiting task must not be replaced")
+	_expect(panel.refresh_allowance_label.text == "刷新額度：1/1", "rejected waiting refresh must not consume allowance")
 	var clock: RefCounted = panel._snapshot_collection.restore_clock(panel._task_id)
 	var started_at_seconds: int = clock.started_at_seconds
 	panel.refresh_execution_status(started_at_seconds + 2)

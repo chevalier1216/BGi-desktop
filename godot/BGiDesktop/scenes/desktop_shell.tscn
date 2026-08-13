@@ -1,9 +1,15 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/desktop_shell.gd" id="1_shell"]
 [ext_resource type="PackedScene" path="res://scenes/mission_lifecycle_panel.tscn" id="2_lifecycle_panel"]
 [ext_resource type="Script" path="res://scripts/mission_lifecycle_demo_controller.gd" id="3_lifecycle_demo"]
 [ext_resource type="PackedScene" path="res://scenes/starter_mission_flow_panel.tscn" id="4_starter_flow"]
+[ext_resource type="Texture2D" path="res://assets/third_party/subversionary_24_karat_gui/extracted/24K GUI/game/gui/frame_bg.png" id="5_frame_bg"]
+[ext_resource type="Texture2D" path="res://assets/third_party/subversionary_24_karat_gui/extracted/24K GUI/game/gui/frame_border.png" id="6_frame_border"]
+[ext_resource type="Texture2D" path="res://assets/third_party/subversionary_24_karat_gui/extracted/24K GUI/game/gui/gold.png" id="7_gold"]
+[ext_resource type="Texture2D" path="res://assets/third_party/subversionary_24_karat_gui/extracted/24K GUI/game/gui/button/choice_idle_border.png" id="8_button_border"]
+[ext_resource type="Shader" path="res://shaders/karat_gold_mask.gdshader" id="9_gold_shader"]
+[ext_resource type="PackedScene" path="res://scenes/background_apply_confirmation_dialog.tscn" id="10_background_confirm"]
 
 [sub_resource type="StyleBoxFlat" id="StylePanel"]
 bg_color = Color(0.047, 0.063, 0.094, 0.96)
@@ -16,6 +22,14 @@ corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
+
+[sub_resource type="ShaderMaterial" id="KaratFrameMaterial"]
+shader = ExtResource("9_gold_shader")
+shader_parameter/gold_texture = ExtResource("7_gold")
+
+[sub_resource type="ShaderMaterial" id="KaratButtonMaterial"]
+shader = ExtResource("9_gold_shader")
+shader_parameter/gold_texture = ExtResource("7_gold")
 
 [node name="DesktopShell" type="Control"]
 layout_mode = 3
@@ -34,7 +48,7 @@ anchor_bottom = 1.0
 offset_left = 16.0
 offset_top = 12.0
 offset_right = -16.0
-offset_bottom = -12.0
+offset_bottom = -76.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -46,6 +60,21 @@ theme_override_constants/separation = 12
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StylePanel")
+
+[node name="KaratFrameBackground" type="TextureRect" parent="Margin/Columns/TerritoryPanel"]
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("5_frame_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="KaratFrameBorder" type="TextureRect" parent="Margin/Columns/TerritoryPanel"]
+layout_mode = 2
+mouse_filter = 2
+material = SubResource("KaratFrameMaterial")
+texture = ExtResource("6_frame_border")
+expand_mode = 1
+stretch_mode = 6
 
 [node name="Content" type="VBoxContainer" parent="Margin/Columns/TerritoryPanel"]
 layout_mode = 2
@@ -97,6 +126,21 @@ custom_minimum_size = Vector2(330, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StylePanel")
 
+[node name="KaratFrameBackground" type="TextureRect" parent="Margin/Columns/MissionPanel"]
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("5_frame_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="KaratFrameBorder" type="TextureRect" parent="Margin/Columns/MissionPanel"]
+layout_mode = 2
+mouse_filter = 2
+material = SubResource("KaratFrameMaterial")
+texture = ExtResource("6_frame_border")
+expand_mode = 1
+stretch_mode = 6
+
 [node name="Content" type="VBoxContainer" parent="Margin/Columns/MissionPanel"]
 layout_mode = 2
 theme_override_constants/separation = 8
@@ -143,3 +187,174 @@ unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "開啟後，桌面介面會保持在其他視窗上方。"
 text = "置頂顯示"
+
+[node name="BottomPersistentBar" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -68.0
+offset_right = -16.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="KaratFrameBackground" type="TextureRect" parent="BottomPersistentBar"]
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("5_frame_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="KaratFrameBorder" type="TextureRect" parent="BottomPersistentBar"]
+layout_mode = 2
+mouse_filter = 2
+material = SubResource("KaratFrameMaterial")
+texture = ExtResource("6_frame_border")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Entries" type="HBoxContainer" parent="BottomPersistentBar"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 14
+
+[node name="TerritoryEntry" type="Control" parent="BottomPersistentBar/Entries"]
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+
+[node name="KaratButtonFrame" type="TextureRect" parent="BottomPersistentBar/Entries/TerritoryEntry"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+material = SubResource("KaratButtonMaterial")
+texture = ExtResource("8_button_border")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Button" type="Button" parent="BottomPersistentBar/Entries/TerritoryEntry"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+text = "地盤"
+
+[node name="MarketEntry" type="Control" parent="BottomPersistentBar/Entries"]
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+
+[node name="KaratButtonFrame" type="TextureRect" parent="BottomPersistentBar/Entries/MarketEntry"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+material = SubResource("KaratButtonMaterial")
+texture = ExtResource("8_button_border")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Button" type="Button" parent="BottomPersistentBar/Entries/MarketEntry"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+text = "黑市"
+
+[node name="CrewEntry" type="Control" parent="BottomPersistentBar/Entries"]
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+
+[node name="KaratButtonFrame" type="TextureRect" parent="BottomPersistentBar/Entries/CrewEntry"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+material = SubResource("KaratButtonMaterial")
+texture = ExtResource("8_button_border")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Button" type="Button" parent="BottomPersistentBar/Entries/CrewEntry"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+text = "角色"
+
+[node name="CollectionEntry" type="Control" parent="BottomPersistentBar/Entries"]
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+
+[node name="KaratButtonFrame" type="TextureRect" parent="BottomPersistentBar/Entries/CollectionEntry"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+material = SubResource("KaratButtonMaterial")
+texture = ExtResource("8_button_border")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Button" type="Button" parent="BottomPersistentBar/Entries/CollectionEntry"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+text = "收藏"
+
+[node name="SettingsEntry" type="Control" parent="BottomPersistentBar/Entries"]
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+
+[node name="KaratButtonFrame" type="TextureRect" parent="BottomPersistentBar/Entries/SettingsEntry"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+material = SubResource("KaratButtonMaterial")
+texture = ExtResource("8_button_border")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Button" type="Button" parent="BottomPersistentBar/Entries/SettingsEntry"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+text = "設定"
+
+[node name="BackgroundApplyConfirmationDialog" parent="." instance=ExtResource("10_background_confirm")]
+layout_mode = 1

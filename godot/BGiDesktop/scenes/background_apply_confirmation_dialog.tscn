@@ -1,0 +1,92 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/background_apply_confirmation_dialog.gd" id="1_dialog"]
+[ext_resource type="Texture2D" path="res://assets/third_party/subversionary_24_karat_gui/extracted/24K GUI/game/gui/frame_bg.png" id="2_frame_bg"]
+[ext_resource type="Texture2D" path="res://assets/third_party/subversionary_24_karat_gui/extracted/24K GUI/game/gui/frame_border.png" id="3_frame_border"]
+[ext_resource type="Texture2D" path="res://assets/third_party/subversionary_24_karat_gui/extracted/24K GUI/game/gui/gold.png" id="4_gold"]
+[ext_resource type="Shader" path="res://shaders/karat_gold_mask.gdshader" id="5_gold_shader"]
+
+[sub_resource type="ShaderMaterial" id="KaratFrameMaterial"]
+shader = ExtResource("5_gold_shader")
+shader_parameter/gold_texture = ExtResource("4_gold")
+
+[node name="BackgroundApplyConfirmationDialog" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_dialog")
+
+[node name="Dim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.01, 0.012, 0.02, 0.78)
+
+[node name="Dialog" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(460, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -120.0
+offset_right = 230.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="FrameBackground" type="TextureRect" parent="Dialog"]
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("2_frame_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="FrameBorder" type="TextureRect" parent="Dialog"]
+layout_mode = 2
+mouse_filter = 2
+material = SubResource("KaratFrameMaterial")
+texture = ExtResource("3_frame_border")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Content" type="VBoxContainer" parent="Dialog"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Prompt" type="Label" parent="Dialog/Content"]
+layout_mode = 2
+text = "已取得新街區布景，立即套用？"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Note" type="Label" parent="Dialog/Content"]
+layout_mode = 2
+text = "暫不更換仍保留於收藏庫；掛件位置與效果不變。"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Actions" type="HBoxContainer" parent="Dialog/Content"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="ConfirmApplyButton" type="Button" parent="Dialog/Content/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "確認套用"
+
+[node name="DeferApplyButton" type="Button" parent="Dialog/Content/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "暫不更換"

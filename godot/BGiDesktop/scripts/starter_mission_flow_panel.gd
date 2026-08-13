@@ -21,7 +21,9 @@ var _selected_crew_ids: Array[String] = []
 var _game_state: Node
 var _starter_mission_catalog: Node
 var _lifecycle: RefCounted
+var _snapshot_collection: RefCounted
 var _is_waiting: bool = false
+var _is_completed: bool = false
 
 func _ready() -> void:
 	_game_state = get_node("/root/GameState") as Node
@@ -30,8 +32,8 @@ func _ready() -> void:
 	var assignment_coordinator: RefCounted = AssignmentCoordinatorScript.new(_game_state, assignment_state)
 	var validity_query: RefCounted = ValidityQueryScript.new()
 	var expired_release_service: RefCounted = ExpiredReleaseServiceScript.new(assignment_coordinator, assignment_state, validity_query)
-	var snapshot_collection: RefCounted = SnapshotCollectionScript.new()
-	_lifecycle = MissionLifecycleCoordinatorScript.new(assignment_coordinator, expired_release_service, snapshot_collection)
+	_snapshot_collection = SnapshotCollectionScript.new()
+	_lifecycle = MissionLifecycleCoordinatorScript.new(assignment_coordinator, expired_release_service, _snapshot_collection)
 	_load_first_starter_mission()
 	_render_crew_choices()
 	start_button.pressed.connect(_on_start_pressed)
@@ -86,3 +88,26 @@ func _on_start_pressed() -> void:
 		choice.disabled = true
 	start_button.disabled = true
 	status_label.text = "等待中：已派遣 %d 名小弟" % _selected_crew_ids.size()
+
+func _process(_delta: float) -> void:
+	refresh_execution_status(int(Time.get_unix_time_from_system()))
+
+## Updates the visual execution state from an injected timestamp for deterministic UI tests.
+func refresh_execution_status(current_time_seconds: int) -> void:
+	if not _is_waiting:
+		return
+	var clock: Variant = _snapshot_collection.restore_clock(_task_id)
+	if clock == null:
+		status_label.text = "等待狀態無法讀取"
+		return
+	var remaining_seconds: int = clock.get_remaining_seconds(current_time_seconds)
+	if remaining_seconds > 0:
+		status_label.text = "等待中：剩餘 %d 秒" % remaining_seconds
+		return
+	var resolution: Dictionary = _lifecycle.resolve_completed_result(_task_id, current_time_seconds)
+	if not bool(resolution["is_resolved"]):
+		status_label.text = "完成狀態無法讀取"
+		return
+	_is_waiting = false
+	_is_completed = true
+	status_label.text = "已完成／保底報酬待定"

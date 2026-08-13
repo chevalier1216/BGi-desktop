@@ -13,6 +13,8 @@ const MissionRefreshServiceScript = preload("res://scripts/mission_refresh_servi
 const TerritoryFirstTouchUnlockScript = preload("res://scripts/territory_first_touch_unlock.gd")
 const TerritoryProgressModelScript = preload("res://scripts/territory_progress_model.gd")
 const MissionRewardDisclosureModelScript = preload("res://scripts/mission_reward_disclosure_model.gd")
+const TutorialTaskProgressionScript = preload("res://scripts/tutorial_task_progression.gd")
+const TutorialMissionCompletionCoordinatorScript = preload("res://scripts/tutorial_mission_completion_coordinator.gd")
 
 @onready var task_label: Label = %TaskLabel
 @onready var requirement_label: Label = %RequirementLabel
@@ -29,6 +31,7 @@ const MissionRewardDisclosureModelScript = preload("res://scripts/mission_reward
 @onready var extra_reward_range_label: Label = %ExtraRewardRangeLabel
 @onready var extra_reward_probability_label: Label = %ExtraRewardProbabilityLabel
 @onready var extra_reward_note_label: Label = %ExtraRewardNoteLabel
+@onready var next_tutorial_task_label: Label = %NextTutorialTaskLabel
 
 var _task_id: String = ""
 var _duration_seconds: int = 0
@@ -37,6 +40,9 @@ var _current_missions: Array[Dictionary] = []
 var _game_state: Node
 var _starter_mission_catalog: Node
 var _lifecycle: RefCounted
+var _assignment_state: RefCounted
+var _tutorial_progression: RefCounted
+var _tutorial_completion_coordinator: RefCounted
 var _snapshot_collection: RefCounted
 var _refresh_allowance: RefCounted
 var _refresh_service: RefCounted
@@ -49,10 +55,10 @@ var _is_completed: bool = false
 func _ready() -> void:
 	_game_state = get_node("/root/GameState") as Node
 	_starter_mission_catalog = get_node("/root/StarterMissionCatalog") as Node
-	var assignment_state: RefCounted = MissionAssignmentStateScript.new()
-	var assignment_coordinator: RefCounted = AssignmentCoordinatorScript.new(_game_state, assignment_state)
+	_assignment_state = MissionAssignmentStateScript.new()
+	var assignment_coordinator: RefCounted = AssignmentCoordinatorScript.new(_game_state, _assignment_state)
 	var validity_query: RefCounted = ValidityQueryScript.new()
-	var expired_release_service: RefCounted = ExpiredReleaseServiceScript.new(assignment_coordinator, assignment_state, validity_query)
+	var expired_release_service: RefCounted = ExpiredReleaseServiceScript.new(assignment_coordinator, _assignment_state, validity_query)
 	_snapshot_collection = SnapshotCollectionScript.new()
 	_lifecycle = MissionLifecycleCoordinatorScript.new(assignment_coordinator, expired_release_service, _snapshot_collection)
 	var current_time_seconds: int = int(Time.get_unix_time_from_system())
@@ -61,6 +67,8 @@ func _ready() -> void:
 	_refresh_service = MissionRefreshServiceScript.new(_refresh_allowance)
 	_territory_data = TerritoryProgressModelScript.create("territory_01")
 	_load_first_starter_mission()
+	_tutorial_progression = TutorialTaskProgressionScript.new(_current_missions)
+	_tutorial_completion_coordinator = TutorialMissionCompletionCoordinatorScript.new(_tutorial_progression, _assignment_state, validity_query)
 	_render_crew_choices()
 	start_button.pressed.connect(_on_start_pressed)
 	refresh_button.pressed.connect(_on_refresh_pressed)
@@ -204,7 +212,17 @@ func refresh_execution_status(current_time_seconds: int) -> void:
 		return
 	_is_waiting = false
 	_is_completed = true
+	var tutorial_result: Dictionary = _tutorial_completion_coordinator.complete_current_task(_task_id, clock, current_time_seconds)
+	if bool(tutorial_result["is_completed"]):
+		_show_next_tutorial_task()
 	for choice: CheckButton in crew_selector.get_children():
 		choice.disabled = true
 	start_button.disabled = true
 	status_label.text = "已完成／保底報酬待定"
+
+func _show_next_tutorial_task() -> void:
+	var next_task: Dictionary = _tutorial_progression.get_current_task()
+	if next_task.is_empty():
+		next_tutorial_task_label.text = "新手任務已完成"
+		return
+	next_tutorial_task_label.text = "下一個新手任務：%s（%d 秒）" % [next_task["id"], next_task["duration_seconds"]]

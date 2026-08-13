@@ -20,6 +20,14 @@
 - A PM sub-agent is allowed only when no suitable existing branch thread exists, the work is clearly independent, and the user has explicitly approved that exception.
 - Never describe a PM sub-agent as a replacement for an existing branch thread.
 
+## CodeGraph
+
+### Godot resources
+
+- CodeGraph is initialized for this project with Godot/GDScript support. GDScript and Godot resources should preferentially use the CodeGraph MCP for code discovery and exploration.
+- The full command-line path is `C:\Users\phil\AppData\Local\codegraph-godot-rust\codegraph.exe`.
+- Do not initialize or uninitialize CodeGraph, or commit `.codegraph`.
+
 ## 回覆語法
 
 - 嚴禁濫用「不是……而是……」句式。只有在釐清必要且實質的對比或誤解時才能使用；一般說明、結論與狀態回報一律改用直接句。

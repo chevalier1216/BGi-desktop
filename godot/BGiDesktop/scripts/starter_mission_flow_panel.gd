@@ -37,6 +37,7 @@ const TutorialMissionCompletionCoordinatorScript = preload("res://scripts/tutori
 @onready var extra_reward_probability_label: Label = %ExtraRewardProbabilityLabel
 @onready var extra_reward_note_label: Label = %ExtraRewardNoteLabel
 @onready var next_tutorial_task_label: Label = %NextTutorialTaskLabel
+@onready var claim_button: Button = %ClaimButton
 
 @export var execution_state_store_path: String = "user://starter_mission_flow_state.json"
 @export var territory_state_store_path: String = "user://starter_mission_territory_state.json"
@@ -70,6 +71,7 @@ var _territory_progress_state_store: RefCounted
 var _reward_disclosure_data: Dictionary = {}
 var _is_waiting: bool = false
 var _is_completed: bool = false
+var _is_claimed: bool = false
 
 func _ready() -> void:
 	_game_state = get_node("/root/GameState") as Node
@@ -109,6 +111,7 @@ func _ready() -> void:
 	_tutorial_completion_coordinator = TutorialMissionCompletionCoordinatorScript.new(_tutorial_progression, _assignment_state, validity_query)
 	_render_crew_choices()
 	start_button.pressed.connect(_on_start_pressed)
+	claim_button.pressed.connect(_on_claim_pressed)
 	refresh_button.pressed.connect(_on_refresh_pressed)
 	explore_territory_button.pressed.connect(_on_explore_territory_pressed)
 	_refresh_selection_state()
@@ -149,7 +152,7 @@ func _append_crew_choice(crew_member: Dictionary) -> void:
 	crew_selector.add_child(choice)
 
 func _on_crew_toggled(pressed: bool, crew_id: String) -> void:
-	if _is_waiting or _is_completed:
+	if _is_waiting or _is_completed or _is_claimed:
 		return
 	if pressed:
 		if not _selected_crew_ids.has(crew_id):
@@ -160,12 +163,12 @@ func _on_crew_toggled(pressed: bool, crew_id: String) -> void:
 
 func _refresh_selection_state() -> void:
 	var selected_count: int = _selected_crew_ids.size()
-	start_button.disabled = _is_waiting or _is_completed or selected_count < DispatchRules.MIN_ASSIGNEES or selected_count > DispatchRules.MAX_ASSIGNEES
-	if not _is_waiting and not _is_completed:
+	start_button.disabled = _is_waiting or _is_completed or _is_claimed or selected_count < DispatchRules.MIN_ASSIGNEES or selected_count > DispatchRules.MAX_ASSIGNEES
+	if not _is_waiting and not _is_completed and not _is_claimed:
 		status_label.text = "已選 %d/%d 名小弟" % [selected_count, DispatchRules.MAX_ASSIGNEES]
 
 func _on_start_pressed() -> void:
-	if _is_waiting or _is_completed:
+	if _is_waiting or _is_completed or _is_claimed:
 		return
 	var result: Dictionary = _lifecycle.accept_execution(_task_id, _selected_crew_ids, _get_current_time_seconds(), _duration_seconds)
 	if not bool(result["is_accepted"]):
@@ -185,6 +188,27 @@ func _on_start_pressed() -> void:
 	start_button.disabled = true
 	status_label.text = "等待中：已派遣 %d 名小弟" % _selected_crew_ids.size()
 	_refresh_refresh_state()
+
+func _on_claim_pressed() -> void:
+	if not _is_completed or _is_claimed:
+		return
+	var claim_result: Dictionary = _lifecycle.claim_completed_result(_task_id, _get_current_time_seconds())
+	if not bool(claim_result["is_claimed"]):
+		status_label.text = "領取狀態無法讀取"
+		return
+	_crew_ids_by_task.erase(_task_id)
+	var save_result: Dictionary = _save_execution_state()
+	_is_completed = false
+	_is_claimed = true
+	for choice: CheckButton in crew_selector.get_children():
+		choice.disabled = true
+	start_button.disabled = true
+	claim_button.disabled = true
+	_refresh_refresh_state()
+	if not bool(save_result["is_saved"]):
+		status_label.text = "已領取／保底報酬待定（保存失敗）"
+		return
+	status_label.text = "已領取／保底報酬待定"
 
 func _on_refresh_pressed() -> void:
 	refresh_current_mission(_get_current_time_seconds())
@@ -241,7 +265,7 @@ func _refresh_reward_disclosure_display() -> void:
 
 ## Refreshes only the displayed unaccepted mission using an explicit existing catalog entry.
 func refresh_current_mission(current_time_seconds: int) -> void:
-	if _is_waiting or _is_completed:
+	if _is_waiting or _is_completed or _is_claimed:
 		if not _is_completed:
 			status_label.text = "無法刷新：任務已接受"
 		_refresh_refresh_state()
@@ -273,7 +297,7 @@ func update_refresh_allowance(current_time_seconds: int) -> void:
 
 func _refresh_refresh_state() -> void:
 	refresh_allowance_label.text = "刷新額度：%d/%d" % [_refresh_allowance.get_allowance(), MissionRefreshAllowanceScript.MAX_ALLOWANCE]
-	refresh_button.disabled = _is_waiting or _is_completed or _refresh_allowance.get_allowance() == 0
+	refresh_button.disabled = _is_waiting or _is_completed or _is_claimed or _refresh_allowance.get_allowance() == 0
 
 func _save_refresh_state() -> Dictionary:
 	return _refresh_state_store.save(_refresh_allowance)
@@ -310,9 +334,20 @@ func refresh_execution_status(current_time_seconds: int) -> void:
 	for choice: CheckButton in crew_selector.get_children():
 		choice.disabled = true
 	start_button.disabled = true
+	claim_button.disabled = false
+	_refresh_refresh_state()
 	status_label.text = "已完成／保底報酬待定"
 
 func _restore_saved_execution(current_time_seconds: int) -> void:
+	if _result_state.is_claimed(_task_id):
+		_is_claimed = true
+		for choice: CheckButton in crew_selector.get_children():
+			choice.disabled = true
+		start_button.disabled = true
+		claim_button.disabled = true
+		_refresh_refresh_state()
+		status_label.text = "已領取／保底報酬待定"
+		return
 	var clock: Variant = _snapshot_collection.restore_clock(_task_id)
 	if clock == null:
 		return
@@ -327,6 +362,7 @@ func _restore_saved_execution(current_time_seconds: int) -> void:
 	if not _result_state.get_locked_result(_task_id).is_empty():
 		_is_completed = true
 		start_button.disabled = true
+		claim_button.disabled = false
 		_refresh_refresh_state()
 		status_label.text = "已完成／保底報酬待定"
 		return

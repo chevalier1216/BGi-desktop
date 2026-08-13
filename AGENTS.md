@@ -6,6 +6,13 @@
 - 機器路徑、目前分支清單、工具命令、測試步驟、素材決策、額度交接與其他可變執行細節，必須放入 `docs/operations/` 的獨立文件，並由本檔引用。
 - 新增規則前先判斷其是否為可變細節；若是，不得直接堆入 `AGENTS.md`。
 
+## 專案操作文件
+
+- 專案背景與 canonical 路徑請見 `docs/operations/PROJECT_CONTEXT.md`。
+- 跨裝置同步流程請見 `docs/operations/CROSS_DEVICE_DEVELOPMENT.md`。
+- 手機至桌機的決策交接請使用 `docs/operations/SESSION_HANDOFF_TEMPLATE.md`。
+- 可變的路徑、流程與交接細節維護於 `docs/operations/`，不寫入本檔。
+
 ## PM and branch-thread coordination
 
 - When an existing Codex branch thread already covers a task, the PM thread must continue that existing thread through the Codex thread tools.

@@ -10,6 +10,7 @@
 
 | 日期時間（Asia/Taipei） | 類型 | 目標 | 檔案相對位置 | 行號與摘要 | 驗證結果 | Git commit |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-13 | 文件架構／ADR 決策紀錄入口 | 新增 ADR 用途、回寫與模板指引 | `docs/decisions/README.md` | 1–38：定義 ADR 用途、ChatGPT Project 決策回寫、檔名規則，以及背景、決策、替代方案、影響、Git commit、文件連結與狀態模板。 | 目標原先不存在；format check 與 Git whitespace 檢查通過。 | `c3d2f1d` |
 | 2026-08-13 | 素材台帳範本 | 新增可複製的素材包／素材檔台帳範本 | `docs/assets/ASSET_LEDGER_TEMPLATE.md` | 1–7：定義名稱、類型、來源與授權證據 URL、商用／修改條件、狀態、SHA-256、用途邊界、人工確認者與日期欄位。 | Git whitespace 檢查通過；未修改 Godot 或素材。 | `b18e753` |
 | 2026-08-13 | 跨裝置素材文件規則 | 新增素材文件分類、授權追溯與導入前檢核規則 | `docs/assets/README.md` | 1–67：記錄素材／研究分類、台帳最低欄位、授權證據與狀態邊界、跨裝置回寫規則及 SHA-256 導入前檢核。 | Git whitespace 檢查通過；未修改 Godot 或素材。 | `d41a0a6` |
 | 2026-08-13 | 文件架構／Git 文件治理 | 新增文件索引 | `docs/README.md` | 1–31：整理文件架構與各類文件入口，作為 Git 追蹤文件的導覽索引。 | format check 與 Git whitespace 檢查通過；來源檔案由未追蹤狀態提交。備份路徑的 `docs/README.md` 未觸碰。 | `0d5e928` |

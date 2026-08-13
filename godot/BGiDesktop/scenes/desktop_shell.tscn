@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/desktop_shell.gd" id="1_shell"]
 [ext_resource type="PackedScene" path="res://scenes/mission_lifecycle_panel.tscn" id="2_lifecycle_panel"]
 [ext_resource type="Script" path="res://scripts/mission_lifecycle_demo_controller.gd" id="3_lifecycle_demo"]
+[ext_resource type="PackedScene" path="res://scenes/starter_mission_flow_panel.tscn" id="4_starter_flow"]
 
 [sub_resource type="StyleBoxFlat" id="StylePanel"]
 bg_color = Color(0.047, 0.063, 0.094, 0.96)
@@ -118,6 +119,9 @@ text = "緊湊／標準"
 layout_mode = 2
 text = "新手固定任務目錄（23 項）"
 autowrap_mode = 2
+
+[node name="StarterMissionFlowPanel" parent="Margin/Columns/MissionPanel/Content" instance=ExtResource("4_starter_flow")]
+layout_mode = 2
 
 [node name="MissionLifecyclePanel" parent="Margin/Columns/MissionPanel/Content" instance=ExtResource("2_lifecycle_panel")]
 layout_mode = 2

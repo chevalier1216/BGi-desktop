@@ -3,7 +3,7 @@ extends Node
 const SETTINGS_PATH := "user://desktop_preferences.cfg"
 const SECTION := "desktop_window"
 const TOPMOST_KEY := "always_on_top"
-const STANDARD_HEIGHT := 260
+const STANDARD_HEIGHT := 450
 const COMPACT_HEIGHT := 188
 
 var _compact_layout := false

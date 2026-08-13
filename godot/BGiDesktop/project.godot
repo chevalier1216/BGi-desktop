@@ -16,9 +16,9 @@ StarterMissionCatalog="*res://scripts/starter_mission_catalog.gd"
 
 [display/window]
 size/viewport_width=1280
-size/viewport_height=330
+size/viewport_height=450
 size/window_width_override=1280
-size/window_height_override=330
+size/window_height_override=450
 size/resizable=false
 size/borderless=true
 size/transparent=true

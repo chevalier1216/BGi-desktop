@@ -12,6 +12,7 @@ const MissionRefreshAllowanceScript = preload("res://scripts/mission_refresh_all
 const MissionRefreshServiceScript = preload("res://scripts/mission_refresh_service.gd")
 const TerritoryFirstTouchUnlockScript = preload("res://scripts/territory_first_touch_unlock.gd")
 const TerritoryProgressModelScript = preload("res://scripts/territory_progress_model.gd")
+const MissionRewardDisclosureModelScript = preload("res://scripts/mission_reward_disclosure_model.gd")
 
 @onready var task_label: Label = %TaskLabel
 @onready var requirement_label: Label = %RequirementLabel
@@ -24,6 +25,10 @@ const TerritoryProgressModelScript = preload("res://scripts/territory_progress_m
 @onready var exploration_collection_label: Label = %ExplorationCollectionLabel
 @onready var environment_decoration_label: Label = %EnvironmentDecorationLabel
 @onready var explore_territory_button: Button = %ExploreTerritoryButton
+@onready var guaranteed_reward_label: Label = %GuaranteedRewardLabel
+@onready var extra_reward_range_label: Label = %ExtraRewardRangeLabel
+@onready var extra_reward_probability_label: Label = %ExtraRewardProbabilityLabel
+@onready var extra_reward_note_label: Label = %ExtraRewardNoteLabel
 
 var _task_id: String = ""
 var _duration_seconds: int = 0
@@ -37,6 +42,7 @@ var _refresh_allowance: RefCounted
 var _refresh_service: RefCounted
 var _touched_territory_ids: Dictionary = {}
 var _territory_data: Dictionary = {}
+var _reward_disclosure_data: Dictionary = {}
 var _is_waiting: bool = false
 var _is_completed: bool = false
 
@@ -62,6 +68,7 @@ func _ready() -> void:
 	_refresh_selection_state()
 	_refresh_refresh_state()
 	_refresh_territory_growth_display()
+	_refresh_reward_disclosure_display()
 
 func _load_first_starter_mission() -> void:
 	_current_missions = _starter_mission_catalog.get_missions()
@@ -76,6 +83,8 @@ func _load_current_mission() -> void:
 	var mission: Dictionary = _current_missions[0]
 	_task_id = str(mission["id"])
 	_duration_seconds = int(mission["duration_seconds"])
+	_reward_disclosure_data = MissionRewardDisclosureModelScript.create(_task_id, false)
+	_refresh_reward_disclosure_display()
 	task_label.text = "新手任務：%s（%d 秒）" % [_task_id, _duration_seconds]
 	requirement_label.text = "需要 %d–%d 名小弟" % [DispatchRules.MIN_ASSIGNEES, DispatchRules.MAX_ASSIGNEES]
 
@@ -134,6 +143,12 @@ func _refresh_territory_growth_display() -> void:
 	territory_progress_label.text = "地盤進度：%s" % _territory_data["territory_progress"]
 	exploration_collection_label.text = "探索收藏：%s" % _territory_data["exploration_collection_count"]
 	environment_decoration_label.text = "環境布置：%s" % _territory_data["environment_decoration_owned_count"]
+
+func _refresh_reward_disclosure_display() -> void:
+	guaranteed_reward_label.text = "保底報酬：%s" % _reward_disclosure_data["guaranteed_reward"]
+	extra_reward_range_label.text = "額外報酬範圍：%s" % _reward_disclosure_data["extra_reward_range"]
+	extra_reward_probability_label.text = "額外機率：%s" % _reward_disclosure_data["extra_reward_probability"]
+	extra_reward_note_label.text = "額外報酬為 0；保底報酬照常顯示" if bool(_reward_disclosure_data["extra_reward_is_zero"]) else "額外報酬依揭露範圍與機率顯示"
 
 ## Refreshes only the displayed unaccepted mission using an explicit existing catalog entry.
 func refresh_current_mission(current_time_seconds: int) -> void:

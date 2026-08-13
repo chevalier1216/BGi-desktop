@@ -10,6 +10,7 @@
 
 | 日期時間（Asia/Taipei） | 類型 | 目標 | 檔案相對位置 | 行號與摘要 | 驗證結果 | Git commit |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-13 | 文件架構／Git 文件治理 | 新增文件索引 | `docs/README.md` | 1–31：整理文件架構與各類文件入口，作為 Git 追蹤文件的導覽索引。 | format check 與 Git whitespace 檢查通過；來源檔案由未追蹤狀態提交。備份路徑的 `docs/README.md` 未觸碰。 | `0d5e928` |
 | 2026-08-13 | 文件 | 新增跨裝置開發指引 | `docs/operations/CROSS_DEVICE_DEVELOPMENT.md` | 1–43：記錄跨裝置開發的 repository、同步與工作樹操作原則。 | 檔案未被 ignore，隔離 Git whitespace 檢查通過；提交前 `main` 已追蹤 `origin/main` 且無 ahead／behind。 | `b5fbbe2` |
 | 2026-08-10 17:12 | 美術素材盤點／Google Sheet | 記錄本串 20 個素材包的 Google Sheet 盤點交付 | [Google Sheet](https://docs.google.com/spreadsheets/d/1Yf7SGR_IwU81-0Q-3X27a_UqxXoP2KDGNhwhtJ8RCBI/edit) | 「素材總覽」與「預覽圖」各 21 行；MJv6.1 Feather／Ring／Dragon Egg 依使用者人工確認標記免署名與導入已核准，同時記錄頁面無正式授權文字。 | Sheet 讀回無 `#REF!`；IMAGE 公式遭 Sheets 拒絕後改用正式預覽圖直連。未成功下載 MJv6.1 實檔，未改 Godot 或 Git 來源檔。 | `N/A`（外部交付；本列由日誌提交記錄） |
 | 2026-08-10 17:04 | UI／UI 接線 | 建立任務生命週期文字面板並接入單一 `starter_01` 測試流程 | `mission_lifecycle_panel.gd` 4–55、`mission_lifecycle_panel.tscn` 5–48、`mission_lifecycle_demo_controller.gd` 11–55、`desktop_shell.tscn`、`project.godot` 18–21，以及兩份對應測試 | 文字面板提供四種狀態與按鈕規則；接入單一測試流程，視窗高度調整為 330 容納面板。 | Godot project load、面板實例化與按鈕接線測試均結束碼 0；手動啟動可操作；Git whitespace 檢查通過。 | `fe58d3a` |

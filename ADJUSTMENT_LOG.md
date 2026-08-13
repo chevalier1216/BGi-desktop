@@ -10,6 +10,7 @@
 
 | 日期時間（Asia/Taipei） | 類型 | 目標 | 檔案相對位置 | 行號與摘要 | 驗證結果 | Git commit |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-13 | 測試 | 驗證新手任務可派遣人數互動與鎖定 | `godot/BGiDesktop/tests/starter_mission_flow_panel_test.gd` | 驗證 0 人顯示且不可開始，選取 1／3／5 人時顯示相同人數；等待與完成後皆不可改變已派遣人數。 | Godot 4.7.1 headless editor 載入與指定測試通過，結束碼 0；Git whitespace 檢查通過。 | `ed5f6b9` |
 | 2026-08-13 | 程式／UI | 顯示新手任務卡報酬揭露 | `godot/BGiDesktop/scripts/starter_mission_flow_panel.gd`、`godot/BGiDesktop/scenes/starter_mission_flow_panel.tscn`、`godot/BGiDesktop/tests/starter_mission_flow_panel_test.gd` | 顯示保底報酬、額外報酬範圍與額外機率三個 `[PLACEHOLDER]` 欄位；額外為 0 時採中性文案，完成文案維持「已完成／保底報酬待定」。 | Godot 4.7.1 headless editor 載入與面板測試通過，結束碼 0；Git whitespace 檢查通過。 | `d090964` |
 | 2026-08-13 | 程式／UI | 顯示地盤首次觸及解鎖與長期成長文字狀態 | `godot/BGiDesktop/scripts/starter_mission_flow_panel.gd`、`godot/BGiDesktop/scenes/starter_mission_flow_panel.tscn`、`godot/BGiDesktop/tests/starter_mission_flow_panel_test.gd` | 首次觸及 `territory_01` 顯示解鎖 1 名人物，重複觸及不再解鎖；地盤進度、探索收藏與環境布置欄位皆維持 `[PLACEHOLDER]`。 | Godot 4.7.1 headless editor 載入與面板測試通過，結束碼 0；Git whitespace 檢查通過，未開可見視窗。 | `0211ae4` |
 | 2026-08-13 | 程式／UI | 鎖定完成後的新手任務控制項與事件入口 | `godot/BGiDesktop/scripts/starter_mission_flow_panel.gd`、`godot/BGiDesktop/tests/starter_mission_flow_panel_test.gd` | 等待或完成時禁用小弟選取與開始按鈕；事件入口拒絕程式化二次開始，完成文案與既有固定結果維持不變。 | Godot 4.7.1 headless editor 載入與面板測試通過，結束碼 0；Git whitespace 檢查通過，未開可見視窗。 | `ac91309` |

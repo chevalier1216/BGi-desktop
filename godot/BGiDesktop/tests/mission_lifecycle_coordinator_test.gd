@@ -46,8 +46,8 @@ func _run() -> void:
 	_expect(snapshot_collection.restore_clock("starter_01") == null, "successful claim must remove execution snapshot")
 
 	var repeated_claim: Dictionary = lifecycle.claim_completed_result("starter_01", 106)
-	_expect(not bool(repeated_claim["is_claimed"]), "repeated claim must be rejected")
-	_expect(str(repeated_claim["error_code"]) == "task_result_already_claimed", "repeated claim must remain idempotent")
+	_expect(bool(repeated_claim["is_claimed"]) and not bool(repeated_claim["did_claim"]), "repeated claim must return the existing receipt without a second transaction")
+	_expect(Dictionary(repeated_claim["receipt"]) == Dictionary(first_claim["receipt"]), "repeated claim must preserve the original receipt")
 
 	game_state.queue_free()
 	quit(1 if _failed else 0)

@@ -94,10 +94,13 @@ func claim_completed_result(task_id: String, current_time_seconds: int) -> Dicti
 	var clock: Variant = _snapshot_collection.restore_clock(task_id)
 	if clock == null:
 		return _rejected("is_claimed", "task_execution_not_found")
-	var resolution: Dictionary = resolve_completed_result(task_id, current_time_seconds)
-	if not bool(resolution["is_resolved"]):
-		return _rejected("is_claimed", str(resolution["error_code"]))
-	var claim_result: Dictionary = MissionResultClaimServiceScript.claim(task_id, clock, current_time_seconds, resolution["result"], _claimed_task_ids)
+	var fixed_result: Dictionary = Dictionary(_locked_results_by_task_id.get(task_id, {})).duplicate(true)
+	if fixed_result.is_empty():
+		var resolution: Dictionary = resolve_completed_result(task_id, current_time_seconds)
+		if not bool(resolution["is_resolved"]):
+			return _rejected("is_claimed", str(resolution["error_code"]))
+		fixed_result = Dictionary(resolution["result"]).duplicate(true)
+	var claim_result: Dictionary = MissionResultClaimServiceScript.claim(task_id, clock, current_time_seconds, fixed_result, _claimed_task_ids)
 	if not bool(claim_result["is_claimed"]):
 		return _rejected("is_claimed", str(claim_result["error_code"]))
 	var result_id: String = str(Dictionary(claim_result["result"]).get("result_id", ""))

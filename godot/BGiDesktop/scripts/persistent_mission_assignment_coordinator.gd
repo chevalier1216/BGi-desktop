@@ -49,6 +49,20 @@ func release_assignment(task_id: String) -> Dictionary:
 		return _rejected("is_released", "assignment_release_failed")
 	return {"is_released": true, "error_code": ""}
 
+## Keeps an expired assignment occupied while its fixed result awaits a claim.
+func mark_assignment_completed(task_id: String) -> Dictionary:
+	var assigned_crew_ids: Array[String] = _assignment_state.get_assigned_crew_ids(task_id)
+	if assigned_crew_ids.is_empty():
+		return _rejected("is_completed", "task_not_assigned")
+	var updated_crew_ids: Array[String] = []
+	for crew_id: String in assigned_crew_ids:
+		var state_result: Dictionary = _game_state.set_crew_status(crew_id, GameStateScript.CrewStatus.COMPLETED)
+		if not bool(state_result["is_updated"]):
+			_set_status(updated_crew_ids, GameStateScript.ASSIGNED_STATUS)
+			return _rejected("is_completed", "crew_state_update_failed")
+		updated_crew_ids.append(crew_id)
+	return {"is_completed": true, "error_code": ""}
+
 func _to_dispatch_rule_crew(crew: Array[Dictionary]) -> Array[Dictionary]:
 	var rule_crew: Array[Dictionary] = []
 	for crew_member: Dictionary in crew:

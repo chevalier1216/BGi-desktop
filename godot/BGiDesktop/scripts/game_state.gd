@@ -22,7 +22,7 @@ func get_crew() -> Array[Dictionary]:
 	return _crew.duplicate(true)
 
 func set_crew_status(crew_id: String, status: int) -> Dictionary:
-	if status != CrewStatus.AVAILABLE and status != ASSIGNED_STATUS:
+	if status != CrewStatus.AVAILABLE and status != ASSIGNED_STATUS and status != CrewStatus.COMPLETED:
 		return _rejected("unsupported_status")
 	for crew_member: Dictionary in _crew:
 		if crew_member["id"] == crew_id:

@@ -27,16 +27,17 @@ func _run() -> void:
 	var locked_result: Dictionary = Dictionary(first_panel._lifecycle._locked_results_by_task_id[first_panel._task_id]).duplicate(true)
 	first_panel.current_time_override = clock.started_at_seconds + 5
 	first_panel.claim_button.emit_signal("pressed")
-	_expect(first_panel.status_label.text == "已領取／保底報酬待定", "claim must present a claimed guaranteed-result state")
+	_expect(first_panel._task_id == "starter_02", "claim must advance to the next fixed tutorial task")
+	_expect(first_panel.status_label.text == "已選 0/5 名小弟", "claim must return the next task to a selectable crew state")
 	_expect(first_panel.claim_button.disabled, "claimed task must disable repeated claim")
-	_expect(first_panel._snapshot_collection.restore_clock(first_panel._task_id) == null, "claim must clear the task execution clock")
-	_expect(first_panel._result_state.is_claimed(first_panel._task_id), "claim must record the claimed task id")
+	_expect(first_panel._snapshot_collection.restore_clock("starter_01") == null, "claim must clear the completed task execution clock")
+	_expect(first_panel._result_state.is_claimed("starter_01"), "claim must record the claimed task id")
 	for crew_id: String in dispatched_crew_ids:
 		_expect(_status_for(first_panel._game_state.get_crew(), crew_id) == 0, "claim must return every dispatched crew member to available")
 	_expect(first_panel._assignment_state.get_assigned_crew_ids(first_panel._task_id).is_empty(), "claim must clear the original task assignment")
 	first_panel.claim_button.emit_signal("pressed")
-	_expect(first_panel.status_label.text == "已領取／保底報酬待定", "repeated claim input must not change the claimed presentation")
-	_expect(Dictionary(first_panel._lifecycle._locked_results_by_task_id[first_panel._task_id]) == locked_result, "repeated claim input must not replace the locked result")
+	_expect(first_panel.status_label.text == "已選 0/5 名小弟", "repeated claim input must not change the next-task presentation")
+	_expect(Dictionary(first_panel._lifecycle._locked_results_by_task_id["starter_01"]) == locked_result, "repeated claim input must not replace the locked result")
 	first_panel.queue_free()
 	await process_frame
 
@@ -45,11 +46,12 @@ func _run() -> void:
 	_expect(stored_state["result_state"].is_claimed("starter_01"), "saved claimed state must retain the claimed task id")
 
 	var reopened_panel: StarterMissionFlowPanel = _create_panel("ReopenedPanel", 999)
-	_expect(reopened_panel.status_label.text == "已領取／保底報酬待定", "reopened claimed task must retain claimed presentation")
-	_expect(reopened_panel.claim_button.disabled, "reopened claimed task must not allow another claim")
-	_expect(reopened_panel.start_button.disabled, "reopened claimed task must not allow another dispatch")
+	_expect(reopened_panel._task_id == "starter_02", "reopened panel must restore the next fixed tutorial task")
+	_expect(reopened_panel.status_label.text == "已選 0/5 名小弟", "reopened panel must offer the next task for crew selection")
+	_expect(reopened_panel.claim_button.disabled, "reopened next task must not allow a stale claim")
+	_expect(reopened_panel.start_button.disabled, "reopened next task must require a crew selection")
 	for choice: CheckButton in reopened_panel.crew_selector.get_children():
-		_expect(choice.disabled, "reopened claimed task must not allow crew reselection")
+		_expect(not choice.disabled, "reopened next task must allow crew reselection")
 	for crew_id: String in dispatched_crew_ids:
 		_expect(_status_for(reopened_panel._game_state.get_crew(), crew_id) == 0, "reopened claimed task must retain available crew state for later tasks")
 	var future_assignment_state: RefCounted = MissionAssignmentStateScript.new()

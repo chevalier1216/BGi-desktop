@@ -19,6 +19,8 @@ func _run() -> void:
 	panel.refresh_execution_status(clock.started_at_seconds + 5)
 	_expect(panel.status_label.text == "已完成／保底報酬待定", "completion presentation must remain unchanged")
 	_expect(panel.guaranteed_reward_label.text == "保底報酬：[PLACEHOLDER]", "completion must retain reward disclosure")
+	panel.current_time_override = clock.started_at_seconds + 5
+	panel.claim_button.emit_signal("pressed")
 	_expect(panel.next_tutorial_task_label.text == "下一個新手任務：starter_02（5 秒）", "first completed task must present the next fixed tutorial task")
 
 	panel.queue_free()

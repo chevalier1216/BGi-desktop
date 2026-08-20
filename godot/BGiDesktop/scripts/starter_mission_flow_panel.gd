@@ -107,7 +107,6 @@ func _ready() -> void:
 	_unlocked_crew_ids_by_territory = Dictionary(territory_state_result["unlocked_crew_ids_by_territory"]).duplicate(true)
 	_restore_unlocked_crew()
 	_load_first_starter_mission()
-	_tutorial_progression = TutorialTaskProgressionScript.new(_current_missions)
 	_tutorial_completion_coordinator = TutorialMissionCompletionCoordinatorScript.new(_tutorial_progression, _assignment_state, validity_query)
 	_render_crew_choices()
 	start_button.pressed.connect(_on_start_pressed)
@@ -122,15 +121,30 @@ func _ready() -> void:
 
 func _load_first_starter_mission() -> void:
 	_current_missions = _starter_mission_catalog.get_missions()
-	_load_current_mission()
+	_tutorial_progression = TutorialTaskProgressionScript.new(_current_missions)
+	_restore_claimed_tutorial_progression()
+	_load_current_mission(_tutorial_progression.get_current_task())
 
-func _load_current_mission() -> void:
+## Rebuilds fixed tutorial progression from already-saved claim receipts.
+func _restore_claimed_tutorial_progression() -> void:
+	while true:
+		var current_task: Dictionary = _tutorial_progression.get_current_task()
+		if current_task.is_empty():
+			return
+		var current_task_id: String = str(current_task["id"])
+		if not _result_state.is_claimed(current_task_id):
+			return
+		var advance_result: Dictionary = _tutorial_progression.complete_current_task(current_task_id)
+		if not bool(advance_result["is_advanced"]):
+			return
+
+func _load_current_mission(mission_override: Dictionary = {}) -> void:
 	if _current_missions.is_empty():
 		task_label.text = "新手任務：無可用任務"
 		status_label.text = "任務資料不可用"
 		start_button.disabled = true
 		return
-	var mission: Dictionary = _current_missions[0]
+	var mission: Dictionary = mission_override if not mission_override.is_empty() else _current_missions[0]
 	_task_id = str(mission["id"])
 	_duration_seconds = int(mission["duration_seconds"])
 	_reward_disclosure_data = MissionRewardDisclosureModelScript.create(_task_id, false)
@@ -198,8 +212,6 @@ func _on_claim_pressed() -> void:
 		return
 	_crew_ids_by_task.erase(_task_id)
 	var save_result: Dictionary = _save_execution_state()
-	_is_completed = false
-	_is_claimed = true
 	for choice: CheckButton in crew_selector.get_children():
 		choice.disabled = true
 	start_button.disabled = true
@@ -209,6 +221,23 @@ func _on_claim_pressed() -> void:
 		status_label.text = "已領取／保底報酬待定（保存失敗）"
 		return
 	status_label.text = "已領取／保底報酬待定"
+
+	var tutorial_result: Dictionary = _tutorial_completion_coordinator.complete_claimed_current_task(_task_id, Dictionary(claim_result["receipt"]))
+	if not bool(tutorial_result["is_completed"]):
+		return
+	_is_waiting = false
+	_is_completed = false
+	_selected_crew_ids.clear()
+	var next_task: Dictionary = _tutorial_progression.get_current_task()
+	if not next_task.is_empty():
+		_load_current_mission(next_task)
+		for choice: CheckButton in crew_selector.get_children():
+			choice.button_pressed = false
+			choice.disabled = false
+		claim_button.disabled = true
+		_refresh_selection_state()
+		_refresh_refresh_state()
+		_show_next_tutorial_task()
 
 func _on_refresh_pressed() -> void:
 	refresh_current_mission(_get_current_time_seconds())
@@ -273,6 +302,9 @@ func refresh_current_mission(current_time_seconds: int) -> void:
 	if _current_missions.size() < 2:
 		status_label.text = "無法刷新：缺少替換任務"
 		return
+	# Fixed T01–T23 task identities never change through refresh and consume no allowance.
+	_refresh_refresh_state()
+	return
 	var replacements_by_mission_id: Dictionary = {_task_id: _current_missions[1].duplicate(true)}
 	var accepted_mission_ids: Array[String] = []
 	var refresh_result: Dictionary = _refresh_service.refresh(_current_missions, accepted_mission_ids, replacements_by_mission_id, current_time_seconds)
@@ -328,9 +360,6 @@ func refresh_execution_status(current_time_seconds: int) -> void:
 		return
 	_is_waiting = false
 	_is_completed = true
-	var tutorial_result: Dictionary = _tutorial_completion_coordinator.complete_current_task(_task_id, clock, current_time_seconds)
-	if bool(tutorial_result["is_completed"]):
-		_show_next_tutorial_task()
 	for choice: CheckButton in crew_selector.get_children():
 		choice.disabled = true
 	start_button.disabled = true
@@ -360,6 +389,9 @@ func _restore_saved_execution(current_time_seconds: int) -> void:
 	for choice: CheckButton in crew_selector.get_children():
 		choice.disabled = true
 	if not _result_state.get_locked_result(_task_id).is_empty():
+		var completion_result: Dictionary = _assignment_coordinator.mark_assignment_completed(_task_id)
+		if not bool(completion_result["is_completed"]):
+			return
 		_is_completed = true
 		start_button.disabled = true
 		claim_button.disabled = false

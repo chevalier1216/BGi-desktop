@@ -23,17 +23,18 @@ func _run() -> void:
 	var clock := ClockScript.new("task_01", 100, 5)
 
 	_expect(assignment_coordinator.accept_assignment("task_01", ["crew_01"])["is_accepted"], "前置派遣必須成功")
-	_expect_result(expired_release_service.release_if_expired("task_01", clock, 104), false, "execution_not_completed")
+	_expect_result(expired_release_service.mark_completed_if_expired("task_01", clock, 104), false, "execution_not_completed")
 	_expect(_status_for(game_state.get_crew(), "crew_01") == GameStateScript.ASSIGNED_STATUS, "未到期拒絕後小弟必須維持派遣中")
-	_expect_result(expired_release_service.release_if_expired("task_01", clock, 105), true, "")
+	_expect_result(expired_release_service.mark_completed_if_expired("task_01", clock, 105), true, "")
+	_expect(assignment_coordinator.release_assignment("task_01")["is_released"], "completed assignment must release only through an explicit claim-side action")
 	_expect(assignment_state.get_assigned_crew_ids("task_01").is_empty(), "到期釋放後配置必須為空")
 	_expect(_status_for(game_state.get_crew(), "crew_01") == GameStateScript.CrewStatus.AVAILABLE, "到期釋放後小弟必須可用")
-	_expect_result(expired_release_service.release_if_expired("task_01", clock, 105), false, "task_not_assigned")
+	_expect_result(expired_release_service.mark_completed_if_expired("task_01", clock, 105), false, "task_not_assigned")
 
 	_expect(assignment_coordinator.accept_assignment("task_02", ["crew_01"])["is_accepted"], "中止前置派遣必須成功")
 	_expect(abort_service.abort("task_02")["is_aborted"], "中止前置任務必須成功")
 	var aborted_clock := ClockScript.new("task_02", 100, 5)
-	_expect_result(expired_release_service.release_if_expired("task_02", aborted_clock, 105), false, "task_not_assigned")
+	_expect_result(expired_release_service.mark_completed_if_expired("task_02", aborted_clock, 105), false, "task_not_assigned")
 
 	game_state.queue_free()
 	quit(1 if _failed else 0)
@@ -45,6 +46,7 @@ func _status_for(crew: Array[Dictionary], crew_id: String) -> int:
 	return -1
 
 func _expect_result(result: Dictionary, expected_released: bool, expected_error: String) -> void:
+	result["is_released"] = result.get("is_completed", false)
 	_expect(result.get("is_released") == expected_released and result.get("error_code") == expected_error, "到期釋放結果不符：%s" % result)
 
 func _expect(condition: bool, message: String) -> void:

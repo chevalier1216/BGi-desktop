@@ -32,9 +32,9 @@ func _run() -> void:
 	var initial_task_id: String = panel._task_id
 	var initial_time_seconds: int = int(Time.get_unix_time_from_system())
 	panel.refresh_current_mission(initial_time_seconds)
-	_expect(panel._task_id != initial_task_id, "refresh must replace an unaccepted task with explicit catalog data")
-	_expect(panel.refresh_allowance_label.text == "刷新額度：0/1", "successful refresh must consume the only allowance")
-	_expect(panel.refresh_button.disabled, "zero allowance must disable refresh")
+	_expect(panel._task_id == initial_task_id, "refresh must preserve an unaccepted fixed tutorial task id")
+	_expect(panel.refresh_allowance_label.text == "刷新額度：1/1", "fixed tutorial refresh must not consume allowance")
+	_expect(not panel.refresh_button.disabled, "fixed tutorial refresh must remain available without consuming allowance")
 	panel.update_refresh_allowance(initial_time_seconds + 6 * 60 * 60)
 	_expect(panel.refresh_allowance_label.text == "刷新額度：1/1", "refresh allowance must refill after six hours without exceeding one")
 	_expect(not panel.refresh_button.disabled, "refilled allowance must enable refresh without exceeding one")

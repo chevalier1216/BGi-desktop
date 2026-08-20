@@ -10,18 +10,14 @@ func _init(progression: RefCounted, assignment_state: RefCounted, validity_query
 	_assignment_state = assignment_state
 	_validity_query = validity_query
 
-func complete_current_task(task_id: String, clock: RefCounted, current_time_seconds: int) -> Dictionary:
+func complete_claimed_current_task(task_id: String, claim_receipt: Dictionary) -> Dictionary:
 	var current_task: Dictionary = _progression.get_current_task()
 	if current_task.is_empty():
 		return _rejected("tutorial_completed")
 	if current_task["id"] != task_id:
 		return _rejected("task_not_current")
-
-	var execution_status: Dictionary = _validity_query.get_status(_assignment_state, task_id, clock, current_time_seconds)
-	if not bool(execution_status["is_valid_execution"]):
-		return _rejected(str(execution_status["error_code"]))
-	if not bool(execution_status["is_completed"]):
-		return _rejected("execution_not_completed")
+	if str(claim_receipt.get("claim_receipt_id", "")).is_empty() or str(claim_receipt.get("mission_run_id", "")).is_empty() or str(claim_receipt.get("result_id", "")).is_empty():
+		return _rejected("claim_receipt_required")
 
 	var progression_result: Dictionary = _progression.complete_current_task(task_id)
 	if not bool(progression_result["is_advanced"]):

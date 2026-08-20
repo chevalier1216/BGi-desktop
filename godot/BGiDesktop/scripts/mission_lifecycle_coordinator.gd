@@ -43,6 +43,9 @@ func resolve_completed_result(task_id: String, current_time_seconds: int) -> Dic
 		return _rejected("is_resolved", str(resolution["error_code"]))
 	var result_snapshot: Dictionary = Dictionary(resolution["result"]).duplicate(true)
 	_locked_results_by_task_id[task_id] = result_snapshot
+	var completion_result: Dictionary = _expired_release_service.mark_completed_if_expired(task_id, clock, current_time_seconds)
+	if not bool(completion_result["is_completed"]):
+		return _rejected("is_resolved", str(completion_result["error_code"]))
 	return {
 		"is_resolved": true,
 		"did_resolve": bool(resolution["did_resolve"]),
@@ -87,7 +90,7 @@ func claim_completed_result(task_id: String, current_time_seconds: int) -> Dicti
 	var save_receipt_result: Dictionary = _claim_receipt_store.save_receipt(task_id, Dictionary(receipt_result["receipt"]))
 	if not bool(save_receipt_result["is_saved"]):
 		return _rejected("is_claimed", str(save_receipt_result["error_code"]))
-	var release_result: Dictionary = _expired_release_service.release_if_expired(task_id, clock, current_time_seconds)
+	var release_result: Dictionary = _assignment_coordinator.release_assignment(task_id)
 	if not bool(release_result["is_released"]):
 		return _rejected("is_claimed", str(release_result["error_code"]))
 	_claimed_task_ids = Dictionary(claim_result["claimed_task_ids"]).duplicate(true)

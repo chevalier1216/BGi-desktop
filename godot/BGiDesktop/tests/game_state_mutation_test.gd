@@ -19,9 +19,12 @@ func _run() -> void:
 	var before_rejection: Array[Dictionary] = game_state.get_crew()
 	_expect_result(game_state.set_crew_status("crew_99", GameStateScript.ASSIGNED_STATUS), false, "crew_not_found")
 	_expect(game_state.get_crew() == before_rejection, "未知 id 拒絕後資料不得改變")
-	_expect_result(game_state.set_crew_status("crew_01", GameStateScript.CrewStatus.COMPLETED), false, "unsupported_status")
+	_expect_result(game_state.set_crew_status("crew_01", GameStateScript.CrewStatus.COMPLETED), true, "")
+	_expect(_status_for(game_state.get_crew(), "crew_01") == GameStateScript.CrewStatus.COMPLETED, "completed state must persist")
+	before_rejection = game_state.get_crew()
 	_expect(game_state.get_crew() == before_rejection, "不支援狀態拒絕後資料不得改變")
 
+	_expect_result(game_state.set_crew_status("crew_01", GameStateScript.CrewStatus.AVAILABLE), true, "")
 	var crew_copy: Array[Dictionary] = game_state.get_crew()
 	crew_copy[0]["status"] = GameStateScript.ASSIGNED_STATUS
 	_expect(_status_for(game_state.get_crew(), "crew_01") == GameStateScript.CrewStatus.AVAILABLE, "取得複本仍須與 GameState 隔離")

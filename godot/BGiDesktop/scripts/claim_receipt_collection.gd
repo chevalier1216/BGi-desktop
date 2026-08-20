@@ -29,6 +29,9 @@ func get_receipt(mission_run_id: String) -> Dictionary:
 		return {"is_found": false, "error_code": "", "receipt": {}}
 	return {"is_found": true, "error_code": "", "receipt": Dictionary(_receipts_by_mission_run_id[mission_run_id]).duplicate(true)}
 
+func remove_receipt(mission_run_id: String) -> void:
+	_receipts_by_mission_run_id.erase(mission_run_id)
+
 func to_data() -> Dictionary:
 	return _receipts_by_mission_run_id.duplicate(true)
 

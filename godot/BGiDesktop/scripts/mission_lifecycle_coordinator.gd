@@ -152,6 +152,32 @@ func get_persisted_runs() -> Dictionary:
 func get_claim_receipt(mission_run_id: String) -> Dictionary:
 	return _claim_receipt_store.get_receipt(mission_run_id)
 
+## Restores a just-claimed run when its enclosing player-save transaction fails.
+func rollback_claim_after_save_failure(task_id: String, receipt: Dictionary) -> void:
+	var mission_run_id: String = str(receipt.get("mission_run_id", ""))
+	if mission_run_id.is_empty() or not _mission_runs_by_id.has(mission_run_id):
+		return
+	var run: Dictionary = Dictionary(_mission_runs_by_id[mission_run_id]).duplicate(true)
+	if str(run.get("run_state", "")) != MissionRunRecordScript.CLAIMED:
+		return
+	var crew_ids: Array[String] = []
+	for crew_id_variant: Variant in Array(run.get("assigned_crew_ids", [])):
+		crew_ids.append(str(crew_id_variant))
+	if not bool(_assignment_coordinator.accept_assignment(task_id, crew_ids).get("is_accepted", false)):
+		return
+	if not bool(_assignment_coordinator.mark_assignment_completed(task_id).get("is_completed", false)):
+		return
+	var started_at: int = int(run.get("started_at_seconds", 0))
+	var due_at: int = int(run.get("due_at_seconds", started_at))
+	_snapshot_collection.add_snapshot(MissionExecutionSnapshotScript.new(task_id, started_at, due_at - started_at, mission_run_id))
+	run["run_state"] = MissionRunRecordScript.COMPLETED_PENDING_CLAIM
+	run.erase("claim_receipt_id")
+	_mission_runs_by_id[mission_run_id] = run
+	_active_run_id_by_task_id[task_id] = mission_run_id
+	_claimed_mission_run_ids.erase(mission_run_id)
+	_claimed_task_ids.erase(task_id)
+	_claim_receipt_store.remove_receipt(mission_run_id)
+
 func _find_mission_run_id(task_id: String) -> String:
 	var active_run_id: String = str(_active_run_id_by_task_id.get(task_id, ""))
 	if not active_run_id.is_empty():

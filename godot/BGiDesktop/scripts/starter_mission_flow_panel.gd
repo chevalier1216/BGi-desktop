@@ -505,6 +505,7 @@ func _on_claim_pressed() -> void:
 	_crew_ids_by_task.erase(_task_id)
 	var save_result: Dictionary = _save_execution_state()
 	if not bool(save_result["is_saved"]):
+		_lifecycle.rollback_claim_after_save_failure(_task_id, Dictionary(claim_result["receipt"]))
 		_game_state.restore_crew(previous_crew)
 		_touched_territory_ids = previous_touched_territory_ids
 		_unlocked_crew_ids_by_territory = previous_unlocked_crew_ids

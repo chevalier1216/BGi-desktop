@@ -11,15 +11,17 @@ func _init(file_path: String = DEFAULT_FILE_PATH) -> void:
 	_file_path = file_path
 
 ## Saves each execution snapshot and its locked result state in one JSON envelope.
-func save(snapshot_collection: RefCounted, result_state: RefCounted, crew_ids_by_task: Dictionary = {}) -> Dictionary:
+func save(snapshot_collection: RefCounted, result_state: RefCounted, crew_ids_by_task: Dictionary = {}, persisted_runs: Dictionary = {}) -> Dictionary:
 	if not _file_path.begins_with("user://"):
 		return _rejected("execution_state_store_path_invalid")
 	var executions_result: Dictionary = _to_execution_data(snapshot_collection, crew_ids_by_task)
 	if not bool(executions_result["is_valid"]):
 		return _rejected("execution_state_store_crew_ids_invalid")
 	var payload: Dictionary = {
+		"contract_version": "full_loop_contract_v1",
 		"executions": executions_result["executions"],
 		"result_state": result_state.to_data(),
+		"mission_runs": persisted_runs.duplicate(true),
 	}
 	var file: FileAccess = FileAccess.open(_file_path, FileAccess.WRITE)
 	if file == null:
@@ -45,7 +47,8 @@ func load() -> Dictionary:
 	var payload: Dictionary = Dictionary(json.data)
 	var executions_variant: Variant = payload.get("executions", {})
 	var result_state_variant: Variant = payload.get("result_state", {})
-	if typeof(executions_variant) != TYPE_DICTIONARY or typeof(result_state_variant) != TYPE_DICTIONARY:
+	var mission_runs_variant: Variant = payload.get("mission_runs", {})
+	if typeof(executions_variant) != TYPE_DICTIONARY or typeof(result_state_variant) != TYPE_DICTIONARY or typeof(mission_runs_variant) != TYPE_DICTIONARY:
 		return _rejected("execution_state_store_data_invalid")
 	var snapshots_result: Dictionary = _restore_snapshot_collection(Dictionary(executions_variant))
 	if not bool(snapshots_result["is_valid"]):
@@ -60,6 +63,7 @@ func load() -> Dictionary:
 		"collection": snapshots_result["collection"],
 		"result_state": result_state_result["snapshot"],
 		"crew_ids_by_task": snapshots_result["crew_ids_by_task"],
+		"mission_runs": Dictionary(mission_runs_variant).duplicate(true),
 	}
 
 func _to_execution_data(snapshot_collection: RefCounted, crew_ids_by_task: Dictionary) -> Dictionary:
@@ -134,6 +138,7 @@ func _loaded_empty(was_missing: bool) -> Dictionary:
 		"collection": SnapshotCollectionScript.new(),
 		"result_state": ResultStateSnapshotScript.new(),
 		"crew_ids_by_task": {},
+		"mission_runs": {},
 	}
 
 func _rejected(error_code: String) -> Dictionary:
@@ -145,4 +150,5 @@ func _rejected(error_code: String) -> Dictionary:
 		"collection": SnapshotCollectionScript.new(),
 		"result_state": ResultStateSnapshotScript.new(),
 		"crew_ids_by_task": {},
+		"mission_runs": {},
 	}

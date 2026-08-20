@@ -85,7 +85,7 @@ func _ready() -> void:
 	_snapshot_collection = execution_state_result["collection"]
 	_result_state = execution_state_result["result_state"]
 	_crew_ids_by_task = Dictionary(execution_state_result["crew_ids_by_task"]).duplicate(true)
-	_lifecycle = MissionLifecycleCoordinatorScript.new(_assignment_coordinator, expired_release_service, _snapshot_collection)
+	_lifecycle = MissionLifecycleCoordinatorScript.new(_assignment_coordinator, expired_release_service, _snapshot_collection, null, Dictionary(execution_state_result["mission_runs"]))
 	_restore_result_state()
 	var current_time_seconds: int = _get_current_time_seconds()
 	_refresh_state_store = MissionRefreshStateStoreScript.new(refresh_state_store_path)
@@ -409,7 +409,7 @@ func _restore_saved_execution(current_time_seconds: int) -> void:
 
 func _save_execution_state() -> Dictionary:
 	_capture_result_state()
-	return _execution_state_store.save(_snapshot_collection, _result_state, _crew_ids_by_task)
+	return _execution_state_store.save(_snapshot_collection, _result_state, _crew_ids_by_task, _lifecycle.get_persisted_runs())
 
 func _restore_result_state() -> void:
 	var result_data: Dictionary = _result_state.to_data()

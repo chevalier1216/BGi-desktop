@@ -47,7 +47,7 @@ func _run() -> void:
 	_expect(not bool(failed_claim["is_claimed"]), "receipt write failure must reject claim")
 	_expect(str(failed_claim["error_code"]) == "claim_receipt_store_write_failed", "receipt write failure must be reported")
 	_expect(failing["snapshot_collection"].restore_clock("starter_02") != null, "receipt write failure must retain the execution clock")
-	_expect(_status_for(failing["game_state"].get_crew(), "crew_01") == GameStateScript.ASSIGNED_STATUS, "receipt write failure must not release assigned crew")
+	_expect(_status_for(failing["game_state"].get_crew(), "crew_01") == GameStateScript.CrewStatus.COMPLETED, "receipt write failure must retain completed-pending-claim crew")
 
 	for context: Dictionary in [first, reopened, failing]:
 		context["game_state"].queue_free()

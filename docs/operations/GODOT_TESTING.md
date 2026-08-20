@@ -52,4 +52,6 @@ When the Windows workstation is in use, continue all validation that does not re
 5. Defer that foreground-required check without stopping independent implementation, testing, documentation, or Git delivery work.
 6. Until it is performed, report the visible UX result as incomplete; never substitute automated evidence for the missing interaction.
 
+When the Codex execution environment cannot access the interactive Windows desktop, record the outcome as `background validation complete / foreground validation deferred`. Do not retry OS screenshots or global mouse or keyboard automation. This deferred validation blocks a later mission only when that mission explicitly depends on the missing native-interaction evidence; otherwise continue the approved execution order without expanding product scope.
+
 Background-safe UX harnesses are allowed when they are low-risk, project-local, reproducible, and do not alter product behavior. Treat them as infrastructure work after the current playable-loop acceptance path, unless they are necessary to reproduce a current defect.

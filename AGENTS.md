@@ -29,6 +29,13 @@ Do not duplicate a workflow across these layers. Resolve a conflict by escalatin
 - Add `$visible-ux-validation` whenever a mission changes or validates a user-facing flow.
 - These Skills provide reusable execution methods. Do not copy their workflows into BGi documents.
 
+## Background-safe validation
+
+- A user working on the Windows workstation is not a blocker for the mission as a whole. Do not seize the foreground window, physical mouse, or keyboard for routine validation.
+- Prefer reproducible headless, targeted automated, scene/state, simulated-event, and application-driven background-safe validation. Defer only the part that genuinely requires native foreground interaction.
+- Record a deferred foreground-required check as incomplete, with its concrete evidence gap. Do not infer or claim visible UX success from automated evidence alone.
+- A low-risk, project-local background-safe UX validation harness that does not alter product behavior may be added as a later infrastructure improvement. It must not delay the current playable-loop mission.
+
 ## Git, delivery, and verification
 
 - Follow `docs/operations/CROSS_DEVICE_DEVELOPMENT.md` for synchronization and Git safety.

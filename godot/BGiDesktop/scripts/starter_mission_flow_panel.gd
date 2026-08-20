@@ -162,7 +162,22 @@ func _load_first_starter_mission() -> void:
 	_current_missions = _starter_mission_catalog.get_missions()
 	_tutorial_progression = TutorialTaskProgressionScript.new(_current_missions)
 	_restore_claimed_tutorial_progression()
-	_load_current_mission(_tutorial_progression.get_current_task())
+	var current_task: Dictionary = _tutorial_progression.get_current_task()
+	if current_task.is_empty():
+		_show_tutorial_completed_state()
+		return
+	_load_current_mission(current_task)
+
+func _show_tutorial_completed_state() -> void:
+	_task_id = ""
+	_duration_seconds = 0
+	task_label.text = "新手任務：全部完成"
+	requirement_label.text = "所有固定新手任務已完成"
+	status_label.text = "已完成全部新手任務"
+	for choice: CheckButton in crew_selector.get_children():
+		choice.disabled = true
+	start_button.disabled = true
+	claim_button.disabled = true
 
 ## Rebuilds fixed tutorial progression from already-saved claim receipts.
 func _restore_claimed_tutorial_progression() -> void:
@@ -383,6 +398,12 @@ func _refresh_territory_growth_display() -> void:
 	environment_decoration_label.text = "環境布置：%s" % _territory_data["environment_decoration_owned_count"]
 
 func _refresh_reward_disclosure_display() -> void:
+	if not bool(_reward_disclosure_data.get("is_valid", false)):
+		guaranteed_reward_label.text = "保底報酬：[PLACEHOLDER]"
+		extra_reward_range_label.text = "額外報酬範圍：[PLACEHOLDER]"
+		extra_reward_probability_label.text = "額外機率：[PLACEHOLDER]"
+		extra_reward_note_label.text = "未取得額外獎勵；保底報酬照常顯示"
+		return
 	guaranteed_reward_label.text = "保底報酬：%s" % _reward_disclosure_data["guaranteed_reward"]
 	extra_reward_range_label.text = "額外報酬範圍：%s" % _reward_disclosure_data["extra_reward_range"]
 	extra_reward_probability_label.text = "額外機率：%s" % _reward_disclosure_data["extra_reward_probability"]

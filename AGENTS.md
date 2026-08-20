@@ -32,6 +32,7 @@ Do not duplicate a workflow across these layers. Resolve a conflict by escalatin
 ## Background-safe validation
 
 - A user working on the Windows workstation is not a blocker for the mission as a whole. Do not seize the foreground window, physical mouse, or keyboard for routine validation.
+- A validation runtime may be fixed to the dedicated second physical monitor for real application launch, rendering, screenshot evidence, visible-state inspection, and application or scene-level programmatic interaction. Both monitors remain one Windows interactive session: the second monitor does not authorize global OS-level input or establish foreground isolation.
 - Prefer reproducible headless, targeted automated, scene/state, simulated-event, and application-driven background-safe validation. Defer only the part that genuinely requires native foreground interaction.
 - Record a deferred foreground-required check as incomplete, with its concrete evidence gap. Do not infer or claim visible UX success from automated evidence alone.
 - A low-risk, project-local background-safe UX validation harness that does not alter product behavior may be added as a later infrastructure improvement. It must not delay the current playable-loop mission.

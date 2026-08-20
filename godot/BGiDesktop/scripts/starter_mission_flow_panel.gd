@@ -223,7 +223,7 @@ func _restore_claimed_tutorial_progression() -> void:
 		if current_task.is_empty():
 			return
 		var current_task_id: String = str(current_task["id"])
-		if _result_state.get_locked_result(current_task_id).is_empty():
+		if not _result_state.is_claimed(current_task_id):
 			return
 		var advance_result: Dictionary = _tutorial_progression.complete_current_task(current_task_id)
 		if not bool(advance_result["is_advanced"]):
@@ -468,6 +468,10 @@ func _on_claim_pressed() -> void:
 			_territory_touch_receipts_by_id = previous_touch_receipts
 			status_label.text = "收取保存未完成，請重試"
 			return
+	var tutorial_result: Dictionary = _tutorial_completion_coordinator.complete_claimed_current_task(_task_id, Dictionary(claim_result["receipt"]))
+	if not bool(tutorial_result["is_completed"]):
+		status_label.text = "收取完成，但教學進度無法更新"
+		return
 	_crew_ids_by_task.erase(_task_id)
 	var save_result: Dictionary = _save_execution_state()
 	if not bool(save_result["is_saved"]):
@@ -698,10 +702,6 @@ func refresh_execution_status(current_time_seconds: int) -> void:
 		return
 	_is_waiting = false
 	_is_completed = true
-	var tutorial_result: Dictionary = _tutorial_completion_coordinator.complete_resolved_current_task(_task_id)
-	if not bool(tutorial_result["is_completed"]):
-		status_label.text = "完成狀態無法讀取"
-		return
 	_record_tutorial_event("tutorial_task_completed", _task_id, "claimable", _task_id)
 	_record_tutorial_event("tutorial_result_locked", _task_id, "locked", _task_id, {"result_id": str(Dictionary(resolution["result"]).get("result_id", ""))})
 	start_button.disabled = true
@@ -722,8 +722,19 @@ func _restore_saved_execution(current_time_seconds: int) -> void:
 		status_label.text = "已領取／保底報酬待定"
 		return
 	if not _result_state.get_locked_result(_task_id).is_empty():
-		# Completed runs already released their crew. Restore the result presentation
-		# without reconstructing an assignment that no longer exists.
+		# Rebuild the transient assignment so the completed crew stays unavailable and
+		# can be released only by the successful claim transaction.
+		var completed_crew_ids: Array[String] = _get_saved_crew_ids(_task_id)
+		for completed_crew_id: String in completed_crew_ids:
+			_game_state.set_crew_status(completed_crew_id, GameStateScript.CrewStatus.AVAILABLE)
+		var completed_assignment_result: Dictionary = _assignment_coordinator.accept_assignment(_task_id, completed_crew_ids)
+		if not bool(completed_assignment_result["is_accepted"]):
+			status_label.text = "完成任務無法還原：%s" % completed_assignment_result["error_code"]
+			return
+		var completed_state_result: Dictionary = _assignment_coordinator.mark_assignment_completed(_task_id)
+		if not bool(completed_state_result["is_completed"]):
+			status_label.text = "完成任務無法還原：%s" % completed_state_result["error_code"]
+			return
 		_is_completed = true
 		start_button.disabled = true
 		claim_button.disabled = false

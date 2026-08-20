@@ -19,7 +19,7 @@ func _run() -> void:
 	panel.refresh_execution_status(clock.started_at_seconds + 5)
 	_expect(panel.status_label.text == "任務已完成", "completion must present a completed task state")
 	_expect(panel.guaranteed_reward_label.text.is_empty(), "completion must not expose an internal reward placeholder")
-	_expect(str(Array(panel.get_task_directory_entries()["current"])[0]["task_id"]) == "starter_02", "completion must make the next tutorial task available before result collection")
+	_expect(Array(panel.get_task_directory_entries()["current"]).is_empty(), "completion must not make the next tutorial task available before result collection")
 	panel.current_time_override = clock.started_at_seconds + 5
 	panel.claim_button.emit_signal("pressed")
 	_expect(str(Array(panel.get_task_directory_entries()["current"])[0]["task_id"]) == "starter_02", "result collection must not alter the already-available next tutorial task")

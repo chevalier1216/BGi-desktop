@@ -24,9 +24,9 @@ func _run() -> void:
 	first_panel.refresh_execution_status(clock.started_at_seconds + 5)
 	_expect(first_panel.status_label.text == "任務已完成", "completed task must show a client-facing completion state")
 	_expect(not first_panel.claim_button.disabled, "locked result must enable exactly one claim action")
-	_expect(str(Array(first_panel.get_task_directory_entries()["current"])[0]["task_id"]) == "starter_02", "completion must make the next fixed tutorial task dispatchable before claim")
+	_expect(Array(first_panel.get_task_directory_entries()["current"]).is_empty(), "completion must not make the next fixed tutorial task dispatchable before claim")
 	for crew_id: String in dispatched_crew_ids:
-		_expect(_status_for(first_panel._game_state.get_crew(), crew_id) == 0, "completion must return every dispatched crew member before result claim")
+		_expect(_status_for(first_panel._game_state.get_crew(), crew_id) == 2, "completion must keep every dispatched crew member unavailable before result claim")
 	var locked_result: Dictionary = Dictionary(first_panel._lifecycle._locked_results_by_task_id[first_panel._task_id]).duplicate(true)
 	first_panel.current_time_override = clock.started_at_seconds + 5
 	first_panel.claim_button.emit_signal("pressed")

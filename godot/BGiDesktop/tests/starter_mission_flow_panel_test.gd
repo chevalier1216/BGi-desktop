@@ -77,7 +77,7 @@ func _run() -> void:
 	panel.refresh_execution_status(started_at_seconds + 5)
 	_expect(panel.status_label.text == "任務已完成", "expired task must expose a completed task state")
 	_expect(not panel.crew_selector.visible, "completed task detail must keep crew selection hidden")
-	_expect(str(Array(panel.get_task_directory_entries()["current"])[0]["task_id"]) == "starter_02", "completed task must make the next tutorial task available before result collection")
+	_expect(Array(panel.get_task_directory_entries()["current"]).is_empty(), "completed task must not make the next tutorial task available before result collection")
 	var completed_text: String = panel.status_label.text
 	var locked_result: Dictionary = Dictionary(panel._lifecycle._locked_results_by_task_id[panel._task_id]).duplicate(true)
 	_expect(panel.start_button.disabled, "completed task must keep the start control disabled")

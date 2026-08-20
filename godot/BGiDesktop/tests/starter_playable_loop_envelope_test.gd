@@ -39,7 +39,7 @@ func _run() -> void:
 	var resumed_result: Dictionary = Dictionary(claim_panel._lifecycle._locked_results_by_task_id["starter_01"])
 	_expect(str(resumed_result["result_id"]) == str(first_result["result_id"]), "restart must retain the same fixed result id before collection")
 	_expect(int(resumed_result["resolved_at_seconds"]) == int(first_result["resolved_at_seconds"]), "restart must retain the original result resolution time before collection")
-	_expect(claim_panel._task_id == "starter_02", "restart must make the next tutorial task dispatchable before collection")
+	_expect(claim_panel._task_id == "starter_01", "restart must retain the completed tutorial task before collection")
 	_expect(claim_panel.show_task_detail("starter_01"), "completed task must remain available from the completed mission list")
 	_expect(not claim_panel.claim_button.disabled, "fixed result must offer collection after restart")
 	claim_panel.claim_button.emit_signal("pressed")

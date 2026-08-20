@@ -38,15 +38,14 @@ func _run() -> void:
 	_reset_game_state_to_available()
 
 	var locked_panel: StarterMissionFlowPanel = _create_panel(999)
-	_expect(locked_panel._task_id == "starter_02", "reopened player state must advance the current tutorial task before result claim")
+	_expect(locked_panel._task_id == "starter_01", "reopened player state must retain the completed tutorial task before result claim")
 	_expect(locked_panel.show_task_detail("starter_01"), "completed mission must remain available from the completed mission directory")
 	_expect(locked_panel.status_label.text == "任務已完成", "reopened locked result must retain its completed presentation")
-	var repeated_resolution: Dictionary = locked_panel._lifecycle.resolve_completed_result(locked_panel._task_id, 999)
-	_expect(not bool(repeated_resolution["did_resolve"]), "reopened locked result must not resolve again")
-	_expect(int(repeated_resolution["result"]["resolved_at_seconds"]) == int(locked_result["resolved_at_seconds"]), "reopened locked result must retain its first resolution time")
+	var restored_result: Dictionary = Dictionary(locked_panel._lifecycle._locked_results_by_task_id[locked_panel._task_id]).duplicate(true)
+	_expect(int(restored_result["resolved_at_seconds"]) == int(locked_result["resolved_at_seconds"]), "reopened locked result must retain its first resolution time")
 	_expect(locked_panel._selected_crew_ids.is_empty(), "completed restoration must not present a stale crew selection")
-	for crew_member: Dictionary in locked_panel._game_state.get_crew():
-		_expect(int(crew_member["status"]) == 0, "completed restoration must keep all crew available for the next task")
+	for crew_id: String in ["crew_01", "crew_02", "crew_03"]:
+		_expect(_status_for(locked_panel._game_state.get_crew(), crew_id) == 2, "completed restoration must keep dispatched crew unavailable before result claim")
 	locked_panel.queue_free()
 
 	quit(1 if _failed else 0)
@@ -69,6 +68,12 @@ func _reset_game_state_to_available() -> void:
 	var game_state: Node = root.get_node("GameState") as Node
 	for crew_member: Dictionary in game_state.get_crew():
 		game_state.set_crew_status(str(crew_member["id"]), 0)
+
+func _status_for(crew: Array[Dictionary], crew_id: String) -> int:
+	for crew_member: Dictionary in crew:
+		if str(crew_member["id"]) == crew_id:
+			return int(crew_member["status"])
+	return -1
 
 func _expect(condition: bool, message: String) -> void:
 	if not condition:

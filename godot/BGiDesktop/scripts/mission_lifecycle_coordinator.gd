@@ -75,7 +75,10 @@ func resolve_completed_result(task_id: String, current_time_seconds: int) -> Dic
 
 ## Claims a fixed completed result once, then releases the completed assignment.
 func claim_completed_result(task_id: String, current_time_seconds: int) -> Dictionary:
-	var stored_receipt: Dictionary = _claim_receipt_store.get_receipt(task_id)
+	var mission_run_id: String = _find_mission_run_id(task_id)
+	if mission_run_id.is_empty():
+		return _rejected("is_claimed", "mission_run_not_found")
+	var stored_receipt: Dictionary = _claim_receipt_store.get_receipt(mission_run_id)
 	if not str(stored_receipt["error_code"]).is_empty():
 		return _rejected("is_claimed", str(stored_receipt["error_code"]))
 	if bool(stored_receipt["is_found"]):
@@ -97,8 +100,9 @@ func claim_completed_result(task_id: String, current_time_seconds: int) -> Dicti
 	var claim_result: Dictionary = MissionResultClaimServiceScript.claim(task_id, clock, current_time_seconds, resolution["result"], _claimed_task_ids)
 	if not bool(claim_result["is_claimed"]):
 		return _rejected("is_claimed", str(claim_result["error_code"]))
-	var mission_run_id: String = "%s:%d" % [task_id, int(clock.started_at_seconds)]
-	var result_id: String = "%s:%d" % [mission_run_id, int(Dictionary(claim_result["result"])["resolved_at_seconds"])]
+	var result_id: String = str(Dictionary(claim_result["result"]).get("result_id", ""))
+	if result_id.is_empty():
+		return _rejected("is_claimed", "mission_result_id_missing")
 	var receipt_result: Dictionary = ClaimReceiptScript.create(
 		"%s:claim" % mission_run_id,
 		mission_run_id,
@@ -107,7 +111,7 @@ func claim_completed_result(task_id: String, current_time_seconds: int) -> Dicti
 	)
 	if not bool(receipt_result["is_valid"]):
 		return _rejected("is_claimed", str(receipt_result["error_code"]))
-	var save_receipt_result: Dictionary = _claim_receipt_store.save_receipt(task_id, Dictionary(receipt_result["receipt"]))
+	var save_receipt_result: Dictionary = _claim_receipt_store.save_receipt(Dictionary(receipt_result["receipt"]))
 	if not bool(save_receipt_result["is_saved"]):
 		return _rejected("is_claimed", str(save_receipt_result["error_code"]))
 	var release_result: Dictionary = _assignment_coordinator.release_assignment(task_id)
@@ -134,6 +138,23 @@ func get_persisted_runs() -> Dictionary:
 		"mission_runs_by_id": _mission_runs_by_id.duplicate(true),
 		"active_run_id_by_task_id": _active_run_id_by_task_id.duplicate(true),
 	}
+
+func _find_mission_run_id(task_id: String) -> String:
+	var active_run_id: String = str(_active_run_id_by_task_id.get(task_id, ""))
+	if not active_run_id.is_empty():
+		return active_run_id
+	var latest_run_id: String = ""
+	var latest_started_at: int = -1
+	for run_id_variant: Variant in _mission_runs_by_id:
+		var run_id: String = str(run_id_variant)
+		var record: Dictionary = Dictionary(_mission_runs_by_id[run_id])
+		if str(record.get("mission_template_id", "")) != task_id:
+			continue
+		var started_at: int = int(record.get("started_at_seconds", -1))
+		if started_at > latest_started_at:
+			latest_run_id = run_id
+			latest_started_at = started_at
+	return latest_run_id
 
 func _restore_persisted_runs(persisted_runs: Dictionary) -> void:
 	var runs_variant: Variant = persisted_runs.get("mission_runs_by_id", {})

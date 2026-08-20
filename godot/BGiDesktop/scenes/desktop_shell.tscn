@@ -91,6 +91,7 @@ text = "目前街區：未涉足\n下一步：完成首次地盤任務"
 autowrap_mode = 2
 
 [node name="TerritoryButton" type="Button" parent="Margin/Columns/TerritoryPanel/Content"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "查看地盤"
 
@@ -104,22 +105,48 @@ layout_mode = 2
 alignment = 1
 
 [node name="Title" type="Label" parent="Margin/Columns/ScenePanel/Content"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "勢力場景"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 22
 
 [node name="Summary" type="Label" parent="Margin/Columns/ScenePanel/Content"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "初始勢力\n在此呈現地盤、收藏與勢力變化"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="SecondaryDetail" type="Label" parent="Margin/Columns/ScenePanel/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "選擇下方入口查看地盤、人物、收藏、黑市或設定。"
+horizontal_alignment = 1
+autowrap_mode = 2
 
 [node name="CrewIndicators" type="HBoxContainer" parent="Margin/Columns/ScenePanel/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
+
+[node name="SettingsActions" type="HBoxContainer" parent="Margin/Columns/ScenePanel/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+alignment = 1
+visible = false
+
+[node name="SettingsLayoutButton" type="Button" parent="Margin/Columns/ScenePanel/Content/SettingsActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "緊湊／標準"
+
+[node name="SettingsTopmostToggle" type="CheckButton" parent="Margin/Columns/ScenePanel/Content/SettingsActions"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "開啟後，桌面介面會保持在其他視窗上方。"
+text = "置頂顯示"
 
 [node name="MissionPanel" type="PanelContainer" parent="Margin/Columns"]
 custom_minimum_size = Vector2(330, 0)

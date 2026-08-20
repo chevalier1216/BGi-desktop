@@ -19,6 +19,18 @@ func _run() -> void:
 	_expect(mission_scroll != null, "mission controls must be contained in a scrollable region instead of being clipped below the desktop bar")
 	_expect(mission_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED, "mission controls must preserve their full width while allowing vertical access")
 	_expect(mission_scroll.get_node("Content/StarterMissionFlowPanel") != null, "starter mission controls must remain inside the scrollable mission region")
+	var secondary_title: Label = shell.get_node("Margin/Columns/ScenePanel/Content/Title") as Label
+	var settings_actions: HBoxContainer = shell.get_node("Margin/Columns/ScenePanel/Content/SettingsActions") as HBoxContainer
+	(shell.get_node("BottomPersistentBar/Entries/TerritoryEntry/Button") as Button).emit_signal("pressed")
+	_expect(secondary_title.text == "地盤", "territory entry must open its secondary panel")
+	(shell.get_node("BottomPersistentBar/Entries/MarketEntry/Button") as Button).emit_signal("pressed")
+	_expect(secondary_title.text == "黑市", "market entry must open its locked placeholder panel")
+	(shell.get_node("BottomPersistentBar/Entries/CrewEntry/Button") as Button).emit_signal("pressed")
+	_expect(secondary_title.text == "角色", "crew entry must open its status panel")
+	(shell.get_node("BottomPersistentBar/Entries/CollectionEntry/Button") as Button).emit_signal("pressed")
+	_expect(secondary_title.text == "收藏", "collection entry must open its locked placeholder panel")
+	(shell.get_node("BottomPersistentBar/Entries/SettingsEntry/Button") as Button).emit_signal("pressed")
+	_expect(secondary_title.text == "設定" and settings_actions.visible, "settings entry must expose desktop preference controls")
 	_expect(_resource_path(shell.get_node("BottomPersistentBar/Entries/TerritoryEntry/KaratButtonFrame") as TextureRect) == KARAT_ROOT + "button/choice_idle_border.png", "bottom entry must use the 24 Karat button border")
 	_expect((shell.get_node("BottomPersistentBar/Entries") as HBoxContainer).get_child_count() == 5, "bottom persistent bar must expose five visual entry frames")
 

@@ -238,10 +238,10 @@ func _load_current_mission(mission_override: Dictionary = {}) -> void:
 	_duration_seconds = int(mission["duration_seconds"])
 	_reward_disclosure_data = MissionRewardDisclosureModelScript.create(_task_id, false)
 	_refresh_reward_disclosure_display()
-	task_label.text = "新手任務：%s（%d 秒）" % [_task_id, _duration_seconds]
+	task_label.text = "%s（%d 秒）" % [_client_mission_title(_task_id), _duration_seconds]
 	requirement_label.text = "需求人物數量：%d–%d 名" % [DispatchRules.MIN_ASSIGNEES, DispatchRules.MAX_ASSIGNEES]
 	if task_description_label != null:
-		task_description_label.text = "本任務為固定新手流程的一部分。派遣符合數量要求的人物後，系統會保存派遣狀態並開始倒數。完成後可在此領取已鎖定的結果；收取成功才會推進後續狀態。任務的敘事與最終報酬內容尚待設定。"
+		task_description_label.text = "派遣符合數量要求的人物後，任務將開始倒數。完成後可在此領取任務結果；收取成功後即可繼續下一個任務。"
 	if crew_type_label != null:
 		crew_type_label.text = "需求人物種類：無限制"
 	if duration_label != null:
@@ -279,11 +279,11 @@ func _append_crew_choice(crew_member: Dictionary) -> void:
 	card_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(card_content)
 	var crew_name := Label.new()
-	crew_name.text = "小弟 %s" % crew_id.trim_prefix("crew_")
+	crew_name.text = "小弟 %02d" % (crew_selector.get_child_count() + 1)
 	crew_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card_content.add_child(crew_name)
 	var icon_placeholder := Label.new()
-	icon_placeholder.text = "人物 icon\n預留位置"
+	icon_placeholder.text = ""
 	icon_placeholder.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	icon_placeholder.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	icon_placeholder.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -520,13 +520,14 @@ func _refresh_territory_growth_display() -> void:
 	environment_decoration_label.text = "環境布置：%s" % _territory_data["environment_decoration_owned_count"]
 
 func _refresh_reward_disclosure_display() -> void:
-	if not bool(_reward_disclosure_data.get("is_valid", false)):
-		guaranteed_reward_label.text = "保底報酬：[PLACEHOLDER]"
-		extra_reward_range_label.text = "額外報酬範圍：[PLACEHOLDER]"
-		extra_reward_probability_label.text = "額外機率：[PLACEHOLDER]"
-		extra_reward_note_label.text = "未取得額外獎勵；保底報酬照常顯示"
+	var uses_internal_placeholder := str(_reward_disclosure_data.get("guaranteed_reward", "")).contains("[PLACEHOLDER]")
+	if not bool(_reward_disclosure_data.get("is_valid", false)) or uses_internal_placeholder:
+		guaranteed_reward_label.text = ""
+		extra_reward_range_label.text = ""
+		extra_reward_probability_label.text = ""
+		extra_reward_note_label.text = ""
 		if reward_details != null:
-			reward_details.text = "保底與額外獎勵的 icon 與數值尚未設定。"
+			reward_details.text = "獎勵將於任務完成後顯示。"
 		return
 	guaranteed_reward_label.text = "保底報酬：%s" % _reward_disclosure_data["guaranteed_reward"]
 	extra_reward_range_label.text = "額外報酬範圍：%s" % _reward_disclosure_data["extra_reward_range"]
@@ -778,4 +779,9 @@ func _show_next_tutorial_task() -> void:
 	if next_task.is_empty():
 		next_tutorial_task_label.text = "新手任務已完成"
 		return
-	next_tutorial_task_label.text = "下一個新手任務：%s（%d 秒）" % [next_task["id"], next_task["duration_seconds"]]
+	next_tutorial_task_label.text = "下一個任務：%s（%d 秒）" % [_client_mission_title(str(next_task["id"])), next_task["duration_seconds"]]
+
+func _client_mission_title(task_id: String) -> String:
+	if task_id.begins_with("starter_"):
+		return "新手任務 %02d" % int(task_id.trim_prefix("starter_"))
+	return "任務"

@@ -44,7 +44,7 @@ func _ready() -> void:
 	settings_entry_button.pressed.connect(_show_settings)
 
 func _show_tasks() -> void:
-	var window := _open_popup("tasks", "任務與收取", Vector2i(620, 760))
+	var window := _open_popup("tasks", "任務與收取", Vector2i(760, 820))
 	if _mission_panel == null:
 		_mission_panel = StarterMissionFlowPanelScene.instantiate() as StarterMissionFlowPanel
 		window.add_child(_mission_panel)
@@ -54,7 +54,7 @@ func _show_territory() -> void:
 	_replace_popup_content(window, _territory_content())
 
 func _show_market() -> void:
-	_show_text_popup("market", "黑市", "尚未解鎖", "黑市內容、價格、貨幣與解鎖條件均為 [PLACEHOLDER]。目前沒有可執行的交易按鈕。")
+	_show_text_popup("market", "黑市", "尚未開放", "")
 
 func _show_crew() -> void:
 	var available := 0
@@ -69,7 +69,7 @@ func _show_crew() -> void:
 	_show_text_popup("crew", "角色", "目前人物狀態", "可用：%d\n派遣中：%d\n已完成待收取：%d\n人物的派遣選擇與確認在任務／收取視窗進行。" % [available, dispatched, pending_claim])
 
 func _show_collection() -> void:
-	_show_text_popup("collection", "收藏", "尚未取得收藏", "背景與掛件所有權維持獨立；未擁有項目顯示鎖定。\n取得條件：[PLACEHOLDER]。")
+	_show_text_popup("collection", "收藏", "尚未取得收藏", "")
 
 func _show_settings() -> void:
 	var window := _open_popup("settings", "設定", Vector2i(420, 300))
@@ -83,14 +83,10 @@ func _show_settings() -> void:
 			window_controller.set_always_on_top(enabled)
 	)
 	content.add_child(topmost)
-	var layout_note := Label.new()
-	layout_note.text = "緊湊／標準功能已保留，尚未定義新版操作方式，因此暫不開放。"
-	layout_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	content.add_child(layout_note)
 	_replace_popup_content(window, content)
 
 func _territory_content() -> VBoxContainer:
-	var content := _make_content("地盤／佈置", "目前地盤：territory_02")
+	var content := _make_content("地盤／佈置", "目前地盤")
 	var status := _get_territory_status()
 	for condition: Dictionary in Array(status["conditions"]):
 		var label := Label.new()
@@ -102,7 +98,7 @@ func _territory_content() -> VBoxContainer:
 		var explore := Button.new()
 		explore.text = "探索新地盤"
 		explore.pressed.connect(func() -> void:
-			_show_text_popup("territory_result", "探索新地盤", "尚無下一個地盤資料", "探索條件已達成，但下一個地盤的內容與解鎖資料尚未建立，因此目前不改寫既有地盤狀態。")
+			_show_text_popup("territory_result", "探索新地盤", "目前沒有可探索的新地盤", "")
 		)
 		content.add_child(explore)
 	return content
@@ -121,7 +117,8 @@ func _show_text_popup(key: String, title: String, summary: String, detail: Strin
 	var label := Label.new()
 	label.text = detail
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	content.add_child(label)
+	if not detail.is_empty():
+		content.add_child(label)
 	_replace_popup_content(window, content)
 
 func _open_popup(key: String, title: String, size: Vector2i) -> Window:

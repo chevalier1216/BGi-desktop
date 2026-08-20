@@ -3,177 +3,173 @@
 [ext_resource type="Script" path="res://scripts/starter_mission_flow_panel.gd" id="1_panel"]
 
 [node name="StarterMissionFlowPanel" type="PanelContainer"]
-custom_minimum_size = Vector2(560, 620)
+custom_minimum_size = Vector2(720, 760)
 layout_mode = 2
 script = ExtResource("1_panel")
 
-[node name="Scroll" type="ScrollContainer" parent="."]
-layout_mode = 2
-horizontal_scroll_mode = 0
-
-[node name="Content" type="VBoxContainer" parent="Scroll"]
-custom_minimum_size = Vector2(520, 620)
+[node name="Content" type="VBoxContainer" parent="."]
+custom_minimum_size = Vector2(720, 760)
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="TaskLabel" type="Label" parent="Scroll/Content"]
+[node name="TaskLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 
-[node name="TaskDescriptionScroll" type="ScrollContainer" parent="Scroll/Content"]
-custom_minimum_size = Vector2(0, 124)
+[node name="TaskDescriptionScroll" type="ScrollContainer" parent="Content"]
+custom_minimum_size = Vector2(0, 138)
 layout_mode = 2
 horizontal_scroll_mode = 0
 
-[node name="TaskDescriptionLabel" type="Label" parent="Scroll/Content/TaskDescriptionScroll"]
+[node name="TaskDescriptionLabel" type="Label" parent="Content/TaskDescriptionScroll"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(500, 124)
+custom_minimum_size = Vector2(680, 138)
 layout_mode = 2
 autowrap_mode = 2
 vertical_alignment = 1
 
-[node name="CrewTypeLabel" type="Label" parent="Scroll/Content"]
+[node name="CrewTypeLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "需求人物種類：無限制"
 
-[node name="RequirementLabel" type="Label" parent="Scroll/Content"]
+[node name="RequirementLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="DurationLabel" type="Label" parent="Scroll/Content"]
+[node name="DurationLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="CrewSelectorTitle" type="Label" parent="Scroll/Content"]
+[node name="CrewSelectorTitle" type="Label" parent="Content"]
 layout_mode = 2
 text = "選擇人物"
 
-[node name="CrewSelector" type="HFlowContainer" parent="Scroll/Content"]
+[node name="CrewSelector" type="HFlowContainer" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
 
-[node name="RewardTitle" type="Label" parent="Scroll/Content"]
+[node name="RewardTitle" type="Label" parent="Content"]
 layout_mode = 2
 text = "獎勵內容"
 
-[node name="RewardSlots" type="HBoxContainer" parent="Scroll/Content"]
+[node name="RewardSlots" type="HBoxContainer" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="GuaranteedRewardSlot" type="PanelContainer" parent="Scroll/Content/RewardSlots"]
+[node name="GuaranteedRewardSlot" type="PanelContainer" parent="Content/RewardSlots"]
 custom_minimum_size = Vector2(88, 88)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Scroll/Content/RewardSlots/GuaranteedRewardSlot"]
+[node name="Label" type="Label" parent="Content/RewardSlots/GuaranteedRewardSlot"]
 layout_mode = 2
-text = "保底\nicon 預留"
+text = "保底\n獎勵"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ExtraRewardSlot" type="PanelContainer" parent="Scroll/Content/RewardSlots"]
+[node name="ExtraRewardSlot" type="PanelContainer" parent="Content/RewardSlots"]
 custom_minimum_size = Vector2(88, 88)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Scroll/Content/RewardSlots/ExtraRewardSlot"]
+[node name="Label" type="Label" parent="Content/RewardSlots/ExtraRewardSlot"]
 layout_mode = 2
-text = "額外\nicon 預留"
+text = "額外\n獎勵"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="RewardDetails" type="Label" parent="Scroll/Content"]
+[node name="RewardDetails" type="Label" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 2
 
-[node name="StatusLabel" type="Label" parent="Scroll/Content"]
+[node name="StatusLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="RetryLoadButton" type="Button" parent="Scroll/Content"]
+[node name="RetryLoadButton" type="Button" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "重試讀取"
 disabled = true
 
-[node name="RefreshAllowanceLabel" type="Label" parent="Scroll/Content"]
+[node name="RefreshAllowanceLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="RefreshNextAvailableLabel" type="Label" parent="Scroll/Content"]
+[node name="RefreshNextAvailableLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="RefreshableMissionCountLabel" type="Label" parent="Scroll/Content"]
+[node name="RefreshableMissionCountLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="RefreshButton" type="Button" parent="Scroll/Content"]
+[node name="RefreshButton" type="Button" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "刷新未接受任務"
 
-[node name="TerritoryData" type="VBoxContainer" parent="Scroll/Content"]
+[node name="TerritoryData" type="VBoxContainer" parent="Content"]
 visible = false
 layout_mode = 2
 
-[node name="TerritoryProgressLabel" type="Label" parent="Scroll/Content/TerritoryData"]
+[node name="TerritoryProgressLabel" type="Label" parent="Content/TerritoryData"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ExplorationCollectionLabel" type="Label" parent="Scroll/Content/TerritoryData"]
+[node name="ExplorationCollectionLabel" type="Label" parent="Content/TerritoryData"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="EnvironmentDecorationLabel" type="Label" parent="Scroll/Content/TerritoryData"]
+[node name="EnvironmentDecorationLabel" type="Label" parent="Content/TerritoryData"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ExploreTerritoryButton" type="Button" parent="Scroll/Content/TerritoryData"]
+[node name="ExploreTerritoryButton" type="Button" parent="Content/TerritoryData"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "探索新地盤"
 
-[node name="GuaranteedRewardLabel" type="Label" parent="Scroll/Content"]
+[node name="GuaranteedRewardLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 
-[node name="ExtraRewardRangeLabel" type="Label" parent="Scroll/Content"]
+[node name="ExtraRewardRangeLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 
-[node name="ExtraRewardProbabilityLabel" type="Label" parent="Scroll/Content"]
+[node name="ExtraRewardProbabilityLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 
-[node name="ExtraRewardNoteLabel" type="Label" parent="Scroll/Content"]
+[node name="ExtraRewardNoteLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 
-[node name="ClaimReceiptLabel" type="Label" parent="Scroll/Content"]
+[node name="ClaimReceiptLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 2
 
-[node name="NextTutorialTaskLabel" type="Label" parent="Scroll/Content"]
+[node name="NextTutorialTaskLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ClaimButton" type="Button" parent="Scroll/Content"]
+[node name="ClaimButton" type="Button" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "領取固定結果"
 disabled = true
 
-[node name="StartButton" type="Button" parent="Scroll/Content"]
+[node name="StartButton" type="Button" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "開始任務"

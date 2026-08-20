@@ -47,7 +47,10 @@ func _run() -> void:
 	for popup_key: String in ["territory", "market", "crew", "collection", "settings", "tasks"]:
 		var popup := shell._popup_windows[popup_key] as Window
 		_expect(popup.force_native and not popup.transient, "all shared desktop popups must use the native independent-window mechanism: %s" % popup_key)
-	_expect(shell._mission_panel.has_node("Scroll/Content/TaskDescriptionScroll"), "task popup must provide a scrollable mission description area")
+		_expect(not _contains_internal_client_copy(popup), "client popup must not expose internal placeholder or implementation copy: %s" % popup_key)
+	_expect(shell._mission_panel.has_node("Content/TaskDescriptionScroll"), "task popup must provide a scrollable mission description area")
+	_expect(not shell._mission_panel.has_node("Scroll"), "only the mission description may scroll; the full task window must keep its controls in a fixed layout")
+	_expect((shell._popup_windows["tasks"] as Window).size.x >= 760 and (shell._popup_windows["tasks"] as Window).size.y >= 820, "task popup must reserve enough native-window space for its fixed task, crew and reward sections")
 	_expect(shell._mission_panel.crew_selector is HFlowContainer, "task popup must arrange crew as independent icon cards")
 	_expect(shell._mission_panel.crew_selector.get_child_count() == 5, "task popup must expose all initial crew cards")
 	var first_crew := shell._mission_panel.crew_selector.get_child(0) as CheckButton
@@ -69,6 +72,19 @@ func _resource_path(texture_rect: TextureRect) -> String:
 	if texture_rect.texture == null:
 		return ""
 	return texture_rect.texture.resource_path
+
+func _contains_internal_client_copy(node: Node) -> bool:
+	var forbidden_fragments := ["[PLACEHOLDER]", "預留", "尚未定義", "尚未建立", "暫不開放", "緊湊／標準", "starter_", "territory_"]
+	if node is Control and not (node as Control).visible:
+		return false
+	if node is Label or node is Button:
+		for fragment: String in forbidden_fragments:
+			if fragment in (node as Control).get("text"):
+				return true
+	for child: Node in node.get_children():
+		if _contains_internal_client_copy(child):
+			return true
+	return false
 
 func _on_apply_requested() -> void:
 	_apply_requests += 1

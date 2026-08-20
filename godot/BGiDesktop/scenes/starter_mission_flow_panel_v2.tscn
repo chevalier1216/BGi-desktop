@@ -1,0 +1,180 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/starter_mission_flow_panel.gd" id="1_panel"]
+
+[node name="StarterMissionFlowPanel" type="PanelContainer"]
+custom_minimum_size = Vector2(560, 620)
+layout_mode = 2
+script = ExtResource("1_panel")
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Content" type="VBoxContainer" parent="Scroll"]
+custom_minimum_size = Vector2(520, 620)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TaskLabel" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+
+[node name="TaskDescriptionScroll" type="ScrollContainer" parent="Scroll/Content"]
+custom_minimum_size = Vector2(0, 124)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="TaskDescriptionLabel" type="Label" parent="Scroll/Content/TaskDescriptionScroll"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(500, 124)
+layout_mode = 2
+autowrap_mode = 2
+vertical_alignment = 1
+
+[node name="CrewTypeLabel" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "需求人物種類：無限制"
+
+[node name="RequirementLabel" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DurationLabel" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CrewSelectorTitle" type="Label" parent="Scroll/Content"]
+layout_mode = 2
+text = "選擇人物"
+
+[node name="CrewSelector" type="HFlowContainer" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+
+[node name="RewardTitle" type="Label" parent="Scroll/Content"]
+layout_mode = 2
+text = "獎勵內容"
+
+[node name="RewardSlots" type="HBoxContainer" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="GuaranteedRewardSlot" type="PanelContainer" parent="Scroll/Content/RewardSlots"]
+custom_minimum_size = Vector2(88, 88)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Scroll/Content/RewardSlots/GuaranteedRewardSlot"]
+layout_mode = 2
+text = "保底\nicon 預留"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ExtraRewardSlot" type="PanelContainer" parent="Scroll/Content/RewardSlots"]
+custom_minimum_size = Vector2(88, 88)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Scroll/Content/RewardSlots/ExtraRewardSlot"]
+layout_mode = 2
+text = "額外\nicon 預留"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RewardDetails" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="StatusLabel" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RetryLoadButton" type="Button" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "重試讀取"
+disabled = true
+
+[node name="RefreshAllowanceLabel" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RefreshNextAvailableLabel" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RefreshableMissionCountLabel" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RefreshButton" type="Button" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "刷新未接受任務"
+
+[node name="TerritoryData" type="VBoxContainer" parent="Scroll/Content"]
+visible = false
+layout_mode = 2
+
+[node name="TerritoryProgressLabel" type="Label" parent="Scroll/Content/TerritoryData"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ExplorationCollectionLabel" type="Label" parent="Scroll/Content/TerritoryData"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="EnvironmentDecorationLabel" type="Label" parent="Scroll/Content/TerritoryData"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ExploreTerritoryButton" type="Button" parent="Scroll/Content/TerritoryData"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "探索新地盤"
+
+[node name="GuaranteedRewardLabel" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="ExtraRewardRangeLabel" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="ExtraRewardProbabilityLabel" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="ExtraRewardNoteLabel" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="ClaimReceiptLabel" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="NextTutorialTaskLabel" type="Label" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ClaimButton" type="Button" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "領取固定結果"
+disabled = true
+
+[node name="StartButton" type="Button" parent="Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "開始任務"
+disabled = true

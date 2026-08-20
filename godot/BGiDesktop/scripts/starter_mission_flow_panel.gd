@@ -27,7 +27,11 @@ const TutorialEventLoggerScript = preload("res://scripts/tutorial_event_logger.g
 
 @onready var task_label: Label = %TaskLabel
 @onready var requirement_label: Label = %RequirementLabel
-@onready var crew_selector: HBoxContainer = %CrewSelector
+@onready var crew_selector: Container = %CrewSelector
+@onready var task_description_label: Label = get_node_or_null("%TaskDescriptionLabel") as Label
+@onready var crew_type_label: Label = get_node_or_null("%CrewTypeLabel") as Label
+@onready var duration_label: Label = get_node_or_null("%DurationLabel") as Label
+@onready var reward_details: Label = get_node_or_null("%RewardDetails") as Label
 @onready var status_label: Label = %StatusLabel
 @onready var start_button: Button = %StartButton
 @onready var refresh_allowance_label: Label = %RefreshAllowanceLabel
@@ -235,7 +239,13 @@ func _load_current_mission(mission_override: Dictionary = {}) -> void:
 	_reward_disclosure_data = MissionRewardDisclosureModelScript.create(_task_id, false)
 	_refresh_reward_disclosure_display()
 	task_label.text = "新手任務：%s（%d 秒）" % [_task_id, _duration_seconds]
-	requirement_label.text = "需要 %d–%d 名小弟" % [DispatchRules.MIN_ASSIGNEES, DispatchRules.MAX_ASSIGNEES]
+	requirement_label.text = "需求人物數量：%d–%d 名" % [DispatchRules.MIN_ASSIGNEES, DispatchRules.MAX_ASSIGNEES]
+	if task_description_label != null:
+		task_description_label.text = "本任務為固定新手流程的一部分。派遣符合數量要求的人物後，系統會保存派遣狀態並開始倒數。完成後可在此領取已鎖定的結果；收取成功才會推進後續狀態。任務的敘事與最終報酬內容尚待設定。"
+	if crew_type_label != null:
+		crew_type_label.text = "需求人物種類：無限制"
+	if duration_label != null:
+		duration_label.text = "預計耗時：%d 秒" % _duration_seconds
 
 func _render_crew_choices() -> void:
 	for crew_member: Dictionary in _game_state.get_crew():
@@ -244,9 +254,71 @@ func _render_crew_choices() -> void:
 func _append_crew_choice(crew_member: Dictionary) -> void:
 	var crew_id: String = str(crew_member["id"])
 	var choice: CheckButton = CheckButton.new()
-	choice.text = "小弟 %s" % crew_id.trim_prefix("crew_")
+	choice.custom_minimum_size = Vector2(104, 104)
+	choice.text = ""
 	choice.tooltip_text = "可用" if int(crew_member["status"]) == GameStateScript.CrewStatus.AVAILABLE else "派遣中"
 	choice.disabled = int(crew_member["status"]) != GameStateScript.CrewStatus.AVAILABLE
+	var card := Panel.new()
+	card.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var card_style := StyleBoxFlat.new()
+	card_style.bg_color = Color("111217")
+	card_style.border_width_left = 1
+	card_style.border_width_top = 1
+	card_style.border_width_right = 1
+	card_style.border_width_bottom = 1
+	card_style.border_color = Color("b79a34")
+	card.add_theme_stylebox_override("panel", card_style)
+	choice.add_child(card)
+	var card_content := VBoxContainer.new()
+	card_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	card_content.offset_left = 6
+	card_content.offset_top = 6
+	card_content.offset_right = -6
+	card_content.offset_bottom = -6
+	card_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(card_content)
+	var crew_name := Label.new()
+	crew_name.text = "小弟 %s" % crew_id.trim_prefix("crew_")
+	crew_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	card_content.add_child(crew_name)
+	var icon_placeholder := Label.new()
+	icon_placeholder.text = "人物 icon\n預留位置"
+	icon_placeholder.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon_placeholder.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	icon_placeholder.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	card_content.add_child(icon_placeholder)
+	var selected_overlay := ColorRect.new()
+	selected_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	selected_overlay.color = Color(1.0, 0.9, 0.45, 0.25)
+	selected_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	selected_overlay.visible = false
+	card.add_child(selected_overlay)
+	var selected_label := Label.new()
+	selected_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	selected_label.text = "已選取"
+	selected_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	selected_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	selected_label.add_theme_color_override("font_color", Color("FF3333"))
+	selected_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	selected_overlay.add_child(selected_label)
+	var unavailable_overlay := ColorRect.new()
+	unavailable_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	unavailable_overlay.color = Color(0.5, 0.5, 0.5, 0.15)
+	unavailable_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	unavailable_overlay.visible = choice.disabled
+	card.add_child(unavailable_overlay)
+	var unavailable_symbol := Label.new()
+	unavailable_symbol.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	unavailable_symbol.text = "⊘"
+	unavailable_symbol.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	unavailable_symbol.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	unavailable_symbol.add_theme_font_size_override("font_size", 52)
+	unavailable_symbol.add_theme_color_override("font_color", Color("FF3333"))
+	unavailable_symbol.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	unavailable_overlay.add_child(unavailable_symbol)
+	choice.set_meta("selected_overlay", selected_overlay)
+	choice.set_meta("unavailable_overlay", unavailable_overlay)
 	choice.toggled.connect(_on_crew_toggled.bind(crew_id))
 	crew_selector.add_child(choice)
 
@@ -266,6 +338,14 @@ func _refresh_selection_state() -> void:
 	start_button.disabled = _is_waiting or _is_completed or _is_claimed or selected_count < DispatchRules.MIN_ASSIGNEES or selected_count > DispatchRules.MAX_ASSIGNEES
 	if not _is_waiting and not _is_completed and not _is_claimed:
 		status_label.text = "已選 %d/%d 名小弟" % [selected_count, DispatchRules.MAX_ASSIGNEES]
+	_refresh_crew_card_overlays()
+
+func _refresh_crew_card_overlays() -> void:
+	for choice: CheckButton in crew_selector.get_children():
+		if choice.has_meta("selected_overlay"):
+			(choice.get_meta("selected_overlay") as ColorRect).visible = choice.button_pressed
+		if choice.has_meta("unavailable_overlay"):
+			(choice.get_meta("unavailable_overlay") as ColorRect).visible = choice.disabled
 
 func _on_start_pressed() -> void:
 	if _is_waiting or _is_completed or _is_claimed:
@@ -287,6 +367,7 @@ func _on_start_pressed() -> void:
 	_record_tutorial_event("tutorial_task_started", _task_id, "active", _task_id)
 	for choice: CheckButton in crew_selector.get_children():
 		choice.disabled = true
+	_refresh_crew_card_overlays()
 	start_button.disabled = true
 	status_label.text = "等待中：已派遣 %d 名小弟" % _selected_crew_ids.size()
 	_refresh_refresh_state()
@@ -332,6 +413,7 @@ func _on_claim_pressed() -> void:
 		claim_receipt_label.text += "｜觸及新地盤：%s｜新人物已加入：%s" % [str(touch_plan["territory_id"]), str(touch_plan["unlocked_crew_id"])]
 	for choice: CheckButton in crew_selector.get_children():
 		choice.disabled = true
+	_refresh_crew_card_overlays()
 	start_button.disabled = true
 	claim_button.disabled = true
 	_refresh_refresh_state()
@@ -350,6 +432,7 @@ func _on_claim_pressed() -> void:
 		for choice: CheckButton in crew_selector.get_children():
 			choice.button_pressed = false
 			choice.disabled = false
+		_refresh_crew_card_overlays()
 		claim_button.disabled = true
 		_refresh_selection_state()
 		_refresh_refresh_state()
@@ -442,11 +525,23 @@ func _refresh_reward_disclosure_display() -> void:
 		extra_reward_range_label.text = "額外報酬範圍：[PLACEHOLDER]"
 		extra_reward_probability_label.text = "額外機率：[PLACEHOLDER]"
 		extra_reward_note_label.text = "未取得額外獎勵；保底報酬照常顯示"
+		if reward_details != null:
+			reward_details.text = "保底與額外獎勵的 icon 與數值尚未設定。"
 		return
 	guaranteed_reward_label.text = "保底報酬：%s" % _reward_disclosure_data["guaranteed_reward"]
 	extra_reward_range_label.text = "額外報酬範圍：%s" % _reward_disclosure_data["extra_reward_range"]
 	extra_reward_probability_label.text = "額外機率：%s" % _reward_disclosure_data["extra_reward_probability"]
 	extra_reward_note_label.text = "未取得額外獎勵；保底報酬照常顯示" if bool(_reward_disclosure_data["extra_reward_is_zero"]) else "額外報酬依揭露範圍與機率顯示"
+	if reward_details != null:
+		reward_details.text = "%s｜%s｜%s" % [guaranteed_reward_label.text, extra_reward_range_label.text, extra_reward_probability_label.text]
+
+func get_territory_exploration_status() -> Dictionary:
+	var territory_id := str(_territory_data.get("territory_id", "territory_02"))
+	var is_first_claim_saved := _touched_territory_ids.has(territory_id)
+	return {
+		"conditions": [{"label": "完成並保存首次任務收取成果", "is_met": is_first_claim_saved}],
+		"can_explore": is_first_claim_saved,
+	}
 
 func _restore_latest_claim_receipt_display() -> void:
 	var latest_receipt: Dictionary = {}

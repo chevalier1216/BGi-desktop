@@ -44,9 +44,10 @@ func load() -> Dictionary:
 
 static func make_payload(snapshot_collection: RefCounted, result_state: RefCounted, crew_ids_by_task: Dictionary = {}, persisted_runs: Dictionary = {}) -> Dictionary:
 	var executions: Dictionary = {}
-	for task_id_variant: Variant in snapshot_collection.to_data():
-		var task_id: String = str(task_id_variant)
-		var snapshot: Dictionary = snapshot_collection.get_snapshot_data(task_id)
+	for mission_run_id_variant: Variant in snapshot_collection.to_data():
+		var mission_run_id: String = str(mission_run_id_variant)
+		var snapshot: Dictionary = snapshot_collection.get_snapshot_data(mission_run_id)
+		var task_id: String = str(snapshot.get("task_id", ""))
 		var crew_ids_variant: Variant = crew_ids_by_task.get(task_id, [])
 		if typeof(crew_ids_variant) != TYPE_ARRAY:
 			return {}
@@ -59,7 +60,9 @@ static func make_payload(snapshot_collection: RefCounted, result_state: RefCount
 			if crew_id.is_empty() or seen_crew_ids.has(crew_id):
 				return {}
 			seen_crew_ids[crew_id] = true
-		executions[task_id] = {"task_id": task_id, "started_at_seconds": int(snapshot["started_at_seconds"]), "duration_seconds": int(snapshot["duration_seconds"]), "expires_at_seconds": int(snapshot["started_at_seconds"]) + int(snapshot["duration_seconds"]), "crew_ids": crew_ids.duplicate()}
+		if task_id.is_empty():
+			return {}
+		executions[mission_run_id] = {"mission_run_id": str(snapshot.get("mission_run_id", "")), "task_id": task_id, "started_at_seconds": int(snapshot["started_at_seconds"]), "duration_seconds": int(snapshot["duration_seconds"]), "expires_at_seconds": int(snapshot["started_at_seconds"]) + int(snapshot["duration_seconds"]), "crew_ids": crew_ids.duplicate()}
 	return {"contract_version": "full_loop_contract_v1", "executions": executions, "result_state": result_state.to_data(), "mission_runs": persisted_runs.duplicate(true)}
 
 static func from_payload(payload: Dictionary) -> Dictionary:
@@ -72,10 +75,13 @@ static func from_payload(payload: Dictionary) -> Dictionary:
 		return {"is_loaded": false, "error_code": "execution_state_store_data_invalid", "collection": snapshot_script.new(), "result_state": result_script.new(), "crew_ids_by_task": {}, "mission_runs": {}}
 	var collection_data: Dictionary = {}
 	var crew_ids_by_task: Dictionary = {}
-	for task_id_variant: Variant in Dictionary(executions_variant):
-		var task_id: String = str(task_id_variant)
-		var execution: Dictionary = Dictionary(Dictionary(executions_variant)[task_id])
-		if task_id.is_empty() or str(execution.get("task_id", "")) != task_id or not execution.has("started_at_seconds") or not execution.has("duration_seconds") or not execution.has("expires_at_seconds") or not execution.has("crew_ids"):
+	for execution_key_variant: Variant in Dictionary(executions_variant):
+		var execution_key: String = str(execution_key_variant)
+		var execution: Dictionary = Dictionary(Dictionary(executions_variant)[execution_key])
+		var task_id: String = str(execution.get("task_id", ""))
+		var mission_run_id: String = str(execution.get("mission_run_id", ""))
+		var expected_key: String = mission_run_id if not mission_run_id.is_empty() else task_id
+		if task_id.is_empty() or execution_key != expected_key or not execution.has("started_at_seconds") or not execution.has("duration_seconds") or not execution.has("expires_at_seconds") or not execution.has("crew_ids"):
 			return {"is_loaded": false, "error_code": "execution_state_store_data_invalid", "collection": snapshot_script.new(), "result_state": result_script.new(), "crew_ids_by_task": {}, "mission_runs": {}}
 		var started_at_seconds: int = int(execution["started_at_seconds"])
 		var duration_seconds: int = int(execution["duration_seconds"])
@@ -88,28 +94,33 @@ static func from_payload(payload: Dictionary) -> Dictionary:
 			if crew_id.is_empty() or seen_crew_ids.has(crew_id):
 				return {"is_loaded": false, "error_code": "execution_state_store_data_invalid", "collection": snapshot_script.new(), "result_state": result_script.new(), "crew_ids_by_task": {}, "mission_runs": {}}
 			seen_crew_ids[crew_id] = true
-		collection_data[task_id] = {"task_id": task_id, "started_at_seconds": started_at_seconds, "duration_seconds": duration_seconds}
+		collection_data[execution_key] = {"task_id": task_id, "mission_run_id": mission_run_id, "started_at_seconds": started_at_seconds, "duration_seconds": duration_seconds}
 		crew_ids_by_task[task_id] = crew_ids.duplicate()
 	var result_state_result: Dictionary = result_script.from_data(Dictionary(result_state_variant))
 	if not bool(result_state_result["is_valid"]):
 		return {"is_loaded": false, "error_code": "execution_state_store_data_invalid", "collection": snapshot_script.new(), "result_state": result_script.new(), "crew_ids_by_task": {}, "mission_runs": {}}
 	var result_data: Dictionary = result_state_result["snapshot"].to_data()
-	for task_id_variant: Variant in result_data["locked_results_by_task_id"]:
-		var locked_task_id: String = str(task_id_variant)
-		var locked_result: Dictionary = Dictionary(result_data["locked_results_by_task_id"][locked_task_id])
-		if str(locked_result.get("task_id", "")) != locked_task_id or not locked_result.has("resolved_at_seconds") or not locked_result.has("guaranteed_reward") or not locked_result.has("extra_reward"):
+	for mission_run_id_variant: Variant in result_data["locked_results_by_mission_run_id"]:
+		var mission_run_id: String = str(mission_run_id_variant)
+		var locked_result: Dictionary = Dictionary(result_data["locked_results_by_mission_run_id"][mission_run_id])
+		var expected_result_key: String = str(locked_result.get("mission_run_id", ""))
+		if expected_result_key.is_empty():
+			expected_result_key = str(locked_result.get("task_id", ""))
+		if mission_run_id != expected_result_key or str(locked_result.get("task_id", "")).is_empty() or not locked_result.has("resolved_at_seconds") or not locked_result.has("guaranteed_reward") or not locked_result.has("extra_reward"):
 			return {"is_loaded": false, "error_code": "execution_state_store_data_invalid", "collection": snapshot_script.new(), "result_state": result_script.new(), "crew_ids_by_task": {}, "mission_runs": {}}
 	return {"is_loaded": true, "was_missing": false, "error_code": "", "collection": snapshot_script.from_data(collection_data), "result_state": result_state_result["snapshot"], "crew_ids_by_task": crew_ids_by_task, "mission_runs": Dictionary(mission_runs_variant).duplicate(true)}
 
 func _to_execution_data(snapshot_collection: RefCounted, crew_ids_by_task: Dictionary) -> Dictionary:
 	var executions: Dictionary = {}
-	for task_id_variant: Variant in snapshot_collection.to_data():
-		var task_id: String = str(task_id_variant)
-		var snapshot: Dictionary = snapshot_collection.get_snapshot_data(task_id)
+	for mission_run_id_variant: Variant in snapshot_collection.to_data():
+		var mission_run_id: String = str(mission_run_id_variant)
+		var snapshot: Dictionary = snapshot_collection.get_snapshot_data(mission_run_id)
+		var task_id: String = str(snapshot.get("task_id", ""))
 		var crew_ids_variant: Variant = crew_ids_by_task.get(task_id, [])
 		if not _has_valid_crew_ids(crew_ids_variant):
 			return {"is_valid": false, "executions": {}}
-		executions[task_id] = {
+		executions[mission_run_id] = {
+			"mission_run_id": str(snapshot.get("mission_run_id", "")),
 			"task_id": task_id,
 			"started_at_seconds": int(snapshot["started_at_seconds"]),
 			"duration_seconds": int(snapshot["duration_seconds"]),
@@ -121,10 +132,13 @@ func _to_execution_data(snapshot_collection: RefCounted, crew_ids_by_task: Dicti
 func _restore_snapshot_collection(executions: Dictionary) -> Dictionary:
 	var collection_data: Dictionary = {}
 	var crew_ids_by_task: Dictionary = {}
-	for task_id_variant: Variant in executions:
-		var task_id: String = str(task_id_variant)
-		var execution: Dictionary = Dictionary(executions[task_id])
-		if task_id.is_empty() or str(execution.get("task_id", "")) != task_id:
+	for execution_key_variant: Variant in executions:
+		var execution_key: String = str(execution_key_variant)
+		var execution: Dictionary = Dictionary(executions[execution_key])
+		var task_id: String = str(execution.get("task_id", ""))
+		var mission_run_id: String = str(execution.get("mission_run_id", ""))
+		var expected_key: String = mission_run_id if not mission_run_id.is_empty() else task_id
+		if task_id.is_empty() or execution_key != expected_key:
 			return {"is_valid": false, "collection": SnapshotCollectionScript.new()}
 		if not execution.has("started_at_seconds") or not execution.has("duration_seconds") or not execution.has("expires_at_seconds") or not execution.has("crew_ids"):
 			return {"is_valid": false, "collection": SnapshotCollectionScript.new(), "crew_ids_by_task": {}}
@@ -134,8 +148,9 @@ func _restore_snapshot_collection(executions: Dictionary) -> Dictionary:
 			return {"is_valid": false, "collection": SnapshotCollectionScript.new(), "crew_ids_by_task": {}}
 		if not _has_valid_crew_ids(execution["crew_ids"]):
 			return {"is_valid": false, "collection": SnapshotCollectionScript.new(), "crew_ids_by_task": {}}
-		collection_data[task_id] = {
+		collection_data[execution_key] = {
 			"task_id": task_id,
+			"mission_run_id": mission_run_id,
 			"started_at_seconds": started_at_seconds,
 			"duration_seconds": duration_seconds,
 		}

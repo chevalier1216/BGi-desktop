@@ -120,13 +120,24 @@ func _save_execution_state() -> Dictionary:
 
 func _restore_result_state() -> void:
 	var result_data: Dictionary = _result_state.to_data()
-	_lifecycle._locked_results_by_task_id = result_data["locked_results_by_task_id"].duplicate(true)
-	_lifecycle._claimed_task_ids = result_data["claimed_task_ids"].duplicate(true)
+	_lifecycle._locked_results_by_mission_run_id = result_data["locked_results_by_mission_run_id"].duplicate(true)
+	_lifecycle._claimed_mission_run_ids = result_data["claimed_mission_run_ids"].duplicate(true)
+	_lifecycle._locked_results_by_task_id = {}
+	_lifecycle._claimed_task_ids = {}
+	for mission_run_id_variant: Variant in _lifecycle._locked_results_by_mission_run_id:
+		var mission_run_id: String = str(mission_run_id_variant)
+		var result: Dictionary = Dictionary(_lifecycle._locked_results_by_mission_run_id[mission_run_id])
+		var task_id: String = str(result.get("task_id", ""))
+		if task_id.is_empty():
+			continue
+		_lifecycle._locked_results_by_task_id[task_id] = result.duplicate(true)
+		if _lifecycle._claimed_mission_run_ids.has(mission_run_id):
+			_lifecycle._claimed_task_ids[task_id] = true
 
 func _capture_result_state() -> void:
 	_result_state = ResultStateSnapshotScript.new(
-		_lifecycle._locked_results_by_task_id,
-		_lifecycle._claimed_task_ids
+		_lifecycle._locked_results_by_mission_run_id,
+		_lifecycle._claimed_mission_run_ids
 	)
 
 func _get_saved_crew_ids(task_id: String) -> Array[String]:

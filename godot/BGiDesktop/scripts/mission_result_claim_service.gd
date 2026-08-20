@@ -4,20 +4,21 @@ extends RefCounted
 const MissionCompletionResultLockScript = preload("res://scripts/mission_completion_result_lock.gd")
 
 ## Claims one completed, unclaimed task and returns its immutable locked result snapshot.
-static func claim(task_id: String, clock: RefCounted, current_time_seconds: int, locked_result: Dictionary, claimed_task_ids: Dictionary) -> Dictionary:
+static func claim(task_id: String, clock: RefCounted, current_time_seconds: int, locked_result: Dictionary, claimed_task_ids: Dictionary, mission_run_id: String = "") -> Dictionary:
 	var saved_claims: Dictionary = claimed_task_ids.duplicate(true)
+	var claim_key: String = mission_run_id if not mission_run_id.is_empty() else task_id
 	if task_id.is_empty():
 		return _rejected(saved_claims, "task_id_required")
 	if task_id != str(clock.task_id):
 		return _rejected(saved_claims, "task_id_mismatch")
-	if saved_claims.has(task_id):
+	if saved_claims.has(claim_key):
 		return _rejected(saved_claims, "task_result_already_claimed")
 
 	var resolution: Dictionary = MissionCompletionResultLockScript.resolve(clock, current_time_seconds, locked_result)
 	if not bool(resolution["is_resolved"]):
 		return _rejected(saved_claims, str(resolution["error_code"]))
 	var result_snapshot: Dictionary = Dictionary(resolution["result"]).duplicate(true)
-	saved_claims[task_id] = true
+	saved_claims[claim_key] = true
 	return {
 		"is_claimed": true,
 		"error_code": "",

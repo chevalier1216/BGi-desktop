@@ -11,6 +11,9 @@ const MissionRunRecordScript = preload("res://scripts/mission_run_record.gd")
 var _assignment_coordinator: RefCounted
 var _expired_release_service: RefCounted
 var _snapshot_collection: RefCounted
+var _locked_results_by_mission_run_id: Dictionary = {}
+var _claimed_mission_run_ids: Dictionary = {}
+# Compatibility views for existing task-oriented UI. Persistence is keyed by mission_run_id.
 var _locked_results_by_task_id: Dictionary = {}
 var _claimed_task_ids: Dictionary = {}
 var _claim_receipt_store: RefCounted
@@ -29,15 +32,15 @@ func accept_execution(task_id: String, crew_ids: Array[String], started_at_secon
 	var assignment_result: Dictionary = _assignment_coordinator.accept_assignment(task_id, crew_ids)
 	if not bool(assignment_result["is_accepted"]):
 		return _rejected("is_accepted", str(assignment_result["error_code"]))
-	var snapshot: RefCounted = MissionExecutionSnapshotScript.new(task_id, started_at_seconds, duration_seconds)
+	var mission_run_id: String = _make_mission_run_id(task_id, started_at_seconds)
+	var snapshot: RefCounted = MissionExecutionSnapshotScript.new(task_id, started_at_seconds, duration_seconds, mission_run_id)
 	var snapshot_result: Dictionary = _snapshot_collection.add_snapshot(snapshot)
 	if not bool(snapshot_result["is_added"]):
 		_assignment_coordinator.release_assignment(task_id)
 		return _rejected("is_accepted", str(snapshot_result["error_code"]))
-	var mission_run_id: String = "%s:%d" % [task_id, started_at_seconds]
 	var run_result: Dictionary = MissionRunRecordScript.create(mission_run_id, task_id, crew_ids, started_at_seconds, started_at_seconds + duration_seconds)
 	if not bool(run_result["is_valid"]) or _mission_runs_by_id.has(mission_run_id):
-		_snapshot_collection.remove_snapshot(task_id)
+		_snapshot_collection.remove_snapshot(mission_run_id)
 		_assignment_coordinator.release_assignment(task_id)
 		return _rejected("is_accepted", "mission_run_invalid")
 	_mission_runs_by_id[mission_run_id] = Dictionary(run_result["record"]).duplicate(true)
@@ -46,22 +49,24 @@ func accept_execution(task_id: String, crew_ids: Array[String], started_at_secon
 
 ## Locks the completed result once without releasing the assigned crew.
 func resolve_completed_result(task_id: String, current_time_seconds: int) -> Dictionary:
-	var clock: Variant = _snapshot_collection.restore_clock(task_id)
+	var mission_run_id: String = _find_mission_run_id(task_id)
+	if mission_run_id.is_empty():
+		return _rejected("is_resolved", "mission_run_not_found")
+	var clock: Variant = _snapshot_collection.restore_clock(mission_run_id)
 	if clock == null:
 		return _rejected("is_resolved", "task_execution_not_found")
-	var existing_result: Dictionary = Dictionary(_locked_results_by_task_id.get(task_id, {}))
+	var existing_result: Dictionary = Dictionary(_locked_results_by_mission_run_id.get(mission_run_id, {}))
 	var resolution: Dictionary = MissionCompletionResultLockScript.resolve(clock, current_time_seconds, existing_result)
 	if not bool(resolution["is_resolved"]):
 		return _rejected("is_resolved", str(resolution["error_code"]))
 	var result_snapshot: Dictionary = Dictionary(resolution["result"]).duplicate(true)
-	var mission_run_id: String = str(_active_run_id_by_task_id.get(task_id, ""))
-	if not mission_run_id.is_empty():
-		result_snapshot["mission_run_id"] = mission_run_id
-		result_snapshot["result_id"] = "%s:result" % mission_run_id
-		var existing_run: Dictionary = Dictionary(_mission_runs_by_id[mission_run_id]).duplicate(true)
-		existing_run["run_state"] = MissionRunRecordScript.COMPLETED_PENDING_CLAIM
-		existing_run["result_snapshot"] = result_snapshot.duplicate(true)
-		_mission_runs_by_id[mission_run_id] = existing_run
+	result_snapshot["mission_run_id"] = mission_run_id
+	result_snapshot["result_id"] = "%s:result" % mission_run_id
+	var existing_run: Dictionary = Dictionary(_mission_runs_by_id[mission_run_id]).duplicate(true)
+	existing_run["run_state"] = MissionRunRecordScript.COMPLETED_PENDING_CLAIM
+	existing_run["result_snapshot"] = result_snapshot.duplicate(true)
+	_mission_runs_by_id[mission_run_id] = existing_run
+	_locked_results_by_mission_run_id[mission_run_id] = result_snapshot
 	_locked_results_by_task_id[task_id] = result_snapshot
 	var completion_result: Dictionary = _expired_release_service.mark_completed_if_expired(task_id, clock, current_time_seconds)
 	if not bool(completion_result["is_completed"]):
@@ -89,18 +94,18 @@ func claim_completed_result(task_id: String, current_time_seconds: int) -> Dicti
 			"result": {},
 			"receipt": Dictionary(stored_receipt["receipt"]).duplicate(true),
 		}
-	if _claimed_task_ids.has(task_id):
+	if _claimed_mission_run_ids.has(mission_run_id):
 		return _rejected("is_claimed", "claim_receipt_missing")
-	var clock: Variant = _snapshot_collection.restore_clock(task_id)
+	var clock: Variant = _snapshot_collection.restore_clock(mission_run_id)
 	if clock == null:
 		return _rejected("is_claimed", "task_execution_not_found")
-	var fixed_result: Dictionary = Dictionary(_locked_results_by_task_id.get(task_id, {})).duplicate(true)
+	var fixed_result: Dictionary = Dictionary(_locked_results_by_mission_run_id.get(mission_run_id, {})).duplicate(true)
 	if fixed_result.is_empty():
 		var resolution: Dictionary = resolve_completed_result(task_id, current_time_seconds)
 		if not bool(resolution["is_resolved"]):
 			return _rejected("is_claimed", str(resolution["error_code"]))
 		fixed_result = Dictionary(resolution["result"]).duplicate(true)
-	var claim_result: Dictionary = MissionResultClaimServiceScript.claim(task_id, clock, current_time_seconds, fixed_result, _claimed_task_ids)
+	var claim_result: Dictionary = MissionResultClaimServiceScript.claim(task_id, clock, current_time_seconds, fixed_result, _claimed_mission_run_ids, mission_run_id)
 	if not bool(claim_result["is_claimed"]):
 		return _rejected("is_claimed", str(claim_result["error_code"]))
 	var result_id: String = str(Dictionary(claim_result["result"]).get("result_id", ""))
@@ -120,13 +125,14 @@ func claim_completed_result(task_id: String, current_time_seconds: int) -> Dicti
 	var release_result: Dictionary = _assignment_coordinator.release_assignment(task_id)
 	if not bool(release_result["is_released"]):
 		return _rejected("is_claimed", str(release_result["error_code"]))
-	_claimed_task_ids = Dictionary(claim_result["claimed_task_ids"]).duplicate(true)
+	_claimed_mission_run_ids = Dictionary(claim_result["claimed_task_ids"]).duplicate(true)
+	_claimed_task_ids[task_id] = true
 	if _mission_runs_by_id.has(mission_run_id):
 		var claimed_run: Dictionary = Dictionary(_mission_runs_by_id[mission_run_id]).duplicate(true)
 		claimed_run["run_state"] = MissionRunRecordScript.CLAIMED
 		claimed_run["claim_receipt_id"] = str(Dictionary(save_receipt_result["receipt"])["claim_receipt_id"])
 		_mission_runs_by_id[mission_run_id] = claimed_run
-	_snapshot_collection.remove_snapshot(task_id)
+	_snapshot_collection.remove_snapshot(mission_run_id)
 	_active_run_id_by_task_id.erase(task_id)
 	return {
 		"is_claimed": true,
@@ -163,6 +169,15 @@ func _find_mission_run_id(task_id: String) -> String:
 			latest_started_at = started_at
 	return latest_run_id
 
+func _make_mission_run_id(task_id: String, started_at_seconds: int) -> String:
+	var base_id: String = "%s:%d" % [task_id, started_at_seconds]
+	var mission_run_id: String = base_id
+	var sequence: int = 2
+	while _mission_runs_by_id.has(mission_run_id):
+		mission_run_id = "%s:%d" % [base_id, sequence]
+		sequence += 1
+	return mission_run_id
+
 func _restore_persisted_runs(persisted_runs: Dictionary) -> void:
 	var runs_variant: Variant = persisted_runs.get("mission_runs_by_id", {})
 	var active_variant: Variant = persisted_runs.get("active_run_id_by_task_id", {})
@@ -177,8 +192,10 @@ func _restore_persisted_runs(persisted_runs: Dictionary) -> void:
 		_mission_runs_by_id[run_id] = record
 		var task_id: String = str(record["mission_template_id"])
 		if str(record["run_state"]) in [MissionRunRecordScript.COMPLETED_PENDING_CLAIM, MissionRunRecordScript.CLAIMED]:
+			_locked_results_by_mission_run_id[run_id] = Dictionary(record["result_snapshot"]).duplicate(true)
 			_locked_results_by_task_id[task_id] = Dictionary(record["result_snapshot"]).duplicate(true)
 		if str(record["run_state"]) == MissionRunRecordScript.CLAIMED:
+			_claimed_mission_run_ids[run_id] = true
 			_claimed_task_ids[task_id] = true
 	for task_id_variant: Variant in Dictionary(active_variant):
 		var task_id: String = str(task_id_variant)

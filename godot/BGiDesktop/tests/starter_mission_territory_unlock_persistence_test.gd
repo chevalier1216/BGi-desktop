@@ -7,7 +7,7 @@ const MissionAssignmentStateScript = preload("res://scripts/mission_assignment_s
 const AssignmentCoordinatorScript = preload("res://scripts/persistent_mission_assignment_coordinator.gd")
 
 const TERRITORY_STATE_PATH: String = "user://starter_mission_territory_unlock_persistence_test.json"
-const UNLOCKED_CREW_ID: String = "territory_territory_01_crew_01"
+const UNLOCKED_CREW_ID: String = "territory_territory_02_crew_01"
 
 var _failed: bool = false
 
@@ -17,13 +17,13 @@ func _init() -> void:
 func _run() -> void:
 	var first_panel: StarterMissionFlowPanel = _create_panel("FirstPanel")
 	_expect(first_panel.crew_selector.get_child_count() == 5, "first launch must begin with five crew choices")
-	first_panel.explore_territory_button.emit_signal("pressed")
-	_expect(first_panel.status_label.text == "首次觸及：已解鎖 1 名新人物", "first touch must unlock one crew member")
+	_dispatch_and_claim_starter_01(first_panel)
+	_expect(first_panel.claim_receipt_label.text.contains("觸及新地盤：territory_02"), "saved first claim must trigger territory_02 touch")
 	_expect(first_panel.crew_selector.get_child_count() == 6, "first touch must add one selectable crew choice")
 	var unlocked_choice: CheckButton = first_panel.crew_selector.get_child(5) as CheckButton
 	_expect(not unlocked_choice.disabled, "newly unlocked crew member must be available for selection")
 	first_panel.explore_territory_button.emit_signal("pressed")
-	_expect(first_panel.status_label.text == "已探索此地盤：不重複解鎖", "repeated touch must not unlock another crew member")
+	_expect(first_panel._touched_territory_ids.size() == 1, "direct territory input after claim must not create a duplicate touch")
 	_expect(first_panel.crew_selector.get_child_count() == 6, "repeated touch must keep the crew pool unchanged")
 	first_panel.queue_free()
 	await process_frame
@@ -31,8 +31,9 @@ func _run() -> void:
 	var state_store: RefCounted = TerritoryStateStoreScript.new(TERRITORY_STATE_PATH)
 	var restored_state: Dictionary = state_store.load()
 	_expect(bool(restored_state["is_loaded"]), "saved territory state must load after reopening")
-	_expect(bool(restored_state["touched_territory_ids"].get("territory_01", false)), "saved territory touch must persist")
-	_expect(str(restored_state["unlocked_crew_ids_by_territory"]["territory_01"]) == UNLOCKED_CREW_ID, "saved territory state must retain the unlocked crew id")
+	_expect(bool(restored_state["touched_territory_ids"].get("territory_02", false)), "saved territory touch must persist")
+	_expect(str(restored_state["unlocked_crew_ids_by_territory"]["territory_02"]) == UNLOCKED_CREW_ID, "saved territory state must retain the unlocked crew id")
+	_expect(str(restored_state["source_claim_receipt_ids_by_territory"]["territory_02"]).contains("starter_01"), "saved territory touch must retain its claim receipt source")
 
 	var restarted_game_state: Node = GameStateScript.new()
 	root.add_child(restarted_game_state)
@@ -60,6 +61,17 @@ func _create_panel(panel_name: String) -> StarterMissionFlowPanel:
 	panel.execution_state_store_path = "user://%s_execution_state.json" % panel_name
 	root.add_child(panel)
 	return panel
+
+func _dispatch_and_claim_starter_01(panel: StarterMissionFlowPanel) -> void:
+	for index: int in range(3):
+		var choice: CheckButton = panel.crew_selector.get_child(index) as CheckButton
+		choice.button_pressed = true
+		choice.emit_signal("toggled", true)
+	panel.start_button.emit_signal("pressed")
+	var clock: RefCounted = panel._snapshot_collection.restore_clock("starter_01")
+	panel.current_time_override = clock.started_at_seconds + 5
+	panel.refresh_execution_status(panel.current_time_override)
+	panel.claim_button.emit_signal("pressed")
 
 func _expect(condition: bool, message: String) -> void:
 	if not condition:

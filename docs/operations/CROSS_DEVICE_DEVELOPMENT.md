@@ -2,10 +2,11 @@
 
 ## Roles and source of truth
 
-- The canonical repository is `G:\Projects\BGi-Desktop` on the desktop computer.
-- Desktop Codex is the only role that writes project files, runs local verification, commits, and pushes.
+- GitHub `origin/main` is the shared source of truth for verified project history.
+- The canonical desktop checkout is the local execution environment; its path is recorded in `PROJECT_CONTEXT.md`.
+- Desktop Codex writes project files, runs local verification, commits, and pushes.
 - The mobile ChatGPT Project is used for planning, requirements clarification, review, and handoff decisions. It does not directly modify the repository.
-- GitHub `origin/main` is the shared synchronization point between devices.
+- A local unpushed change is not cross-device availability.
 
 ## Start-of-work synchronization
 
@@ -13,15 +14,21 @@
 2. Stop if the worktree is dirty. Record the changed paths and decide whether to commit, stash through an approved workflow, or resolve the unfinished work before syncing.
 3. When the worktree is clean, run `git fetch origin` and inspect whether the local branch is behind `origin/main`.
 4. Integrate upstream changes with the repository-approved method before editing. Do not overwrite local work.
-5. Share the current branch, commit baseline, and planned file scope with the mobile ChatGPT Project before implementation begins.
+5. Record the current baseline and active mission scope in the mission handoff when cross-device continuity is needed.
 
 ## Desktop implementation and handoff
 
-1. Keep each change scoped to the approved task and verify it locally.
+1. Keep each change scoped to one coherent mission and verify it locally.
 2. Review `git status` and `git diff --check` before committing.
 3. Create an atomic commit with a clear conventional message after verification succeeds.
 4. Push the committed branch to `origin`.
-5. Send the mobile ChatGPT Project a handoff containing the branch, commit SHA, verification result, changed files, and remaining risks.
+5. Send one mission-level handoff containing the commit SHA, verification result, changed files, and remaining risks.
+
+## Branch policy
+
+- Codex threads describe execution context; they do not permanently map to Git branches.
+- Keep `main` as the verified launch baseline.
+- Create a short-lived branch only when a coherent mission needs isolation. Merge or otherwise finish that branch after verification; avoid branch churn for routine work.
 
 ## Dirty worktree rule
 

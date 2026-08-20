@@ -33,7 +33,10 @@ $env:LOCALAPPDATA = $testRoot
   --script 'res://tests/<test_script>.gd'
 ```
 
-## QA transition
+## Validation progression
 
-- Do not create `BGi-desktop_QA` until the agreed complete-playthrough criteria are available through visual interaction.
-- Before visible QA, run the relevant headless tests and record their evidence in OPLOG_HANDOFF.
+Use the smallest relevant automated/headless verification first. For user-facing work, then run a visible UX checkpoint through the real application using `$visible-ux-validation`.
+
+- A build, headless run, or source inspection alone does not pass visible UX validation.
+- Visible UX validation may use placeholders when approved requirements allow them; missing final art alone is not a blocker.
+- Full QA follows a complete visible gameplay loop. Do not require Full QA before an earlier visible UX checkpoint.

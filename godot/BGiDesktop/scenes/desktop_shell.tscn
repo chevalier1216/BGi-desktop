@@ -141,48 +141,53 @@ texture = ExtResource("6_frame_border")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="Content" type="VBoxContainer" parent="Margin/Columns/MissionPanel"]
+[node name="MissionScroll" type="ScrollContainer" parent="Margin/Columns/MissionPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Content" type="VBoxContainer" parent="Margin/Columns/MissionPanel/MissionScroll"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="TitleRow" type="HBoxContainer" parent="Margin/Columns/MissionPanel/Content"]
+[node name="TitleRow" type="HBoxContainer" parent="Margin/Columns/MissionPanel/MissionScroll/Content"]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="Margin/Columns/MissionPanel/Content/TitleRow"]
+[node name="Title" type="Label" parent="Margin/Columns/MissionPanel/MissionScroll/Content/TitleRow"]
 size_flags_horizontal = 3
 layout_mode = 2
 text = "任務與收取"
 theme_override_font_sizes/font_size = 18
 
-[node name="LayoutButton" type="Button" parent="Margin/Columns/MissionPanel/Content/TitleRow"]
+[node name="LayoutButton" type="Button" parent="Margin/Columns/MissionPanel/MissionScroll/Content/TitleRow"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "緊湊／標準"
 
-[node name="MissionStatus" type="Label" parent="Margin/Columns/MissionPanel/Content"]
+[node name="MissionStatus" type="Label" parent="Margin/Columns/MissionPanel/MissionScroll/Content"]
 layout_mode = 2
 text = "新手固定任務目錄（23 項）"
 autowrap_mode = 2
 
-[node name="StarterMissionFlowPanel" parent="Margin/Columns/MissionPanel/Content" instance=ExtResource("4_starter_flow")]
+[node name="StarterMissionFlowPanel" parent="Margin/Columns/MissionPanel/MissionScroll/Content" instance=ExtResource("4_starter_flow")]
 layout_mode = 2
 
-[node name="MissionLifecyclePanel" parent="Margin/Columns/MissionPanel/Content" instance=ExtResource("2_lifecycle_panel")]
+[node name="MissionLifecyclePanel" parent="Margin/Columns/MissionPanel/MissionScroll/Content" instance=ExtResource("2_lifecycle_panel")]
 layout_mode = 2
 
-[node name="LifecycleDemo" type="Node" parent="Margin/Columns/MissionPanel/Content"]
+[node name="LifecycleDemo" type="Node" parent="Margin/Columns/MissionPanel/MissionScroll/Content"]
 layout_mode = 2
 script = ExtResource("3_lifecycle_demo")
 panel_path = NodePath("../MissionLifecyclePanel")
 
-[node name="MissionList" type="ItemList" parent="Margin/Columns/MissionPanel/Content"]
+[node name="MissionList" type="ItemList" parent="Margin/Columns/MissionPanel/MissionScroll/Content"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 size_flags_vertical = 3
 layout_mode = 2
 mouse_filter = 2
 
-[node name="TopmostToggle" type="CheckButton" parent="Margin/Columns/MissionPanel/Content"]
+[node name="TopmostToggle" type="CheckButton" parent="Margin/Columns/MissionPanel/MissionScroll/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "開啟後，桌面介面會保持在其他視窗上方。"

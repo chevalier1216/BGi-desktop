@@ -15,6 +15,10 @@ func _run() -> void:
 	root.add_child(shell)
 	_expect(_resource_path(shell.get_node("Margin/Columns/TerritoryPanel/KaratFrameBorder") as TextureRect) == KARAT_ROOT + "frame_border.png", "territory window must use the 24 Karat frame border")
 	_expect(_resource_path(shell.get_node("Margin/Columns/MissionPanel/KaratFrameBackground") as TextureRect) == KARAT_ROOT + "frame_bg.png", "mission window must use the 24 Karat frame background")
+	var mission_scroll: ScrollContainer = shell.get_node("Margin/Columns/MissionPanel/MissionScroll") as ScrollContainer
+	_expect(mission_scroll != null, "mission controls must be contained in a scrollable region instead of being clipped below the desktop bar")
+	_expect(mission_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED, "mission controls must preserve their full width while allowing vertical access")
+	_expect(mission_scroll.get_node("Content/StarterMissionFlowPanel") != null, "starter mission controls must remain inside the scrollable mission region")
 	_expect(_resource_path(shell.get_node("BottomPersistentBar/Entries/TerritoryEntry/KaratButtonFrame") as TextureRect) == KARAT_ROOT + "button/choice_idle_border.png", "bottom entry must use the 24 Karat button border")
 	_expect((shell.get_node("BottomPersistentBar/Entries") as HBoxContainer).get_child_count() == 5, "bottom persistent bar must expose five visual entry frames")
 

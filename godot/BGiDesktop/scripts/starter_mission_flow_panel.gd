@@ -26,6 +26,7 @@ const MissionRewardDisclosureModelScript = preload("res://scripts/mission_reward
 const TutorialTaskProgressionScript = preload("res://scripts/tutorial_task_progression.gd")
 const TutorialMissionCompletionCoordinatorScript = preload("res://scripts/tutorial_mission_completion_coordinator.gd")
 const TutorialEventLoggerScript = preload("res://scripts/tutorial_event_logger.gd")
+const RecoveryDiagnosticStoreScript = preload("res://scripts/recovery_diagnostic_store.gd")
 
 @onready var task_label: Label = %TaskLabel
 @onready var requirement_label: Label = %RequirementLabel
@@ -94,6 +95,7 @@ var _is_claimed: bool = false
 var _is_player_state_ready: bool = false
 var _is_recovery_hold: bool = false
 var _tutorial_event_logger: RefCounted
+var _recovery_diagnostic_store: RefCounted
 
 func _ready() -> void:
 	_game_state = get_node("/root/GameState") as Node
@@ -105,6 +107,7 @@ func _ready() -> void:
 	_execution_state_store = MissionExecutionStateStoreScript.new(execution_state_store_path)
 	_player_save_store = PlayerSaveEnvelopeStoreScript.new(_get_player_save_store_path())
 	_tutorial_event_logger = TutorialEventLoggerScript.new()
+	_recovery_diagnostic_store = RecoveryDiagnosticStoreScript.new("%s.recovery_diagnostic" % _get_player_save_store_path())
 	var player_save_result: Dictionary = _player_save_store.load()
 	if not bool(player_save_result.get("is_loaded", false)) and not bool(player_save_result.get("was_missing", false)):
 		_record_tutorial_event("tutorial_state_recovery_failed", "", "recovery_hold", "", {"reason": str(player_save_result.get("error_code", "save_data_corrupted"))})
@@ -203,6 +206,7 @@ func _ready() -> void:
 		_save_player_state()
 
 func _enter_recovery_hold(error_code: String) -> void:
+	_recovery_diagnostic_store.save(_get_player_save_store_path(), error_code)
 	_is_recovery_hold = true
 	task_label.text = "無法安全讀取存檔"
 	requirement_label.text = "資料尚未被變更。請重試讀取或保留錯誤代碼供檢查。"

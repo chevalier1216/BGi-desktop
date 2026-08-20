@@ -16,7 +16,7 @@ func _run() -> void:
 	var dispatched_panel: StarterMissionFlowPanel = _create_panel("DispatchedPanel", 100)
 	_select_crew(dispatched_panel, dispatched_crew_ids)
 	dispatched_panel.start_button.emit_signal("pressed")
-	_expect(dispatched_panel.status_label.text == "等待中：已派遣 3 名小弟", "dispatch must visibly enter the waiting state")
+	_expect(dispatched_panel.status_label.text == "等待中：剩餘 5 秒", "dispatch must visibly enter the countdown state")
 	dispatched_panel.queue_free()
 	await process_frame
 	_reset_game_state_to_available()
@@ -29,7 +29,7 @@ func _run() -> void:
 	_reset_game_state_to_available()
 
 	var completed_panel: StarterMissionFlowPanel = _create_panel("CompletedPanel", 105)
-	_expect(completed_panel.status_label.text == "已完成／保底報酬待定", "expired saved mission must expose the fixed pending-claim result")
+	_expect(completed_panel.status_label.text == "任務已完成", "expired saved mission must expose the fixed completed result state")
 	var first_result: Dictionary = Dictionary(completed_panel._lifecycle._locked_results_by_task_id["starter_01"]).duplicate(true)
 	completed_panel.queue_free()
 	await process_frame
@@ -39,10 +39,12 @@ func _run() -> void:
 	var resumed_result: Dictionary = Dictionary(claim_panel._lifecycle._locked_results_by_task_id["starter_01"])
 	_expect(str(resumed_result["result_id"]) == str(first_result["result_id"]), "restart must retain the same fixed result id before collection")
 	_expect(int(resumed_result["resolved_at_seconds"]) == int(first_result["resolved_at_seconds"]), "restart must retain the original result resolution time before collection")
+	_expect(claim_panel._task_id == "starter_02", "restart must make the next tutorial task dispatchable before collection")
+	_expect(claim_panel.show_task_detail("starter_01"), "completed task must remain available from the completed mission list")
 	_expect(not claim_panel.claim_button.disabled, "fixed result must offer collection after restart")
 	claim_panel.claim_button.emit_signal("pressed")
-	_expect(claim_panel._task_id == "starter_02", "successful collection must advance the fixed tutorial task")
-	_expect(claim_panel.claim_receipt_label.text.contains("starter_01:100:claim"), "successful collection must expose the persisted receipt")
+	_expect(claim_panel._task_id == "starter_01", "successful collection must keep the completed task detail open")
+	_expect(claim_panel.claim_receipt_label.text.is_empty(), "successful collection must keep receipt history hidden")
 	_expect(claim_panel._touched_territory_ids.has("territory_02"), "first saved claim must trigger the authorized territory touch")
 	_expect(claim_panel._game_state.get_crew().size() == 6, "first territory touch must unlock exactly one crew member")
 	claim_panel.queue_free()
@@ -63,7 +65,7 @@ func _run() -> void:
 
 	var reopened_panel: StarterMissionFlowPanel = _create_panel("ReopenedPanel", 1000)
 	_expect(reopened_panel._task_id == "starter_02", "full-loop restart must resume the next tutorial task")
-	_expect(reopened_panel.claim_receipt_label.text.contains("starter_01:100:claim"), "full-loop restart must retain claim history")
+	_expect(reopened_panel.claim_receipt_label.text.is_empty(), "full-loop restart must keep claim history hidden")
 	_expect(reopened_panel.status_label.text == "已選 0/5 名小弟", "full-loop restart must offer the next task for a new selection")
 	_expect(reopened_panel._game_state.get_crew().size() == 6, "full-loop restart must retain the unlocked roster")
 	for crew_member: Dictionary in reopened_panel._game_state.get_crew():

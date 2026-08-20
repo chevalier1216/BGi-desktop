@@ -17,11 +17,12 @@ func _run() -> void:
 	panel.start_button.emit_signal("pressed")
 	var clock: RefCounted = panel._snapshot_collection.restore_clock(panel._task_id)
 	panel.refresh_execution_status(clock.started_at_seconds + 5)
-	_expect(panel.status_label.text == "已完成／保底報酬待定", "completion presentation must remain unchanged")
+	_expect(panel.status_label.text == "任務已完成", "completion must present a completed task state")
 	_expect(panel.guaranteed_reward_label.text.is_empty(), "completion must not expose an internal reward placeholder")
+	_expect(str(Array(panel.get_task_directory_entries()["current"])[0]["task_id"]) == "starter_02", "completion must make the next tutorial task available before result collection")
 	panel.current_time_override = clock.started_at_seconds + 5
 	panel.claim_button.emit_signal("pressed")
-	_expect(panel.next_tutorial_task_label.text == "下一個任務：新手任務 02（5 秒）", "first completed task must present the next client-readable tutorial task title")
+	_expect(str(Array(panel.get_task_directory_entries()["current"])[0]["task_id"]) == "starter_02", "result collection must not alter the already-available next tutorial task")
 
 	panel.queue_free()
 	quit(1 if _failed else 0)

@@ -47,7 +47,7 @@ func accept_execution(task_id: String, crew_ids: Array[String], started_at_secon
 	_active_run_id_by_task_id[task_id] = mission_run_id
 	return {"is_accepted": true, "error_code": "", "mission_run_id": mission_run_id}
 
-## Locks the completed result once without releasing the assigned crew.
+## Locks the completed result once, then releases its crew while the result remains claimable.
 func resolve_completed_result(task_id: String, current_time_seconds: int) -> Dictionary:
 	var mission_run_id: String = _find_mission_run_id(task_id)
 	if mission_run_id.is_empty():
@@ -68,9 +68,11 @@ func resolve_completed_result(task_id: String, current_time_seconds: int) -> Dic
 	_mission_runs_by_id[mission_run_id] = existing_run
 	_locked_results_by_mission_run_id[mission_run_id] = result_snapshot
 	_locked_results_by_task_id[task_id] = result_snapshot
-	var completion_result: Dictionary = _expired_release_service.mark_completed_if_expired(task_id, clock, current_time_seconds)
-	if not bool(completion_result["is_completed"]):
-		return _rejected("is_resolved", str(completion_result["error_code"]))
+	# Result persistence is complete at this point. Release the crew now so a pending
+	# collection cannot block the next mission; the fixed result remains claimable.
+	var release_result: Dictionary = _assignment_coordinator.release_assignment(task_id)
+	if not bool(release_result["is_released"]) and str(release_result["error_code"]) != "task_not_assigned":
+		return _rejected("is_resolved", str(release_result["error_code"]))
 	return {
 		"is_resolved": true,
 		"did_resolve": bool(resolution["did_resolve"]),
@@ -123,7 +125,7 @@ func claim_completed_result(task_id: String, current_time_seconds: int) -> Dicti
 	if not bool(save_receipt_result["is_saved"]):
 		return _rejected("is_claimed", str(save_receipt_result["error_code"]))
 	var release_result: Dictionary = _assignment_coordinator.release_assignment(task_id)
-	if not bool(release_result["is_released"]):
+	if not bool(release_result["is_released"]) and str(release_result["error_code"]) != "task_not_assigned":
 		return _rejected("is_claimed", str(release_result["error_code"]))
 	_claimed_mission_run_ids = Dictionary(claim_result["claimed_task_ids"]).duplicate(true)
 	_claimed_task_ids[task_id] = true

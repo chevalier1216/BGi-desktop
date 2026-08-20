@@ -29,7 +29,7 @@ func _run() -> void:
 		_expect(dispatch_panel._duration_seconds == EXPECTED_DURATIONS[index], "tutorial task must retain its approved fixed duration")
 		_select_first_available_crew(dispatch_panel)
 		dispatch_panel.start_button.emit_signal("pressed")
-		_expect(dispatch_panel.status_label.text.begins_with("等待中：已派遣"), "task dispatch must enter the waiting state")
+		_expect(dispatch_panel.status_label.text.begins_with("等待中：剩餘"), "task dispatch must enter the waiting countdown")
 		dispatch_panel.queue_free()
 		await process_frame
 		_reset_game_state_to_available()
@@ -37,11 +37,11 @@ func _run() -> void:
 		var completed_at_seconds: int = started_at_seconds + EXPECTED_DURATIONS[index]
 		var recovery_panel: StarterMissionFlowPanel = _create_panel("Recovery_%02d" % index, completed_at_seconds)
 		_expect(recovery_panel._task_id == task_id, "restart must restore the same active tutorial task before claim")
-		_expect(recovery_panel.status_label.text == "已完成／保底報酬待定", "controlled completion after restart must expose a fixed pending-claim result")
+		_expect(recovery_panel.status_label.text == "任務已完成", "controlled completion after restart must expose a fixed completed result")
 		_expect(not recovery_panel.claim_button.disabled, "recovered fixed result must offer one collection action")
 		recovery_panel.claim_button.emit_signal("pressed")
 		_expect(recovery_panel._result_state.is_claimed(task_id), "collection must mark the recovered task claimed")
-		_expect(recovery_panel.claim_receipt_label.text.contains("%s:%d:claim" % [task_id, started_at_seconds]), "collection must visibly retain the mission-run receipt")
+		_expect(recovery_panel.claim_receipt_label.text.is_empty(), "collection must keep mission-run receipt history hidden")
 		recovery_panel.queue_free()
 		await process_frame
 		_reset_game_state_to_available()

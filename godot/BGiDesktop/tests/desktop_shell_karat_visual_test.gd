@@ -50,7 +50,7 @@ func _run() -> void:
 		_expect(not _contains_internal_client_copy(popup), "client popup must not expose internal placeholder or implementation copy: %s" % popup_key)
 	_expect(shell._mission_panel.has_node("Content/TaskDescriptionScroll"), "task popup must provide a scrollable mission description area")
 	_expect(not shell._mission_panel.has_node("Scroll"), "only the mission description may scroll; the full task window must keep its controls in a fixed layout")
-	_expect((shell._popup_windows["tasks"] as Window).size.x >= 760 and (shell._popup_windows["tasks"] as Window).size.y >= 820, "task popup must reserve enough native-window space for its fixed task, crew and reward sections")
+	_expect((shell._popup_windows["task_detail"] as Window).size.x >= 760 and (shell._popup_windows["task_detail"] as Window).size.y >= 820, "task detail popup must reserve enough native-window space for its fixed task, crew and reward sections")
 	_expect(shell._mission_panel.crew_selector is HFlowContainer, "task popup must arrange crew as independent icon cards")
 	_expect(shell._mission_panel.crew_selector.get_child_count() == 5, "task popup must expose all initial crew cards")
 	var first_crew := shell._mission_panel.crew_selector.get_child(0) as CheckButton
@@ -58,9 +58,11 @@ func _run() -> void:
 	first_crew.button_pressed = true
 	shell._mission_panel._refresh_crew_card_overlays()
 	_expect((first_crew.get_meta("selected_overlay") as ColorRect).visible, "selected crew card must show its selected overlay")
+	first_crew.button_pressed = false
 	first_crew.disabled = true
 	shell._mission_panel._refresh_crew_card_overlays()
 	_expect((first_crew.get_meta("unavailable_overlay") as ColorRect).visible, "unavailable crew card must show its prohibition overlay")
+	_expect(not (first_crew.get_meta("selected_overlay") as ColorRect).visible, "selected and unavailable overlays must never overlap")
 	_expect(_resource_path(shell.get_node("BottomPersistentBar/Entries/TerritoryEntry/KaratButtonFrame") as TextureRect) == KARAT_ROOT + "button/choice_idle_border.png", "bottom entry must use the 24 Karat button border")
 	_expect((shell.get_node("BottomPersistentBar/Entries") as HBoxContainer).get_child_count() == 5, "bottom persistent bar must expose five visual entry frames")
 

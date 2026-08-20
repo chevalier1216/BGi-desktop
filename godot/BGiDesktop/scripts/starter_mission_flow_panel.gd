@@ -1,6 +1,8 @@
 class_name StarterMissionFlowPanel
 extends PanelContainer
 
+signal directory_changed
+
 const GameStateScript = preload("res://scripts/game_state.gd")
 const MissionAssignmentStateScript = preload("res://scripts/mission_assignment_state.gd")
 const AssignmentCoordinatorScript = preload("res://scripts/persistent_mission_assignment_coordinator.gd")
@@ -221,7 +223,7 @@ func _restore_claimed_tutorial_progression() -> void:
 		if current_task.is_empty():
 			return
 		var current_task_id: String = str(current_task["id"])
-		if not _result_state.is_claimed(current_task_id):
+		if _result_state.get_locked_result(current_task_id).is_empty():
 			return
 		var advance_result: Dictionary = _tutorial_progression.complete_current_task(current_task_id)
 		if not bool(advance_result["is_advanced"]):
@@ -246,6 +248,62 @@ func _load_current_mission(mission_override: Dictionary = {}) -> void:
 		crew_type_label.text = "需求人物種類：無限制"
 	if duration_label != null:
 		duration_label.text = "預計耗時：%d 秒" % _duration_seconds
+	_apply_detail_state_visibility()
+
+func get_task_directory_entries() -> Dictionary:
+	var current_entries: Array[Dictionary] = []
+	var completed_entries: Array[Dictionary] = []
+	var current_task: Dictionary = _tutorial_progression.get_current_task()
+	var current_task_id := str(current_task.get("id", ""))
+	for mission: Dictionary in _current_missions:
+		var task_id := str(mission["id"])
+		if not _result_state.get_locked_result(task_id).is_empty():
+			completed_entries.append({"task_id": task_id, "title": _client_mission_title(task_id), "duration_seconds": int(mission["duration_seconds"]), "is_claimed": _result_state.is_claimed(task_id)})
+		elif task_id == current_task_id:
+			current_entries.append({"task_id": task_id, "title": _client_mission_title(task_id), "duration_seconds": int(mission["duration_seconds"])})
+	return {"current": current_entries, "completed": completed_entries}
+
+func get_refresh_directory_state() -> Dictionary:
+	return {
+		"allowance": "刷新額度：%d/%d" % [_refresh_allowance.get_allowance(), MissionRefreshAllowanceScript.MAX_ALLOWANCE],
+		"next_available": "下次可用：%s" % _get_refresh_next_available_text(),
+		"replaceable": "可替換任務：0（新手固定任務）",
+		"can_refresh": false,
+	}
+
+func show_task_detail(task_id: String) -> bool:
+	var mission: Dictionary = {}
+	for candidate: Dictionary in _current_missions:
+		if str(candidate["id"]) == task_id:
+			mission = candidate
+			break
+	if mission.is_empty():
+		return false
+	_selected_crew_ids.clear()
+	_is_waiting = false
+	_is_completed = false
+	_is_claimed = false
+	_load_current_mission(mission)
+	var locked_result: Dictionary = _result_state.get_locked_result(task_id)
+	if not locked_result.is_empty():
+		_is_completed = not _result_state.is_claimed(task_id)
+		_is_claimed = _result_state.is_claimed(task_id)
+		claim_button.disabled = _is_claimed
+		status_label.text = "結果已領取" if _is_claimed else "任務已完成"
+	else:
+		_reset_crew_choices_for_selection()
+		_restore_saved_execution(_get_current_time_seconds())
+	_refresh_selection_state()
+	_apply_detail_state_visibility()
+	return true
+
+func _apply_detail_state_visibility() -> void:
+	var is_waiting_or_completed := _is_waiting or _is_completed or _is_claimed
+	for node_name: String in ["TaskDescriptionScroll", "CrewTypeLabel", "RequirementLabel", "DurationLabel", "CrewSelectorTitle", "CrewSelector", "RewardTitle", "RewardSlots", "RewardDetails", "StartButton"]:
+		var node := get_node_or_null("Content/%s" % node_name) as Control
+		if node != null:
+			node.visible = not is_waiting_or_completed
+	claim_button.visible = _is_completed and not _is_claimed
 
 func _render_crew_choices() -> void:
 	for crew_member: Dictionary in _game_state.get_crew():
@@ -258,6 +316,7 @@ func _append_crew_choice(crew_member: Dictionary) -> void:
 	choice.text = ""
 	choice.tooltip_text = "可用" if int(crew_member["status"]) == GameStateScript.CrewStatus.AVAILABLE else "派遣中"
 	choice.disabled = int(crew_member["status"]) != GameStateScript.CrewStatus.AVAILABLE
+	choice.set_meta("crew_id", crew_id)
 	var card := Panel.new()
 	card.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -322,6 +381,19 @@ func _append_crew_choice(crew_member: Dictionary) -> void:
 	choice.toggled.connect(_on_crew_toggled.bind(crew_id))
 	crew_selector.add_child(choice)
 
+func _reset_crew_choices_for_selection() -> void:
+	for choice: CheckButton in crew_selector.get_children():
+		var crew_id: String = str(choice.get_meta("crew_id", ""))
+		choice.button_pressed = false
+		choice.disabled = _get_crew_status(crew_id) != GameStateScript.CrewStatus.AVAILABLE
+	_refresh_crew_card_overlays()
+
+func _get_crew_status(crew_id: String) -> int:
+	for crew_member: Dictionary in _game_state.get_crew():
+		if str(crew_member.get("id", "")) == crew_id:
+			return int(crew_member.get("status", -1))
+	return -1
+
 func _on_crew_toggled(pressed: bool, crew_id: String) -> void:
 	if _is_waiting or _is_completed or _is_claimed:
 		return
@@ -343,9 +415,9 @@ func _refresh_selection_state() -> void:
 func _refresh_crew_card_overlays() -> void:
 	for choice: CheckButton in crew_selector.get_children():
 		if choice.has_meta("selected_overlay"):
-			(choice.get_meta("selected_overlay") as ColorRect).visible = choice.button_pressed
+			(choice.get_meta("selected_overlay") as ColorRect).visible = choice.button_pressed and not choice.disabled
 		if choice.has_meta("unavailable_overlay"):
-			(choice.get_meta("unavailable_overlay") as ColorRect).visible = choice.disabled
+			(choice.get_meta("unavailable_overlay") as ColorRect).visible = choice.disabled and not choice.button_pressed
 
 func _on_start_pressed() -> void:
 	if _is_waiting or _is_completed or _is_claimed:
@@ -369,8 +441,9 @@ func _on_start_pressed() -> void:
 		choice.disabled = true
 	_refresh_crew_card_overlays()
 	start_button.disabled = true
-	status_label.text = "等待中：已派遣 %d 名小弟" % _selected_crew_ids.size()
+	status_label.text = "等待中：剩餘 %d 秒" % _duration_seconds
 	_refresh_refresh_state()
+	_apply_detail_state_visibility()
 
 func _on_claim_pressed() -> void:
 	if not _is_completed or _is_claimed:
@@ -410,35 +483,18 @@ func _on_claim_pressed() -> void:
 	_show_claim_receipt(Dictionary(claim_result["receipt"]))
 	if bool(touch_plan["did_touch"]):
 		_append_crew_choice({"id": str(touch_plan["unlocked_crew_id"]), "status": GameStateScript.CrewStatus.AVAILABLE})
-		claim_receipt_label.text += "｜觸及新地盤：%s｜新人物已加入：%s" % [str(touch_plan["territory_id"]), str(touch_plan["unlocked_crew_id"])]
 	for choice: CheckButton in crew_selector.get_children():
 		choice.disabled = true
 	_refresh_crew_card_overlays()
 	start_button.disabled = true
 	claim_button.disabled = true
 	_refresh_refresh_state()
-	status_label.text = "已領取／保底報酬待定"
+	status_label.text = "結果已領取"
 	_record_tutorial_event("tutorial_reward_claimed", _task_id, "claimed", _task_id)
-
-	var tutorial_result: Dictionary = _tutorial_completion_coordinator.complete_claimed_current_task(_task_id, Dictionary(claim_result["receipt"]))
-	if not bool(tutorial_result["is_completed"]):
-		return
-	_is_waiting = false
 	_is_completed = false
-	_selected_crew_ids.clear()
-	var next_task: Dictionary = _tutorial_progression.get_current_task()
-	if not next_task.is_empty():
-		_load_current_mission(next_task)
-		for choice: CheckButton in crew_selector.get_children():
-			choice.button_pressed = false
-			choice.disabled = false
-		_refresh_crew_card_overlays()
-		claim_button.disabled = true
-		_refresh_selection_state()
-		_refresh_refresh_state()
-		_show_next_tutorial_task()
-	else:
-		_record_tutorial_event("tutorial_completed", _task_id, "claimed_all", _task_id)
+	_is_claimed = true
+	_apply_detail_state_visibility()
+	directory_changed.emit()
 
 func _on_refresh_pressed() -> void:
 	_record_tutorial_event("tutorial_refresh_attempted", _task_id, "attempted", _task_id)
@@ -527,7 +583,7 @@ func _refresh_reward_disclosure_display() -> void:
 		extra_reward_probability_label.text = ""
 		extra_reward_note_label.text = ""
 		if reward_details != null:
-			reward_details.text = "獎勵將於任務完成後顯示。"
+			reward_details.text = ""
 		return
 	guaranteed_reward_label.text = "保底報酬：%s" % _reward_disclosure_data["guaranteed_reward"]
 	extra_reward_range_label.text = "額外報酬範圍：%s" % _reward_disclosure_data["extra_reward_range"]
@@ -561,11 +617,7 @@ func _restore_latest_claim_receipt_display() -> void:
 		_show_claim_receipt(latest_receipt)
 
 func _show_claim_receipt(receipt: Dictionary) -> void:
-	claim_receipt_label.text = "收取紀錄：%s｜結果：%s｜收取時間：%d" % [
-		str(receipt.get("claim_receipt_id", "[PLACEHOLDER]")),
-		str(receipt.get("result_id", "[PLACEHOLDER]")),
-		int(receipt.get("claimed_at_seconds", 0)),
-	]
+	claim_receipt_label.text = ""
 
 ## Refreshes only the displayed unaccepted mission using an explicit existing catalog entry.
 func refresh_current_mission(current_time_seconds: int) -> void:
@@ -646,14 +698,18 @@ func refresh_execution_status(current_time_seconds: int) -> void:
 		return
 	_is_waiting = false
 	_is_completed = true
+	var tutorial_result: Dictionary = _tutorial_completion_coordinator.complete_resolved_current_task(_task_id)
+	if not bool(tutorial_result["is_completed"]):
+		status_label.text = "完成狀態無法讀取"
+		return
 	_record_tutorial_event("tutorial_task_completed", _task_id, "claimable", _task_id)
 	_record_tutorial_event("tutorial_result_locked", _task_id, "locked", _task_id, {"result_id": str(Dictionary(resolution["result"]).get("result_id", ""))})
-	for choice: CheckButton in crew_selector.get_children():
-		choice.disabled = true
 	start_button.disabled = true
 	claim_button.disabled = false
 	_refresh_refresh_state()
-	status_label.text = "已完成／保底報酬待定"
+	status_label.text = "任務已完成"
+	_apply_detail_state_visibility()
+	directory_changed.emit()
 
 func _restore_saved_execution(current_time_seconds: int) -> void:
 	if _result_state.is_claimed(_task_id):
@@ -664,6 +720,15 @@ func _restore_saved_execution(current_time_seconds: int) -> void:
 		claim_button.disabled = true
 		_refresh_refresh_state()
 		status_label.text = "已領取／保底報酬待定"
+		return
+	if not _result_state.get_locked_result(_task_id).is_empty():
+		# Completed runs already released their crew. Restore the result presentation
+		# without reconstructing an assignment that no longer exists.
+		_is_completed = true
+		start_button.disabled = true
+		claim_button.disabled = false
+		_refresh_refresh_state()
+		status_label.text = "任務已完成"
 		return
 	var clock: Variant = _snapshot_collection.restore_clock(_task_id)
 	if clock == null:
@@ -680,16 +745,6 @@ func _restore_saved_execution(current_time_seconds: int) -> void:
 	_selected_crew_ids = restored_crew_ids
 	for choice: CheckButton in crew_selector.get_children():
 		choice.disabled = true
-	if not _result_state.get_locked_result(_task_id).is_empty():
-		var completion_result: Dictionary = _assignment_coordinator.mark_assignment_completed(_task_id)
-		if not bool(completion_result["is_completed"]):
-			return
-		_is_completed = true
-		start_button.disabled = true
-		claim_button.disabled = false
-		_refresh_refresh_state()
-		status_label.text = "已完成／保底報酬待定"
-		return
 	if clock.is_completed(current_time_seconds):
 		_is_waiting = true
 		refresh_execution_status(current_time_seconds)

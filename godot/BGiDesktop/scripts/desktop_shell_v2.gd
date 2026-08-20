@@ -44,10 +44,91 @@ func _ready() -> void:
 	settings_entry_button.pressed.connect(_show_settings)
 
 func _show_tasks() -> void:
-	var window := _open_popup("tasks", "任務與收取", Vector2i(760, 820))
-	if _mission_panel == null:
-		_mission_panel = StarterMissionFlowPanelScene.instantiate() as StarterMissionFlowPanel
-		window.add_child(_mission_panel)
+	_ensure_mission_panel()
+	var window := _open_popup("tasks", "任務清單", Vector2i(520, 620))
+	_render_task_directory(window)
+
+func _ensure_mission_panel() -> void:
+	if _mission_panel != null:
+		return
+	var detail_window := _open_popup("task_detail", "任務詳情", Vector2i(760, 820))
+	detail_window.hide()
+	_mission_panel = StarterMissionFlowPanelScene.instantiate() as StarterMissionFlowPanel
+	detail_window.add_child(_mission_panel)
+	_mission_panel.directory_changed.connect(_on_mission_directory_changed)
+
+func _render_task_directory(window: Window) -> void:
+	var content := VBoxContainer.new()
+	content.name = "Content"
+	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	content.offset_left = 20
+	content.offset_top = 18
+	content.offset_right = -20
+	content.offset_bottom = -18
+	content.add_theme_constant_override("separation", 12)
+	var heading := Label.new()
+	heading.text = "任務清單"
+	heading.add_theme_font_size_override("font_size", 20)
+	content.add_child(heading)
+	var current_missions := VBoxContainer.new()
+	current_missions.name = "CurrentMissions"
+	content.add_child(current_missions)
+	var current_title := Label.new()
+	current_title.text = "目前可執行"
+	current_missions.add_child(current_title)
+	var entries: Dictionary = _mission_panel.get_task_directory_entries()
+	for entry: Dictionary in Array(entries["current"]):
+		var button := Button.new()
+		button.text = "%s（%d 秒）" % [str(entry["title"]), int(entry["duration_seconds"])]
+		button.pressed.connect(_show_task_detail.bind(str(entry["task_id"])))
+		current_missions.add_child(button)
+	if current_missions.get_child_count() == 1:
+		var empty := Label.new()
+		empty.text = "目前沒有可執行任務"
+		current_missions.add_child(empty)
+	var completed_missions := VBoxContainer.new()
+	completed_missions.name = "CompletedMissions"
+	content.add_child(completed_missions)
+	var completed_title := Label.new()
+	completed_title.text = "已完成任務"
+	completed_missions.add_child(completed_title)
+	for entry: Dictionary in Array(entries["completed"]):
+		var button := Button.new()
+		button.text = "%s（%s）" % [str(entry["title"]), "結果已領取" if bool(entry["is_claimed"]) else "可領取結果"]
+		button.pressed.connect(_show_task_detail.bind(str(entry["task_id"])))
+		completed_missions.add_child(button)
+	if completed_missions.get_child_count() == 1:
+		var empty := Label.new()
+		empty.text = "尚無已完成任務"
+		completed_missions.add_child(empty)
+	var refresh_info := VBoxContainer.new()
+	refresh_info.name = "RefreshInfo"
+	content.add_child(refresh_info)
+	var refresh_title := Label.new()
+	refresh_title.text = "任務刷新"
+	refresh_info.add_child(refresh_title)
+	var refresh_state: Dictionary = _mission_panel.get_refresh_directory_state()
+	for text_value: String in [str(refresh_state["allowance"]), str(refresh_state["next_available"]), str(refresh_state["replaceable"])]:
+		var label := Label.new()
+		label.text = text_value
+		refresh_info.add_child(label)
+	var refresh_button := Button.new()
+	refresh_button.text = "刷新未接受任務"
+	refresh_button.disabled = not bool(refresh_state["can_refresh"])
+	refresh_info.add_child(refresh_button)
+	_replace_popup_content(window, content)
+
+func _show_task_detail(task_id: String) -> void:
+	_ensure_mission_panel()
+	if not _mission_panel.show_task_detail(task_id):
+		return
+	var detail_window := _popup_windows["task_detail"] as Window
+	detail_window.title = _mission_panel.task_label.text
+	detail_window.show()
+
+func _on_mission_directory_changed() -> void:
+	if _popup_windows.has("tasks") and is_instance_valid(_popup_windows["tasks"]):
+		_render_task_directory(_popup_windows["tasks"] as Window)
 
 func _show_territory() -> void:
 	var window := _open_popup("territory", "地盤／佈置", Vector2i(520, 560))

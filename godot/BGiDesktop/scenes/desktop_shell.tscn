@@ -127,6 +127,7 @@ horizontal_alignment = 1
 autowrap_mode = 2
 
 [node name="CrewIndicators" type="HBoxContainer" parent="Margin/Columns/ScenePanel/Content"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
@@ -438,6 +439,7 @@ vertical_alignment = 1
 
 [node name="CrewIndicators" type="HBoxContainer" parent="TerrainStage/Content"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
@@ -446,4 +448,4 @@ alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
-text = "任務／收取"
+text = "開啟任務／收取"

@@ -56,7 +56,7 @@ func _run() -> void:
 	_expect(not bool(failed_claim["is_claimed"]), "receipt write failure must reject claim")
 	_expect(str(failed_claim["error_code"]) == "claim_receipt_store_write_failed", "receipt write failure must be reported")
 	_expect(failing["snapshot_collection"].restore_clock("starter_02") != null, "receipt write failure must retain the execution clock")
-	_expect(_status_for(failing["game_state"].get_crew(), "crew_01") == GameStateScript.CrewStatus.COMPLETED, "receipt write failure must retain completed-pending-claim crew")
+	_expect(_status_for(failing["game_state"].get_crew(), "crew_01") == GameStateScript.CrewStatus.AVAILABLE, "receipt write failure must not re-block crew after the task has completed")
 
 	var legacy_receipt_result: Dictionary = ClaimReceiptScript.create("starter_01:300:claim", "starter_01:300", "starter_01:300:result", 305)
 	var legacy_file: FileAccess = FileAccess.open(LEGACY_RECEIPT_PATH, FileAccess.WRITE)

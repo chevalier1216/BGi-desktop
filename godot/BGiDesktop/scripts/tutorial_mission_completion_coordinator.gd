@@ -24,5 +24,18 @@ func complete_claimed_current_task(task_id: String, claim_receipt: Dictionary) -
 		return _rejected(str(progression_result["error_code"]))
 	return {"is_completed": true, "error_code": ""}
 
+## A completed tutorial task advances the available task list. Claiming its result is
+## intentionally independent, so a completed result never blocks the next dispatch.
+func complete_resolved_current_task(task_id: String) -> Dictionary:
+	var current_task: Dictionary = _progression.get_current_task()
+	if current_task.is_empty():
+		return _rejected("tutorial_completed")
+	if current_task["id"] != task_id:
+		return _rejected("task_not_current")
+	var progression_result: Dictionary = _progression.complete_current_task(task_id)
+	if not bool(progression_result["is_advanced"]):
+		return _rejected(str(progression_result["error_code"]))
+	return {"is_completed": true, "error_code": ""}
+
 func _rejected(error_code: String) -> Dictionary:
 	return {"is_completed": false, "error_code": error_code}

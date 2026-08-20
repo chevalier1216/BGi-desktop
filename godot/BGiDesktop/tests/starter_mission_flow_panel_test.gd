@@ -58,7 +58,8 @@ func _run() -> void:
 		choice.emit_signal("toggled", true)
 	_expect(panel.status_label.text == "已選 5/5 名小弟", "five selected crew members must be visibly shown")
 	panel.start_button.emit_signal("pressed")
-	_expect(panel.status_label.text == "等待中：已派遣 5 名小弟", "started task must retain the selected crew count")
+	_expect(panel.status_label.text == "等待中：剩餘 5 秒", "started task detail must show its countdown")
+	_expect(not panel.crew_selector.visible, "started task detail must hide crew selection instead of layering disabled overlays")
 	_expect(panel.start_button.disabled, "waiting task must disable a second start")
 	_expect(panel.refresh_button.disabled, "waiting task must disable refresh")
 	for choice: CheckButton in panel.crew_selector.get_children():
@@ -74,7 +75,9 @@ func _run() -> void:
 	panel.refresh_execution_status(started_at_seconds + 2)
 	_expect(panel.status_label.text == "等待中：剩餘 3 秒", "waiting task must show the remaining duration")
 	panel.refresh_execution_status(started_at_seconds + 5)
-	_expect(panel.status_label.text == "已完成／保底報酬待定", "expired task must show a guaranteed pending reward state")
+	_expect(panel.status_label.text == "任務已完成", "expired task must expose a completed task state")
+	_expect(not panel.crew_selector.visible, "completed task detail must keep crew selection hidden")
+	_expect(str(Array(panel.get_task_directory_entries()["current"])[0]["task_id"]) == "starter_02", "completed task must make the next tutorial task available before result collection")
 	var completed_text: String = panel.status_label.text
 	var locked_result: Dictionary = Dictionary(panel._lifecycle._locked_results_by_task_id[panel._task_id]).duplicate(true)
 	_expect(panel.start_button.disabled, "completed task must keep the start control disabled")

@@ -19,7 +19,8 @@ func _run() -> void:
 	var first_panel: StarterMissionFlowPanel = _create_panel("FirstPanel")
 	_expect(first_panel.crew_selector.get_child_count() == 5, "first launch must begin with five crew choices")
 	_dispatch_and_claim_starter_01(first_panel)
-	_expect(first_panel.claim_receipt_label.text.contains("觸及新地盤：territory_02"), "saved first claim must trigger territory_02 touch")
+	_expect(first_panel._touched_territory_ids.has("territory_02"), "saved first claim must trigger territory_02 touch without displaying receipt history")
+	_expect(first_panel.show_task_detail("starter_02"), "the next tutorial task must be available without waiting for result collection")
 	_expect(first_panel.crew_selector.get_child_count() == 6, "first touch must add one selectable crew choice")
 	var unlocked_choice: CheckButton = first_panel.crew_selector.get_child(5) as CheckButton
 	_expect(not unlocked_choice.disabled, "newly unlocked crew member must be available for selection")

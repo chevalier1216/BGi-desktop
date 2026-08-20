@@ -67,7 +67,7 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="Content/RewardSlots/GuaranteedRewardSlot"]
 layout_mode = 2
-text = "保底\n獎勵"
+text = "保底\n獎勵\n"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -77,12 +77,13 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="Content/RewardSlots/ExtraRewardSlot"]
 layout_mode = 2
-text = "額外\n獎勵"
+text = "額外\n獎勵\n"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="RewardDetails" type="Label" parent="Content"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 autowrap_mode = 2
 
@@ -98,18 +99,22 @@ disabled = true
 
 [node name="RefreshAllowanceLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 
 [node name="RefreshNextAvailableLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 
 [node name="RefreshableMissionCountLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 
 [node name="RefreshButton" type="Button" parent="Content"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 text = "刷新未接受任務"
 
@@ -156,17 +161,19 @@ layout_mode = 2
 
 [node name="ClaimReceiptLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 autowrap_mode = 2
 
 [node name="NextTutorialTaskLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 
 [node name="ClaimButton" type="Button" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "領取固定結果"
+text = "領取結果"
 disabled = true
 
 [node name="StartButton" type="Button" parent="Content"]

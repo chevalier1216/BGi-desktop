@@ -1,12 +1,13 @@
 extends SceneTree
 
 const StarterMissionFlowPanelScene = preload("res://scenes/starter_mission_flow_panel.tscn")
-const TerritoryStateStoreScript = preload("res://scripts/territory_first_touch_state_store.gd")
+const PlayerSaveEnvelopeStoreScript = preload("res://scripts/player_save_envelope_store.gd")
 const GameStateScript = preload("res://scripts/game_state.gd")
 const MissionAssignmentStateScript = preload("res://scripts/mission_assignment_state.gd")
 const AssignmentCoordinatorScript = preload("res://scripts/persistent_mission_assignment_coordinator.gd")
 
 const TERRITORY_STATE_PATH: String = "user://starter_mission_territory_unlock_persistence_test.json"
+const PLAYER_SAVE_PATH: String = "user://starter_mission_territory_unlock_persistence_player_save.json"
 const UNLOCKED_CREW_ID: String = "territory_territory_02_crew_01"
 
 var _failed: bool = false
@@ -28,12 +29,13 @@ func _run() -> void:
 	first_panel.queue_free()
 	await process_frame
 
-	var state_store: RefCounted = TerritoryStateStoreScript.new(TERRITORY_STATE_PATH)
+	var state_store: RefCounted = PlayerSaveEnvelopeStoreScript.new(PLAYER_SAVE_PATH)
 	var restored_state: Dictionary = state_store.load()
 	_expect(bool(restored_state["is_loaded"]), "saved territory state must load after reopening")
-	_expect(bool(restored_state["touched_territory_ids"].get("territory_02", false)), "saved territory touch must persist")
-	_expect(str(restored_state["unlocked_crew_ids_by_territory"]["territory_02"]) == UNLOCKED_CREW_ID, "saved territory state must retain the unlocked crew id")
-	_expect(str(restored_state["source_claim_receipt_ids_by_territory"]["territory_02"]).contains("starter_01"), "saved territory touch must retain its claim receipt source")
+	var touch_receipts: Dictionary = Dictionary(Dictionary(restored_state["envelope"])["territory_touch_receipts_by_id"])
+	_expect(touch_receipts.has("territory_02"), "saved territory touch must persist")
+	_expect(str(Dictionary(touch_receipts["territory_02"])["unlocked_crew_id"]) == UNLOCKED_CREW_ID, "saved territory state must retain the unlocked crew id")
+	_expect(str(Dictionary(touch_receipts["territory_02"])["source_claim_receipt_id"]).contains("starter_01"), "saved territory touch must retain its claim receipt source")
 
 	var restarted_game_state: Node = GameStateScript.new()
 	root.add_child(restarted_game_state)
@@ -59,6 +61,7 @@ func _create_panel(panel_name: String) -> StarterMissionFlowPanel:
 	panel.name = panel_name
 	panel.territory_state_store_path = TERRITORY_STATE_PATH
 	panel.execution_state_store_path = "user://%s_execution_state.json" % panel_name
+	panel.player_save_store_path = PLAYER_SAVE_PATH
 	root.add_child(panel)
 	return panel
 

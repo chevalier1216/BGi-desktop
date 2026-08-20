@@ -21,6 +21,25 @@ func _ready() -> void:
 func get_crew() -> Array[Dictionary]:
 	return _crew.duplicate(true)
 
+## Restores only a complete, uniquely identified crew set from a saved envelope.
+func restore_crew(crew: Array) -> Dictionary:
+	var restored: Array[Dictionary] = []
+	var seen_ids: Dictionary = {}
+	for crew_member_variant: Variant in crew:
+		if typeof(crew_member_variant) != TYPE_DICTIONARY:
+			return _rejected("crew_restore_invalid")
+		var crew_member: Dictionary = Dictionary(crew_member_variant)
+		var crew_id: String = str(crew_member.get("id", ""))
+		var status: int = int(crew_member.get("status", -1))
+		if crew_id.is_empty() or seen_ids.has(crew_id) or (status != CrewStatus.AVAILABLE and status != ASSIGNED_STATUS and status != CrewStatus.COMPLETED):
+			return _rejected("crew_restore_invalid")
+		seen_ids[crew_id] = true
+		restored.append({"id": crew_id, "status": status})
+	if restored.size() < INITIAL_CREW_COUNT:
+		return _rejected("crew_restore_invalid")
+	_crew = restored
+	return {"is_restored": true, "error_code": ""}
+
 func set_crew_status(crew_id: String, status: int) -> Dictionary:
 	if status != CrewStatus.AVAILABLE and status != ASSIGNED_STATUS and status != CrewStatus.COMPLETED:
 		return _rejected("unsupported_status")

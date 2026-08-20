@@ -2,6 +2,7 @@ extends SceneTree
 
 const StarterMissionFlowPanelScene = preload("res://scenes/starter_mission_flow_panel.tscn")
 const TEST_FILE_PATH: String = "user://starter_mission_flow_panel_persistence_test.json"
+const PLAYER_SAVE_PATH: String = "user://starter_mission_flow_panel_persistence_player_save.json"
 
 var _failed: bool = false
 
@@ -49,6 +50,7 @@ func _run() -> void:
 func _create_panel(current_time_seconds: int) -> StarterMissionFlowPanel:
 	var panel: StarterMissionFlowPanel = StarterMissionFlowPanelScene.instantiate() as StarterMissionFlowPanel
 	panel.execution_state_store_path = TEST_FILE_PATH
+	panel.player_save_store_path = PLAYER_SAVE_PATH
 	panel.current_time_override = current_time_seconds
 	root.add_child(panel)
 	return panel

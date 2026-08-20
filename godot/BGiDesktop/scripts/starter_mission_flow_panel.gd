@@ -9,6 +9,9 @@ const ExpiredReleaseServiceScript = preload("res://scripts/mission_expired_relea
 const SnapshotCollectionScript = preload("res://scripts/mission_execution_snapshot_collection.gd")
 const MissionLifecycleCoordinatorScript = preload("res://scripts/mission_lifecycle_coordinator.gd")
 const MissionExecutionStateStoreScript = preload("res://scripts/mission_execution_state_store.gd")
+const PlayerSaveEnvelopeStoreScript = preload("res://scripts/player_save_envelope_store.gd")
+const ClaimReceiptCollectionScript = preload("res://scripts/claim_receipt_collection.gd")
+const ClaimReceiptStoreScript = preload("res://scripts/claim_receipt_store.gd")
 const MissionResultStateSnapshotScript = preload("res://scripts/mission_result_state_snapshot.gd")
 const MissionRefreshAllowanceScript = preload("res://scripts/mission_refresh_allowance.gd")
 const MissionRefreshServiceScript = preload("res://scripts/mission_refresh_service.gd")
@@ -41,6 +44,7 @@ const TutorialMissionCompletionCoordinatorScript = preload("res://scripts/tutori
 @onready var claim_button: Button = %ClaimButton
 
 @export var execution_state_store_path: String = "user://starter_mission_flow_state.json"
+@export var player_save_store_path: String = ""
 @export var territory_state_store_path: String = "user://starter_mission_territory_state.json"
 @export var territory_progress_state_store_path: String = "user://starter_mission_territory_progress_state.json"
 @export var refresh_state_store_path: String = "user://starter_mission_refresh_state.json"
@@ -59,6 +63,8 @@ var _tutorial_progression: RefCounted
 var _tutorial_completion_coordinator: RefCounted
 var _snapshot_collection: RefCounted
 var _execution_state_store: RefCounted
+var _player_save_store: RefCounted
+var _claim_receipt_collection: RefCounted
 var _result_state: RefCounted
 var _crew_ids_by_task: Dictionary = {}
 var _refresh_allowance: RefCounted
@@ -67,6 +73,7 @@ var _refresh_state_store: RefCounted
 var _touched_territory_ids: Dictionary = {}
 var _unlocked_crew_ids_by_territory: Dictionary = {}
 var _source_claim_receipt_ids_by_territory: Dictionary = {}
+var _territory_touch_receipts_by_id: Dictionary = {}
 var _territory_data: Dictionary = {}
 var _territory_state_store: RefCounted
 var _territory_progress_state_store: RefCounted
@@ -74,6 +81,7 @@ var _reward_disclosure_data: Dictionary = {}
 var _is_waiting: bool = false
 var _is_completed: bool = false
 var _is_claimed: bool = false
+var _is_player_state_ready: bool = false
 
 func _ready() -> void:
 	_game_state = get_node("/root/GameState") as Node
@@ -83,24 +91,41 @@ func _ready() -> void:
 	var validity_query: RefCounted = ValidityQueryScript.new()
 	var expired_release_service: RefCounted = ExpiredReleaseServiceScript.new(_assignment_coordinator, _assignment_state, validity_query)
 	_execution_state_store = MissionExecutionStateStoreScript.new(execution_state_store_path)
-	var execution_state_result: Dictionary = _execution_state_store.load()
+	_player_save_store = PlayerSaveEnvelopeStoreScript.new(_get_player_save_store_path())
+	var player_save_result: Dictionary = _player_save_store.load()
+	var envelope: Dictionary = Dictionary(player_save_result.get("envelope", {}))
+	var has_envelope: bool = bool(player_save_result.get("is_loaded", false)) and not bool(player_save_result.get("was_missing", true))
+	var execution_state_result: Dictionary = MissionExecutionStateStoreScript.from_payload(Dictionary(envelope.get("execution_state", {}))) if has_envelope else _execution_state_store.load()
 	_snapshot_collection = execution_state_result["collection"]
 	_result_state = execution_state_result["result_state"]
 	_crew_ids_by_task = Dictionary(execution_state_result["crew_ids_by_task"]).duplicate(true)
-	_lifecycle = MissionLifecycleCoordinatorScript.new(_assignment_coordinator, expired_release_service, _snapshot_collection, null, Dictionary(execution_state_result["mission_runs"]))
+	if has_envelope:
+		var restore_crew_result: Dictionary = _game_state.restore_crew(Array(envelope.get("crew_by_id", [])))
+		if not bool(restore_crew_result.get("is_restored", false)):
+			has_envelope = false
+			execution_state_result = _execution_state_store.load()
+			_snapshot_collection = execution_state_result["collection"]
+			_result_state = execution_state_result["result_state"]
+			_crew_ids_by_task = Dictionary(execution_state_result["crew_ids_by_task"]).duplicate(true)
+	if has_envelope:
+		_claim_receipt_collection = ClaimReceiptCollectionScript.new(Dictionary(envelope.get("claim_receipts_by_mission_run_id", {})))
+	else:
+		var legacy_receipts: Dictionary = ClaimReceiptStoreScript.new().load()
+		_claim_receipt_collection = ClaimReceiptCollectionScript.new(Dictionary(legacy_receipts.get("receipts_by_mission_run_id", {})))
+	_lifecycle = MissionLifecycleCoordinatorScript.new(_assignment_coordinator, expired_release_service, _snapshot_collection, _claim_receipt_collection, Dictionary(execution_state_result["mission_runs"]))
 	_restore_result_state()
 	var current_time_seconds: int = _get_current_time_seconds()
 	_refresh_state_store = MissionRefreshStateStoreScript.new(refresh_state_store_path)
 	var refresh_state_result: Dictionary = _refresh_state_store.load(current_time_seconds - MissionRefreshAllowanceScript.REFILL_INTERVAL_SECONDS)
-	_refresh_allowance = refresh_state_result["allowance"]
+	_refresh_allowance = MissionRefreshAllowanceScript.from_data(Dictionary(envelope.get("refresh_state", {})))["allowance"] if has_envelope else refresh_state_result["allowance"]
 	_refresh_allowance.update(current_time_seconds)
 	if bool(refresh_state_result["was_missing"]):
-		_save_refresh_state()
+		_refresh_state_store.save(_refresh_allowance)
 	_refresh_service = MissionRefreshServiceScript.new(_refresh_allowance)
 	_territory_data = TerritoryProgressModelScript.create("territory_02")
 	_territory_progress_state_store = TerritoryProgressStateStoreScript.new(territory_progress_state_store_path)
 	var territory_progress_result: Dictionary = _territory_progress_state_store.load(str(_territory_data["territory_id"]))
-	_territory_data = Dictionary(territory_progress_result["territory_data"]).duplicate(true)
+	_territory_data = Dictionary(Dictionary(envelope.get("territory_state_by_id", {})).get("territory_02", territory_progress_result["territory_data"])).duplicate(true) if has_envelope else Dictionary(territory_progress_result["territory_data"]).duplicate(true)
 	if bool(territory_progress_result["was_missing"]):
 		_territory_progress_state_store.save(_territory_data)
 	_territory_state_store = TerritoryFirstTouchStateStoreScript.new(territory_state_store_path)
@@ -108,6 +133,9 @@ func _ready() -> void:
 	_touched_territory_ids = Dictionary(territory_state_result["touched_territory_ids"]).duplicate(true)
 	_unlocked_crew_ids_by_territory = Dictionary(territory_state_result["unlocked_crew_ids_by_territory"]).duplicate(true)
 	_source_claim_receipt_ids_by_territory = Dictionary(territory_state_result["source_claim_receipt_ids_by_territory"]).duplicate(true)
+	if has_envelope:
+		_territory_touch_receipts_by_id = Dictionary(envelope.get("territory_touch_receipts_by_id", {})).duplicate(true)
+		_restore_territory_touch_maps_from_receipts()
 	_restore_unlocked_crew()
 	_load_first_starter_mission()
 	_tutorial_completion_coordinator = TutorialMissionCompletionCoordinatorScript.new(_tutorial_progression, _assignment_state, validity_query)
@@ -124,6 +152,9 @@ func _ready() -> void:
 	_restore_first_claim_territory_touch()
 	explore_territory_button.disabled = true
 	_restore_saved_execution(current_time_seconds)
+	_is_player_state_ready = true
+	if not has_envelope:
+		_save_player_state()
 
 func _load_first_starter_mission() -> void:
 	_current_missions = _starter_mission_catalog.get_missions()
@@ -216,19 +247,43 @@ func _on_claim_pressed() -> void:
 	if not bool(claim_result["is_claimed"]):
 		status_label.text = "領取狀態無法讀取"
 		return
+	var previous_crew: Array[Dictionary] = _game_state.get_crew()
+	var previous_touched_territory_ids: Dictionary = _touched_territory_ids.duplicate(true)
+	var previous_unlocked_crew_ids: Dictionary = _unlocked_crew_ids_by_territory.duplicate(true)
+	var previous_source_receipt_ids: Dictionary = _source_claim_receipt_ids_by_territory.duplicate(true)
+	var previous_touch_receipts: Dictionary = _territory_touch_receipts_by_id.duplicate(true)
+	var touch_plan: Dictionary = _prepare_first_claim_territory_touch(Dictionary(claim_result["receipt"])) if _task_id == "starter_01" else {"did_touch": false}
+	if bool(touch_plan["did_touch"]):
+		_apply_territory_touch_plan(touch_plan)
+		if not _ensure_unlocked_crew(str(touch_plan["unlocked_crew_id"])):
+			_game_state.restore_crew(previous_crew)
+			_touched_territory_ids = previous_touched_territory_ids
+			_unlocked_crew_ids_by_territory = previous_unlocked_crew_ids
+			_source_claim_receipt_ids_by_territory = previous_source_receipt_ids
+			_territory_touch_receipts_by_id = previous_touch_receipts
+			status_label.text = "收取保存未完成，請重試"
+			return
 	_crew_ids_by_task.erase(_task_id)
 	var save_result: Dictionary = _save_execution_state()
+	if not bool(save_result["is_saved"]):
+		_game_state.restore_crew(previous_crew)
+		_touched_territory_ids = previous_touched_territory_ids
+		_unlocked_crew_ids_by_territory = previous_unlocked_crew_ids
+		_source_claim_receipt_ids_by_territory = previous_source_receipt_ids
+		_territory_touch_receipts_by_id = previous_touch_receipts
+		_is_completed = true
+		claim_button.disabled = false
+		status_label.text = "收取保存未完成，請重試"
+		return
+	_show_claim_receipt(Dictionary(claim_result["receipt"]))
+	if bool(touch_plan["did_touch"]):
+		_append_crew_choice({"id": str(touch_plan["unlocked_crew_id"]), "status": GameStateScript.CrewStatus.AVAILABLE})
+		claim_receipt_label.text += "｜觸及新地盤：%s｜新人物已加入：%s" % [str(touch_plan["territory_id"]), str(touch_plan["unlocked_crew_id"])]
 	for choice: CheckButton in crew_selector.get_children():
 		choice.disabled = true
 	start_button.disabled = true
 	claim_button.disabled = true
 	_refresh_refresh_state()
-	if not bool(save_result["is_saved"]):
-		status_label.text = "收取紀錄已保存，但任務狀態保存失敗：%s" % save_result["error_code"]
-		return
-	_show_claim_receipt(Dictionary(claim_result["receipt"]))
-	if _task_id == "starter_01":
-		_apply_first_claim_territory_touch(Dictionary(claim_result["receipt"]))
 	status_label.text = "已領取／保底報酬待定"
 
 	var tutorial_result: Dictionary = _tutorial_completion_coordinator.complete_claimed_current_task(_task_id, Dictionary(claim_result["receipt"]))
@@ -255,32 +310,38 @@ func _on_explore_territory_pressed() -> void:
 	status_label.text = "地盤會在收取成果後觸及"
 
 func _apply_first_claim_territory_touch(claim_receipt: Dictionary) -> void:
-	var source_claim_receipt_id: String = str(claim_receipt.get("claim_receipt_id", ""))
-	if source_claim_receipt_id.is_empty():
-		return
-	var territory_id: String = str(_territory_data["territory_id"])
-	var touch_result: Dictionary = TerritoryFirstTouchUnlockScript.touch(territory_id, _touched_territory_ids)
-	if not bool(touch_result["is_unlock_granted"]):
+	var touch_plan: Dictionary = _prepare_first_claim_territory_touch(claim_receipt)
+	if not bool(touch_plan["did_touch"]):
+		var territory_id: String = str(_territory_data["territory_id"])
 		if _source_claim_receipt_ids_by_territory.has(territory_id):
 			claim_receipt_label.text += "｜地盤已觸及"
 		return
-	var unlocked_crew_id: String = _get_unlocked_crew_id(territory_id)
-	var saved_touches: Dictionary = Dictionary(touch_result["touched_territory_ids"]).duplicate(true)
-	var saved_unlocks: Dictionary = _unlocked_crew_ids_by_territory.duplicate(true)
-	var saved_sources: Dictionary = _source_claim_receipt_ids_by_territory.duplicate(true)
-	saved_unlocks[territory_id] = unlocked_crew_id
-	saved_sources[territory_id] = source_claim_receipt_id
-	var save_result: Dictionary = _territory_state_store.save(saved_touches, saved_unlocks, saved_sources)
+	_apply_territory_touch_plan(touch_plan)
+	if not _ensure_unlocked_crew(str(touch_plan["unlocked_crew_id"]), true):
+		claim_receipt_label.text += "｜新人物還原失敗"
+		return
+	var save_result: Dictionary = _save_player_state()
 	if not bool(save_result["is_saved"]):
 		claim_receipt_label.text += "｜地盤觸及保存失敗：%s" % save_result["error_code"]
 		return
-	_touched_territory_ids = saved_touches
-	_unlocked_crew_ids_by_territory = saved_unlocks
-	_source_claim_receipt_ids_by_territory = saved_sources
-	if not _ensure_unlocked_crew(unlocked_crew_id, true):
-		claim_receipt_label.text += "｜新人物還原失敗"
-		return
-	claim_receipt_label.text += "｜觸及新地盤：%s｜新人物已加入：%s" % [territory_id, unlocked_crew_id]
+	claim_receipt_label.text += "｜觸及新地盤：%s｜新人物已加入：%s" % [str(touch_plan["territory_id"]), str(touch_plan["unlocked_crew_id"])]
+
+func _prepare_first_claim_territory_touch(claim_receipt: Dictionary) -> Dictionary:
+	var source_claim_receipt_id: String = str(claim_receipt.get("claim_receipt_id", ""))
+	var territory_id: String = str(_territory_data["territory_id"])
+	if source_claim_receipt_id.is_empty() or _touched_territory_ids.has(territory_id):
+		return {"did_touch": false}
+	var touch_result: Dictionary = TerritoryFirstTouchUnlockScript.touch(territory_id, _touched_territory_ids)
+	if not bool(touch_result["is_unlock_granted"]):
+		return {"did_touch": false}
+	return {"did_touch": true, "territory_id": territory_id, "source_claim_receipt_id": source_claim_receipt_id, "unlocked_crew_id": _get_unlocked_crew_id(territory_id), "touched_territory_ids": Dictionary(touch_result["touched_territory_ids"]).duplicate(true)}
+
+func _apply_territory_touch_plan(touch_plan: Dictionary) -> void:
+	var territory_id: String = str(touch_plan["territory_id"])
+	_touched_territory_ids = Dictionary(touch_plan["touched_territory_ids"]).duplicate(true)
+	_unlocked_crew_ids_by_territory[territory_id] = str(touch_plan["unlocked_crew_id"])
+	_source_claim_receipt_ids_by_territory[territory_id] = str(touch_plan["source_claim_receipt_id"])
+	_territory_touch_receipts_by_id[territory_id] = {"territory_id": territory_id, "source_claim_receipt_id": str(touch_plan["source_claim_receipt_id"]), "unlocked_crew_id": str(touch_plan["unlocked_crew_id"]), "touched_at_seconds": _get_current_time_seconds()}
 
 func _restore_first_claim_territory_touch() -> void:
 	if _touched_territory_ids.has(str(_territory_data["territory_id"])):
@@ -388,7 +449,9 @@ func _refresh_refresh_state() -> void:
 	refresh_button.disabled = _is_waiting or _is_completed or _is_claimed or _refresh_allowance.get_allowance() == 0
 
 func _save_refresh_state() -> Dictionary:
-	return _refresh_state_store.save(_refresh_allowance)
+	if not _is_player_state_ready:
+		return _refresh_state_store.save(_refresh_allowance)
+	return _save_player_state()
 
 func _process(_delta: float) -> void:
 	refresh_execution_status(_get_current_time_seconds())
@@ -437,6 +500,10 @@ func _restore_saved_execution(current_time_seconds: int) -> void:
 	if clock == null:
 		return
 	var restored_crew_ids: Array[String] = _get_saved_crew_ids(_task_id)
+	# The envelope records authoritative crew status. Rebuild the transient assignment
+	# index from the saved task, then let the coordinator mark these crew dispatched.
+	for restored_crew_id: String in restored_crew_ids:
+		_game_state.set_crew_status(restored_crew_id, GameStateScript.CrewStatus.AVAILABLE)
 	var assignment_result: Dictionary = _assignment_coordinator.accept_assignment(_task_id, restored_crew_ids)
 	if not bool(assignment_result["is_accepted"]):
 		status_label.text = "任務保存無法還原：%s" % assignment_result["error_code"]
@@ -465,7 +532,43 @@ func _restore_saved_execution(current_time_seconds: int) -> void:
 
 func _save_execution_state() -> Dictionary:
 	_capture_result_state()
-	return _execution_state_store.save(_snapshot_collection, _result_state, _crew_ids_by_task, _lifecycle.get_persisted_runs())
+	return _save_player_state()
+
+func _save_player_state() -> Dictionary:
+	_capture_result_state()
+	var execution_payload: Dictionary = MissionExecutionStateStoreScript.make_payload(_snapshot_collection, _result_state, _crew_ids_by_task, _lifecycle.get_persisted_runs())
+	if execution_payload.is_empty():
+		return {"is_saved": false, "error_code": "execution_state_store_crew_ids_invalid"}
+	var envelope: Dictionary = PlayerSaveEnvelopeStoreScript.make_envelope(
+		_game_state.get_crew(),
+		_current_missions,
+		execution_payload,
+		_claim_receipt_collection.to_data(),
+		_refresh_allowance.to_data(),
+		{str(_territory_data["territory_id"]): _territory_data},
+		_territory_touch_receipts_by_id,
+		{"tutorial_claimed_task_ids": _result_state.to_data()["claimed_task_ids"]}
+	)
+	return _player_save_store.save(envelope)
+
+func _get_player_save_store_path() -> String:
+	if not player_save_store_path.is_empty():
+		return player_save_store_path
+	return "%s.envelope" % execution_state_store_path
+
+func _restore_territory_touch_maps_from_receipts() -> void:
+	_touched_territory_ids = {}
+	_unlocked_crew_ids_by_territory = {}
+	_source_claim_receipt_ids_by_territory = {}
+	for territory_id_variant: Variant in _territory_touch_receipts_by_id:
+		var territory_id: String = str(territory_id_variant)
+		var receipt: Dictionary = Dictionary(_territory_touch_receipts_by_id[territory_id])
+		if str(receipt.get("territory_id", "")) != territory_id or str(receipt.get("source_claim_receipt_id", "")).is_empty() or str(receipt.get("unlocked_crew_id", "")).is_empty():
+			_territory_touch_receipts_by_id = {}
+			return
+		_touched_territory_ids[territory_id] = true
+		_unlocked_crew_ids_by_territory[territory_id] = str(receipt["unlocked_crew_id"])
+		_source_claim_receipt_ids_by_territory[territory_id] = str(receipt["source_claim_receipt_id"])
 
 func _restore_result_state() -> void:
 	var result_data: Dictionary = _result_state.to_data()

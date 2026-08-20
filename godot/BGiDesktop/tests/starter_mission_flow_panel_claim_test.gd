@@ -1,7 +1,7 @@
 extends SceneTree
 
 const StarterMissionFlowPanelScene = preload("res://scenes/starter_mission_flow_panel.tscn")
-const ExecutionStateStoreScript = preload("res://scripts/mission_execution_state_store.gd")
+const PlayerSaveEnvelopeStoreScript = preload("res://scripts/player_save_envelope_store.gd")
 const MissionAssignmentStateScript = preload("res://scripts/mission_assignment_state.gd")
 const AssignmentCoordinatorScript = preload("res://scripts/persistent_mission_assignment_coordinator.gd")
 
@@ -42,9 +42,17 @@ func _run() -> void:
 	first_panel.queue_free()
 	await process_frame
 
-	var stored_state: Dictionary = ExecutionStateStoreScript.new(EXECUTION_STATE_PATH).load()
-	_expect(stored_state["collection"].restore_clock("starter_01") == null, "saved claimed state must not retain an execution clock")
-	_expect(stored_state["result_state"].is_claimed("starter_01"), "saved claimed state must retain the claimed task id")
+	var stored_state: Dictionary = PlayerSaveEnvelopeStoreScript.new("%s.envelope" % EXECUTION_STATE_PATH).load()
+	_expect(bool(stored_state["is_loaded"]), "saved claimed state must load from the player envelope")
+	var execution_state: Dictionary = Dictionary(stored_state["envelope"])["execution_state"]
+	_expect(Dictionary(execution_state["executions"]).is_empty(), "saved claimed state must not retain an execution clock")
+	_expect(bool(Dictionary(execution_state["result_state"])["claimed_task_ids"].get("starter_01", false)), "saved claimed state must retain the claimed task id")
+	var saved_envelope: Dictionary = Dictionary(stored_state["envelope"])
+	_expect(Dictionary(saved_envelope["claim_receipts_by_mission_run_id"]).has("starter_01:100"), "claimed run receipt must share the player envelope")
+	_expect(Dictionary(saved_envelope["territory_touch_receipts_by_id"]).has("territory_02"), "first territory touch must share the player envelope")
+	_expect(Dictionary(saved_envelope["territory_state_by_id"]).has("territory_02"), "territory progress state must share the player envelope")
+	_expect(Dictionary(saved_envelope["refresh_state"]).has("allowance"), "refresh state must share the player envelope")
+	_expect(Array(saved_envelope["crew_by_id"]).size() == 6, "unlocked crew must share the player envelope")
 
 	var reopened_panel: StarterMissionFlowPanel = _create_panel("ReopenedPanel", 999)
 	_expect(reopened_panel._task_id == "starter_02", "reopened panel must restore the next fixed tutorial task")

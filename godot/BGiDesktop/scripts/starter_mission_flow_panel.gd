@@ -23,6 +23,7 @@ const TerritoryProgressStateStoreScript = preload("res://scripts/territory_progr
 const MissionRewardDisclosureModelScript = preload("res://scripts/mission_reward_disclosure_model.gd")
 const TutorialTaskProgressionScript = preload("res://scripts/tutorial_task_progression.gd")
 const TutorialMissionCompletionCoordinatorScript = preload("res://scripts/tutorial_mission_completion_coordinator.gd")
+const TutorialEventLoggerScript = preload("res://scripts/tutorial_event_logger.gd")
 
 @onready var task_label: Label = %TaskLabel
 @onready var requirement_label: Label = %RequirementLabel
@@ -86,6 +87,7 @@ var _is_completed: bool = false
 var _is_claimed: bool = false
 var _is_player_state_ready: bool = false
 var _is_recovery_hold: bool = false
+var _tutorial_event_logger: RefCounted
 
 func _ready() -> void:
 	_game_state = get_node("/root/GameState") as Node
@@ -96,8 +98,10 @@ func _ready() -> void:
 	var expired_release_service: RefCounted = ExpiredReleaseServiceScript.new(_assignment_coordinator, _assignment_state, validity_query)
 	_execution_state_store = MissionExecutionStateStoreScript.new(execution_state_store_path)
 	_player_save_store = PlayerSaveEnvelopeStoreScript.new(_get_player_save_store_path())
+	_tutorial_event_logger = TutorialEventLoggerScript.new()
 	var player_save_result: Dictionary = _player_save_store.load()
 	if not bool(player_save_result.get("is_loaded", false)) and not bool(player_save_result.get("was_missing", false)):
+		_record_tutorial_event("tutorial_state_recovery_failed", "", "recovery_hold", "", {"reason": str(player_save_result.get("error_code", "save_data_corrupted"))})
 		_enter_recovery_hold(str(player_save_result.get("error_code", "save_data_corrupted")))
 		return
 	var envelope: Dictionary = Dictionary(player_save_result.get("envelope", {}))
@@ -145,6 +149,8 @@ func _ready() -> void:
 		_restore_territory_touch_maps_from_receipts()
 	_restore_unlocked_crew()
 	_load_first_starter_mission()
+	_record_tutorial_event("tutorial_resumed" if has_envelope else "tutorial_started", _task_id, "loaded", _task_id)
+	_record_tutorial_event("tutorial_step_presented", _task_id, "shown", _task_id)
 	_tutorial_completion_coordinator = TutorialMissionCompletionCoordinatorScript.new(_tutorial_progression, _assignment_state, validity_query)
 	_render_crew_choices()
 	start_button.pressed.connect(_on_start_pressed)
@@ -253,6 +259,7 @@ func _on_crew_toggled(pressed: bool, crew_id: String) -> void:
 	else:
 		_selected_crew_ids.erase(crew_id)
 	_refresh_selection_state()
+	_record_tutorial_event("tutorial_crew_selection_changed", _task_id, "selected" if pressed else "deselected", _task_id, {"crew_count": _selected_crew_ids.size()})
 
 func _refresh_selection_state() -> void:
 	var selected_count: int = _selected_crew_ids.size()
@@ -276,6 +283,8 @@ func _on_start_pressed() -> void:
 		status_label.text = "無法開始：保存失敗：%s" % save_result["error_code"]
 		return
 	_is_waiting = true
+	_record_tutorial_event("tutorial_assignment_confirmed", _task_id, "accepted", _task_id, {"crew_count": _selected_crew_ids.size()})
+	_record_tutorial_event("tutorial_task_started", _task_id, "active", _task_id)
 	for choice: CheckButton in crew_selector.get_children():
 		choice.disabled = true
 	start_button.disabled = true
@@ -327,6 +336,7 @@ func _on_claim_pressed() -> void:
 	claim_button.disabled = true
 	_refresh_refresh_state()
 	status_label.text = "已領取／保底報酬待定"
+	_record_tutorial_event("tutorial_reward_claimed", _task_id, "claimed", _task_id)
 
 	var tutorial_result: Dictionary = _tutorial_completion_coordinator.complete_claimed_current_task(_task_id, Dictionary(claim_result["receipt"]))
 	if not bool(tutorial_result["is_completed"]):
@@ -344,9 +354,13 @@ func _on_claim_pressed() -> void:
 		_refresh_selection_state()
 		_refresh_refresh_state()
 		_show_next_tutorial_task()
+	else:
+		_record_tutorial_event("tutorial_completed", _task_id, "claimed_all", _task_id)
 
 func _on_refresh_pressed() -> void:
+	_record_tutorial_event("tutorial_refresh_attempted", _task_id, "attempted", _task_id)
 	refresh_current_mission(_get_current_time_seconds())
+	_record_tutorial_event("tutorial_refresh_blocked", _task_id, "fixed_tutorial", _task_id)
 
 func _on_explore_territory_pressed() -> void:
 	status_label.text = "地盤會在收取成果後觸及"
@@ -536,6 +550,8 @@ func refresh_execution_status(current_time_seconds: int) -> void:
 		return
 	_is_waiting = false
 	_is_completed = true
+	_record_tutorial_event("tutorial_task_completed", _task_id, "claimable", _task_id)
+	_record_tutorial_event("tutorial_result_locked", _task_id, "locked", _task_id, {"result_id": str(Dictionary(resolution["result"]).get("result_id", ""))})
 	for choice: CheckButton in crew_selector.get_children():
 		choice.disabled = true
 	start_button.disabled = true
@@ -645,6 +661,11 @@ func _get_current_time_seconds() -> int:
 	if current_time_override >= 0:
 		return current_time_override
 	return int(Time.get_unix_time_from_system())
+
+func _record_tutorial_event(event_name: String, tutorial_step_id: String, outcome: String, mission_id: String, details: Dictionary = {}) -> void:
+	if _tutorial_event_logger == null:
+		return
+	_tutorial_event_logger.record(event_name, tutorial_step_id, _get_current_time_seconds(), outcome, mission_id, details)
 
 func _show_next_tutorial_task() -> void:
 	var next_task: Dictionary = _tutorial_progression.get_current_task()

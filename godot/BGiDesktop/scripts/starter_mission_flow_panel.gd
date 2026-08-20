@@ -30,6 +30,8 @@ const TutorialMissionCompletionCoordinatorScript = preload("res://scripts/tutori
 @onready var status_label: Label = %StatusLabel
 @onready var start_button: Button = %StartButton
 @onready var refresh_allowance_label: Label = %RefreshAllowanceLabel
+@onready var refresh_next_available_label: Label = %RefreshNextAvailableLabel
+@onready var refreshable_mission_count_label: Label = %RefreshableMissionCountLabel
 @onready var refresh_button: Button = %RefreshButton
 @onready var territory_progress_label: Label = %TerritoryProgressLabel
 @onready var exploration_collection_label: Label = %ExplorationCollectionLabel
@@ -420,6 +422,7 @@ func refresh_current_mission(current_time_seconds: int) -> void:
 		status_label.text = "無法刷新：缺少替換任務"
 		return
 	# Fixed T01–T23 task identities never change through refresh and consume no allowance.
+	status_label.text = "無法刷新：新手固定任務不可替換"
 	_refresh_refresh_state()
 	return
 	var replacements_by_mission_id: Dictionary = {_task_id: _current_missions[1].duplicate(true)}
@@ -446,7 +449,15 @@ func update_refresh_allowance(current_time_seconds: int) -> void:
 
 func _refresh_refresh_state() -> void:
 	refresh_allowance_label.text = "刷新額度：%d/%d" % [_refresh_allowance.get_allowance(), MissionRefreshAllowanceScript.MAX_ALLOWANCE]
-	refresh_button.disabled = _is_waiting or _is_completed or _is_claimed or _refresh_allowance.get_allowance() == 0
+	refresh_next_available_label.text = "下次可用：%s" % _get_refresh_next_available_text()
+	refreshable_mission_count_label.text = "可替換任務：0（新手固定任務）"
+	refresh_button.disabled = true
+
+func _get_refresh_next_available_text() -> String:
+	if _refresh_allowance.get_allowance() >= MissionRefreshAllowanceScript.MAX_ALLOWANCE:
+		return "已滿額"
+	var refresh_data: Dictionary = _refresh_allowance.to_data()
+	return str(int(refresh_data["last_refill_check_seconds"]) + MissionRefreshAllowanceScript.REFILL_INTERVAL_SECONDS)
 
 func _save_refresh_state() -> Dictionary:
 	if not _is_player_state_ready:

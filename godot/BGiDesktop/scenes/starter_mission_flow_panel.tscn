@@ -36,6 +36,16 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 
+[node name="RefreshNextAvailableLabel" type="Label" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+
+[node name="RefreshableMissionCountLabel" type="Label" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+
 [node name="RefreshButton" type="Button" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2

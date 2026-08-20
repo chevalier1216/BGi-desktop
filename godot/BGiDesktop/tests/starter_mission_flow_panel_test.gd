@@ -26,16 +26,22 @@ func _run() -> void:
 	_expect(panel.status_label.text == "地盤會在收取成果後觸及", "direct territory input must explain the claim requirement")
 	_expect(panel._touched_territory_ids.is_empty(), "direct territory input must not create a touch before a persisted claim")
 	_expect(panel.refresh_allowance_label.text == "刷新額度：1/1", "starter flow must show one available refresh")
-	_expect(not panel.refresh_button.disabled, "unaccepted task with one allowance must enable refresh")
+	_expect(panel.refresh_next_available_label.text == "下次可用：已滿額", "full refresh allowance must visibly state that it is capped")
+	_expect(panel.refreshable_mission_count_label.text == "可替換任務：0（新手固定任務）", "fixed tutorial catalog must visibly expose zero replaceable missions")
+	_expect(panel.refresh_button.disabled, "fixed tutorial task must not offer a no-op refresh action")
 	var initial_task_id: String = panel._task_id
 	var initial_time_seconds: int = int(Time.get_unix_time_from_system())
 	panel.refresh_current_mission(initial_time_seconds)
 	_expect(panel._task_id == initial_task_id, "refresh must preserve an unaccepted fixed tutorial task id")
 	_expect(panel.refresh_allowance_label.text == "刷新額度：1/1", "fixed tutorial refresh must not consume allowance")
-	_expect(not panel.refresh_button.disabled, "fixed tutorial refresh must remain available without consuming allowance")
+	_expect(panel.status_label.text == "無法刷新：新手固定任務不可替換", "fixed tutorial refresh attempt must state its explicit blocker")
+	_expect(panel._refresh_allowance.consume(initial_time_seconds), "test setup must consume the available refresh allowance")
+	panel._refresh_refresh_state()
+	_expect(panel.refresh_allowance_label.text == "刷新額度：0/1", "consumed refresh allowance must visibly show zero")
+	_expect(panel.refresh_next_available_label.text == "下次可用：%d" % (initial_time_seconds + 6 * 60 * 60), "empty refresh allowance must visibly show the next derived refill time")
 	panel.update_refresh_allowance(initial_time_seconds + 6 * 60 * 60)
 	_expect(panel.refresh_allowance_label.text == "刷新額度：1/1", "refresh allowance must refill after six hours without exceeding one")
-	_expect(not panel.refresh_button.disabled, "refilled allowance must enable refresh without exceeding one")
+	_expect(panel.refresh_button.disabled, "fixed tutorial refresh must stay unavailable after allowance updates")
 
 	var first_choice: CheckButton = panel.crew_selector.get_child(0) as CheckButton
 	first_choice.button_pressed = true

@@ -162,6 +162,10 @@ func _ready() -> void:
 	_territory_progress_state_store = TerritoryProgressStateStoreScript.new(territory_progress_state_store_path)
 	var territory_progress_result: Dictionary = _territory_progress_state_store.load(str(_territory_data["territory_id"]))
 	_territory_data = Dictionary(Dictionary(envelope.get("territory_state_by_id", {})).get("territory_02", territory_progress_result["territory_data"])).duplicate(true) if has_envelope else Dictionary(territory_progress_result["territory_data"]).duplicate(true)
+	if has_envelope and (not bool(_territory_data.get("is_valid", false)) or not TerritoryProgressModelScript.has_required_growth_fields(_territory_data)):
+		_record_tutorial_event("tutorial_state_recovery_failed", "", "recovery_hold", "", {"reason": "territory_progress_store_data_invalid"})
+		_enter_recovery_hold("territory_progress_store_data_invalid")
+		return
 	if bool(territory_progress_result["was_missing"]):
 		_territory_progress_state_store.save(_territory_data)
 	_territory_state_store = TerritoryFirstTouchStateStoreScript.new(territory_state_store_path)
@@ -171,7 +175,10 @@ func _ready() -> void:
 	_source_claim_receipt_ids_by_territory = Dictionary(territory_state_result["source_claim_receipt_ids_by_territory"]).duplicate(true)
 	if has_envelope:
 		_territory_touch_receipts_by_id = Dictionary(envelope.get("territory_touch_receipts_by_id", {})).duplicate(true)
-		_restore_territory_touch_maps_from_receipts()
+		if not _restore_territory_touch_maps_from_receipts():
+			_record_tutorial_event("tutorial_state_recovery_failed", "", "recovery_hold", "", {"reason": "territory_state_store_data_invalid"})
+			_enter_recovery_hold("territory_state_store_data_invalid")
+			return
 	_restore_unlocked_crew()
 	_load_first_starter_mission()
 	_record_tutorial_event("tutorial_resumed" if has_envelope else "tutorial_started", _task_id, "loaded", _task_id)
@@ -812,19 +819,22 @@ func _get_player_save_store_path() -> String:
 		return player_save_store_path
 	return "%s.envelope" % execution_state_store_path
 
-func _restore_territory_touch_maps_from_receipts() -> void:
-	_touched_territory_ids = {}
-	_unlocked_crew_ids_by_territory = {}
-	_source_claim_receipt_ids_by_territory = {}
+func _restore_territory_touch_maps_from_receipts() -> bool:
+	var restored_touched_territory_ids: Dictionary = {}
+	var restored_unlocked_crew_ids: Dictionary = {}
+	var restored_source_receipt_ids: Dictionary = {}
 	for territory_id_variant: Variant in _territory_touch_receipts_by_id:
 		var territory_id: String = str(territory_id_variant)
 		var receipt: Dictionary = Dictionary(_territory_touch_receipts_by_id[territory_id])
 		if str(receipt.get("territory_id", "")) != territory_id or str(receipt.get("source_claim_receipt_id", "")).is_empty() or str(receipt.get("unlocked_crew_id", "")).is_empty():
-			_territory_touch_receipts_by_id = {}
-			return
-		_touched_territory_ids[territory_id] = true
-		_unlocked_crew_ids_by_territory[territory_id] = str(receipt["unlocked_crew_id"])
-		_source_claim_receipt_ids_by_territory[territory_id] = str(receipt["source_claim_receipt_id"])
+			return false
+		restored_touched_territory_ids[territory_id] = true
+		restored_unlocked_crew_ids[territory_id] = str(receipt["unlocked_crew_id"])
+		restored_source_receipt_ids[territory_id] = str(receipt["source_claim_receipt_id"])
+	_touched_territory_ids = restored_touched_territory_ids
+	_unlocked_crew_ids_by_territory = restored_unlocked_crew_ids
+	_source_claim_receipt_ids_by_territory = restored_source_receipt_ids
+	return true
 
 func _restore_result_state() -> void:
 	var result_data: Dictionary = _result_state.to_data()

@@ -3,6 +3,7 @@
 ## Roles and source of truth
 
 - GitHub `origin/main` is the shared source of truth for verified project history.
+- `origin` must identify the intended GitHub repository before a mission starts. Local repositories are working copies, not the only persistence layer for completed work.
 - The canonical desktop checkout is the local execution environment; its path is recorded in `PROJECT_CONTEXT.md`.
 - Desktop Codex writes project files, runs local verification, commits, and pushes.
 - The mobile ChatGPT Project is used for planning, requirements clarification, review, and handoff decisions. It does not directly modify the repository.
@@ -10,10 +11,10 @@
 
 ## Start-of-work synchronization
 
-1. On the desktop, confirm the current branch and its upstream with `git status --short --branch`.
-2. Stop if the worktree is dirty. Record the changed paths and decide whether to commit, stash through an approved workflow, or resolve the unfinished work before syncing.
-3. When the worktree is clean, run `git fetch origin` and inspect whether the local branch is behind `origin/main`.
-4. Integrate upstream changes with the repository-approved method before editing. Do not overwrite local work.
+1. On the desktop, confirm the current branch, upstream, and `origin` with `git status --short --branch` and `git remote -v`.
+2. If the worktree is dirty, record its changed paths. An approved active mission may continue within its own boundary, but do not pull, rebase, switch branches, or overwrite those changes.
+3. When synchronization is needed and the worktree is clean, run `git fetch origin` and inspect whether the local branch diverges from its upstream.
+4. Integrate upstream changes only when safe without rewriting history or losing unrelated work. Treat unclear divergence as a blocker.
 5. Record the current baseline and active mission scope in the mission handoff when cross-device continuity is needed.
 
 ## Desktop implementation and handoff
@@ -23,6 +24,8 @@
 3. Create an atomic commit with a clear conventional message after verification succeeds.
 4. Push the committed branch to `origin`.
 5. Send one mission-level handoff containing the commit SHA, verification result, changed files, and remaining risks.
+
+Commit and push at a coherent mission or delivery checkpoint, not for micro-steps. Never force-push, rewrite published history, or report locally-only work as delivered across devices.
 
 ## Branch policy
 

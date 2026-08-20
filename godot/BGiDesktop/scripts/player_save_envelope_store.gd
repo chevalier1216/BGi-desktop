@@ -34,10 +34,11 @@ func load() -> Dictionary:
 	file.close()
 	var json: JSON = JSON.new()
 	if json.parse(serialized) != OK or typeof(json.data) != TYPE_DICTIONARY:
-		return _rejected("player_save_envelope_data_invalid")
+		return _rejected("save_data_corrupted")
 	var envelope: Dictionary = Dictionary(json.data)
-	if not _is_valid(envelope):
-		return _rejected("player_save_envelope_data_invalid")
+	var validation_error: String = _get_validation_error(envelope)
+	if not validation_error.is_empty():
+		return _rejected(validation_error)
 	return {"is_loaded": true, "was_missing": false, "error_code": "", "envelope": envelope.duplicate(true)}
 
 static func make_envelope(crew_by_id: Array, mission_board: Array, execution_state: Dictionary, claim_receipts_by_mission_run_id: Dictionary, refresh_state: Dictionary, territory_state_by_id: Dictionary, territory_touch_receipts_by_id: Dictionary, progression_summary: Dictionary = {}) -> Dictionary:
@@ -54,15 +55,24 @@ static func make_envelope(crew_by_id: Array, mission_board: Array, execution_sta
 	}
 
 static func _is_valid(envelope: Dictionary) -> bool:
+	return _get_validation_error(envelope).is_empty()
+
+static func _get_validation_error(envelope: Dictionary) -> String:
+	if not envelope.has("contract_version"):
+		return "save_required_field_missing"
 	if str(envelope.get("contract_version", "")) != CONTRACT_VERSION:
-		return false
+		return "save_contract_unsupported"
 	for key: String in ["crew_by_id", "mission_board"]:
+		if not envelope.has(key):
+			return "save_required_field_missing"
 		if typeof(envelope.get(key, null)) != TYPE_ARRAY:
-			return false
+			return "save_data_corrupted"
 	for key: String in ["execution_state", "claim_receipts_by_mission_run_id", "refresh_state", "territory_state_by_id", "territory_touch_receipts_by_id", "progression_summary"]:
+		if not envelope.has(key):
+			return "save_required_field_missing"
 		if typeof(envelope.get(key, null)) != TYPE_DICTIONARY:
-			return false
-	return true
+			return "save_data_corrupted"
+	return ""
 
 func _rejected(error_code: String) -> Dictionary:
 	return {"is_saved": false, "is_loaded": false, "was_missing": false, "error_code": error_code, "envelope": {}}

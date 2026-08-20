@@ -41,6 +41,16 @@ func _run() -> void:
 	invalid_envelope.erase("crew_by_id")
 	_expect(not bool(store.save(invalid_envelope)["is_saved"]), "incomplete envelope must not overwrite the saved transaction")
 	_expect(bool(store.load()["is_loaded"]), "failed envelope validation must preserve the previous saved transaction")
+	var missing_field_file: FileAccess = FileAccess.open("user://player_save_envelope_missing_field.json", FileAccess.WRITE)
+	missing_field_file.store_string(JSON.stringify(invalid_envelope))
+	missing_field_file.close()
+	_expect(StoreScript.new("user://player_save_envelope_missing_field.json").load()["error_code"] == "save_required_field_missing", "missing required envelope fields must be classified without loading")
+	var unsupported_envelope: Dictionary = envelope.duplicate(true)
+	unsupported_envelope["contract_version"] = "full_loop_contract_v2"
+	var unsupported_file: FileAccess = FileAccess.open("user://player_save_envelope_unsupported.json", FileAccess.WRITE)
+	unsupported_file.store_string(JSON.stringify(unsupported_envelope))
+	unsupported_file.close()
+	_expect(StoreScript.new("user://player_save_envelope_unsupported.json").load()["error_code"] == "save_contract_unsupported", "unsupported contract versions must be classified without loading")
 	quit(1 if _failed else 0)
 
 func _expect(condition: bool, message: String) -> void:

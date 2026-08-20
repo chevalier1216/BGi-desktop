@@ -44,6 +44,7 @@ const TutorialMissionCompletionCoordinatorScript = preload("res://scripts/tutori
 @onready var claim_receipt_label: Label = %ClaimReceiptLabel
 @onready var next_tutorial_task_label: Label = %NextTutorialTaskLabel
 @onready var claim_button: Button = %ClaimButton
+@onready var retry_load_button: Button = %RetryLoadButton
 
 @export var execution_state_store_path: String = "user://starter_mission_flow_state.json"
 @export var player_save_store_path: String = ""
@@ -84,6 +85,7 @@ var _is_waiting: bool = false
 var _is_completed: bool = false
 var _is_claimed: bool = false
 var _is_player_state_ready: bool = false
+var _is_recovery_hold: bool = false
 
 func _ready() -> void:
 	_game_state = get_node("/root/GameState") as Node
@@ -95,6 +97,9 @@ func _ready() -> void:
 	_execution_state_store = MissionExecutionStateStoreScript.new(execution_state_store_path)
 	_player_save_store = PlayerSaveEnvelopeStoreScript.new(_get_player_save_store_path())
 	var player_save_result: Dictionary = _player_save_store.load()
+	if not bool(player_save_result.get("is_loaded", false)) and not bool(player_save_result.get("was_missing", false)):
+		_enter_recovery_hold(str(player_save_result.get("error_code", "save_data_corrupted")))
+		return
 	var envelope: Dictionary = Dictionary(player_save_result.get("envelope", {}))
 	var has_envelope: bool = bool(player_save_result.get("is_loaded", false)) and not bool(player_save_result.get("was_missing", true))
 	var execution_state_result: Dictionary = MissionExecutionStateStoreScript.from_payload(Dictionary(envelope.get("execution_state", {}))) if has_envelope else _execution_state_store.load()
@@ -144,6 +149,7 @@ func _ready() -> void:
 	_render_crew_choices()
 	start_button.pressed.connect(_on_start_pressed)
 	claim_button.pressed.connect(_on_claim_pressed)
+	retry_load_button.pressed.connect(_on_retry_load_pressed)
 	refresh_button.pressed.connect(_on_refresh_pressed)
 	explore_territory_button.pressed.connect(_on_explore_territory_pressed)
 	_refresh_selection_state()
@@ -157,6 +163,25 @@ func _ready() -> void:
 	_is_player_state_ready = true
 	if not has_envelope:
 		_save_player_state()
+
+func _enter_recovery_hold(error_code: String) -> void:
+	_is_recovery_hold = true
+	task_label.text = "無法安全讀取存檔"
+	requirement_label.text = "資料尚未被變更。請重試讀取或保留錯誤代碼供檢查。"
+	status_label.text = "錯誤：%s" % error_code
+	for choice: CheckButton in crew_selector.get_children():
+		choice.disabled = true
+	start_button.disabled = true
+	claim_button.disabled = true
+	refresh_button.disabled = true
+	explore_territory_button.disabled = true
+	retry_load_button.disabled = false
+	retry_load_button.pressed.connect(_on_retry_load_pressed)
+
+func _on_retry_load_pressed() -> void:
+	if not _is_recovery_hold:
+		return
+	get_tree().reload_current_scene()
 
 func _load_first_starter_mission() -> void:
 	_current_missions = _starter_mission_catalog.get_missions()

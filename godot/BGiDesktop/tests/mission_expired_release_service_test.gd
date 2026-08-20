@@ -3,7 +3,6 @@ extends SceneTree
 const GameStateScript = preload("res://scripts/game_state.gd")
 const MissionAssignmentStateScript = preload("res://scripts/mission_assignment_state.gd")
 const AssignmentCoordinatorScript = preload("res://scripts/persistent_mission_assignment_coordinator.gd")
-const MissionAbortServiceScript = preload("res://scripts/mission_abort_service.gd")
 const ClockScript = preload("res://scripts/mission_execution_clock.gd")
 const ValidityQueryScript = preload("res://scripts/mission_execution_validity_query.gd")
 const ExpiredReleaseServiceScript = preload("res://scripts/mission_expired_release_service.gd")
@@ -18,7 +17,6 @@ func _run() -> void:
 	root.add_child(game_state)
 	var assignment_state := MissionAssignmentStateScript.new()
 	var assignment_coordinator := AssignmentCoordinatorScript.new(game_state, assignment_state)
-	var abort_service := MissionAbortServiceScript.new(assignment_coordinator, assignment_state)
 	var expired_release_service := ExpiredReleaseServiceScript.new(assignment_coordinator, assignment_state, ValidityQueryScript.new())
 	var clock := ClockScript.new("task_01", 100, 5)
 
@@ -31,10 +29,10 @@ func _run() -> void:
 	_expect(_status_for(game_state.get_crew(), "crew_01") == GameStateScript.CrewStatus.AVAILABLE, "到期釋放後小弟必須可用")
 	_expect_result(expired_release_service.mark_completed_if_expired("task_01", clock, 105), false, "task_not_assigned")
 
-	_expect(assignment_coordinator.accept_assignment("task_02", ["crew_01"])["is_accepted"], "中止前置派遣必須成功")
-	_expect(abort_service.abort("task_02")["is_aborted"], "中止前置任務必須成功")
-	var aborted_clock := ClockScript.new("task_02", 100, 5)
-	_expect_result(expired_release_service.mark_completed_if_expired("task_02", aborted_clock, 105), false, "task_not_assigned")
+	_expect(assignment_coordinator.accept_assignment("task_02", ["crew_01"])["is_accepted"], "前置派遣必須成功")
+	_expect(assignment_coordinator.release_assignment("task_02")["is_released"], "收取端模擬釋放必須成功")
+	var released_clock := ClockScript.new("task_02", 100, 5)
+	_expect_result(expired_release_service.mark_completed_if_expired("task_02", released_clock, 105), false, "task_not_assigned")
 
 	game_state.queue_free()
 	quit(1 if _failed else 0)

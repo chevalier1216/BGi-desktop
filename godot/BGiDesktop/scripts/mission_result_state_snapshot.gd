@@ -5,8 +5,23 @@ var _locked_results_by_mission_run_id: Dictionary = {}
 var _claimed_mission_run_ids: Dictionary = {}
 
 func _init(locked_results_by_mission_run_id: Dictionary = {}, claimed_mission_run_ids: Dictionary = {}) -> void:
-	_locked_results_by_mission_run_id = locked_results_by_mission_run_id.duplicate(true)
-	_claimed_mission_run_ids = claimed_mission_run_ids.duplicate(true)
+	for key_variant: Variant in locked_results_by_mission_run_id:
+		var supplied_key: String = str(key_variant)
+		var result: Dictionary = Dictionary(locked_results_by_mission_run_id[supplied_key]).duplicate(true)
+		var mission_run_id: String = str(result.get("mission_run_id", ""))
+		var canonical_key: String = mission_run_id if not mission_run_id.is_empty() else supplied_key
+		_locked_results_by_mission_run_id[canonical_key] = result
+	for claimed_key_variant: Variant in claimed_mission_run_ids:
+		var supplied_claim_key: String = str(claimed_key_variant)
+		var canonical_claim_key: String = supplied_claim_key
+		if not _locked_results_by_mission_run_id.has(canonical_claim_key):
+			for mission_run_id_variant: Variant in _locked_results_by_mission_run_id:
+				var candidate_run_id: String = str(mission_run_id_variant)
+				var result: Dictionary = Dictionary(_locked_results_by_mission_run_id[candidate_run_id])
+				if str(result.get("task_id", "")) == supplied_claim_key:
+					canonical_claim_key = candidate_run_id
+					break
+		_claimed_mission_run_ids[canonical_claim_key] = true
 
 ## Returns isolated data for later persistence without recalculating any result.
 func to_data() -> Dictionary:

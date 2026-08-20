@@ -5,27 +5,40 @@ extends Control
 @onready var crew_indicators: HBoxContainer = %CrewIndicators
 @onready var mission_list: ItemList = %MissionList
 
+var _window_controller: Node
+var _game_state: Node
+var _starter_mission_catalog: Node
+
 const STATUS_COLORS := {
-	GameState.CrewStatus.AVAILABLE: Color("55c993"),
-	GameState.CrewStatus.DISPATCHED: Color("6fa8ff"),
-	GameState.CrewStatus.COMPLETED: Color("f4c95d"),
+	0: Color("55c993"),
+	1: Color("6fa8ff"),
+	2: Color("f4c95d"),
 }
 
 const STATUS_LABELS := {
-	GameState.CrewStatus.AVAILABLE: "可用",
-	GameState.CrewStatus.DISPATCHED: "派遣中",
-	GameState.CrewStatus.COMPLETED: "已完成待收取",
+	0: "可用",
+	1: "派遣中",
+	2: "已完成待收取",
 }
 
 func _ready() -> void:
-	topmost_toggle.button_pressed = DesktopWindowController.is_always_on_top()
-	topmost_toggle.toggled.connect(DesktopWindowController.set_always_on_top)
-	layout_button.pressed.connect(DesktopWindowController.toggle_layout_density)
-	_render_crew_status()
-	_render_starter_missions()
+	_window_controller = get_node_or_null("/root/DesktopWindowController")
+	_game_state = get_node_or_null("/root/GameState")
+	_starter_mission_catalog = get_node_or_null("/root/StarterMissionCatalog")
+	if _window_controller != null:
+		topmost_toggle.button_pressed = bool(_window_controller.is_always_on_top())
+		topmost_toggle.toggled.connect(_window_controller.set_always_on_top)
+		layout_button.pressed.connect(_window_controller.toggle_layout_density)
+	else:
+		topmost_toggle.disabled = true
+		layout_button.disabled = true
+	if _game_state != null:
+		_render_crew_status()
+	if _starter_mission_catalog != null:
+		_render_starter_missions()
 
 func _render_crew_status() -> void:
-	for crew_member in GameState.get_crew():
+	for crew_member in _game_state.get_crew():
 		var indicator := Panel.new()
 		indicator.custom_minimum_size = Vector2(24, 24)
 		indicator.tooltip_text = STATUS_LABELS[crew_member.status]
@@ -39,7 +52,7 @@ func _render_crew_status() -> void:
 		crew_indicators.add_child(indicator)
 
 func _render_starter_missions() -> void:
-	for mission: Dictionary in StarterMissionCatalog.get_missions():
+	for mission: Dictionary in _starter_mission_catalog.get_missions():
 		var duration_seconds: int = int(mission["duration_seconds"])
 		var accepted_status: String = "已接受" if bool(mission["is_accepted"]) else "未接受"
 		mission_list.add_item("%s · %s · %s" % [

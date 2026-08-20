@@ -40,7 +40,7 @@ func _ready() -> void:
 	_snapshot_collection = load_result["collection"]
 	_result_state = load_result["result_state"]
 	_crew_ids_by_task = Dictionary(load_result["crew_ids_by_task"]).duplicate(true)
-	_lifecycle = MissionLifecycleCoordinatorScript.new(_assignment_coordinator, expired_release_service, _snapshot_collection)
+	_lifecycle = MissionLifecycleCoordinatorScript.new(_assignment_coordinator, expired_release_service, _snapshot_collection, null, Dictionary(load_result["mission_runs"]))
 	_restore_result_state()
 	panel.accept_requested.connect(_on_accept_requested)
 	panel.completion_check_requested.connect(_on_completion_check_requested)
@@ -116,7 +116,7 @@ func _restore_execution() -> void:
 
 func _save_execution_state() -> Dictionary:
 	_capture_result_state()
-	return _snapshot_store.save(_snapshot_collection, _result_state, _crew_ids_by_task)
+	return _snapshot_store.save(_snapshot_collection, _result_state, _crew_ids_by_task, _lifecycle.get_persisted_runs())
 
 func _restore_result_state() -> void:
 	var result_data: Dictionary = _result_state.to_data()

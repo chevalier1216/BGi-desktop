@@ -36,6 +36,7 @@ const TutorialMissionCompletionCoordinatorScript = preload("res://scripts/tutori
 @onready var extra_reward_range_label: Label = %ExtraRewardRangeLabel
 @onready var extra_reward_probability_label: Label = %ExtraRewardProbabilityLabel
 @onready var extra_reward_note_label: Label = %ExtraRewardNoteLabel
+@onready var claim_receipt_label: Label = %ClaimReceiptLabel
 @onready var next_tutorial_task_label: Label = %NextTutorialTaskLabel
 @onready var claim_button: Button = %ClaimButton
 
@@ -117,6 +118,7 @@ func _ready() -> void:
 	_refresh_refresh_state()
 	_refresh_territory_growth_display()
 	_refresh_reward_disclosure_display()
+	_restore_latest_claim_receipt_display()
 	_restore_saved_execution(current_time_seconds)
 
 func _load_first_starter_mission() -> void:
@@ -218,8 +220,9 @@ func _on_claim_pressed() -> void:
 	claim_button.disabled = true
 	_refresh_refresh_state()
 	if not bool(save_result["is_saved"]):
-		status_label.text = "已領取／保底報酬待定（保存失敗）"
+		status_label.text = "收取紀錄已保存，但任務狀態保存失敗：%s" % save_result["error_code"]
 		return
+	_show_claim_receipt(Dictionary(claim_result["receipt"]))
 	status_label.text = "已領取／保底報酬待定"
 
 	var tutorial_result: Dictionary = _tutorial_completion_coordinator.complete_claimed_current_task(_task_id, Dictionary(claim_result["receipt"]))
@@ -290,7 +293,30 @@ func _refresh_reward_disclosure_display() -> void:
 	guaranteed_reward_label.text = "保底報酬：%s" % _reward_disclosure_data["guaranteed_reward"]
 	extra_reward_range_label.text = "額外報酬範圍：%s" % _reward_disclosure_data["extra_reward_range"]
 	extra_reward_probability_label.text = "額外機率：%s" % _reward_disclosure_data["extra_reward_probability"]
-	extra_reward_note_label.text = "額外報酬為 0；保底報酬照常顯示" if bool(_reward_disclosure_data["extra_reward_is_zero"]) else "額外報酬依揭露範圍與機率顯示"
+	extra_reward_note_label.text = "未取得額外獎勵；保底報酬照常顯示" if bool(_reward_disclosure_data["extra_reward_is_zero"]) else "額外報酬依揭露範圍與機率顯示"
+
+func _restore_latest_claim_receipt_display() -> void:
+	var latest_receipt: Dictionary = {}
+	var latest_claimed_at_seconds: int = -1
+	for mission_run_id_variant: Variant in _lifecycle.get_persisted_runs()["mission_runs_by_id"]:
+		var mission_run_id: String = str(mission_run_id_variant)
+		var receipt_result: Dictionary = _lifecycle.get_claim_receipt(mission_run_id)
+		if not bool(receipt_result["is_found"]):
+			continue
+		var receipt: Dictionary = Dictionary(receipt_result["receipt"])
+		var claimed_at_seconds: int = int(receipt["claimed_at_seconds"])
+		if claimed_at_seconds > latest_claimed_at_seconds:
+			latest_claimed_at_seconds = claimed_at_seconds
+			latest_receipt = receipt
+	if not latest_receipt.is_empty():
+		_show_claim_receipt(latest_receipt)
+
+func _show_claim_receipt(receipt: Dictionary) -> void:
+	claim_receipt_label.text = "收取紀錄：%s｜結果：%s｜收取時間：%d" % [
+		str(receipt.get("claim_receipt_id", "[PLACEHOLDER]")),
+		str(receipt.get("result_id", "[PLACEHOLDER]")),
+		int(receipt.get("claimed_at_seconds", 0)),
+	]
 
 ## Refreshes only the displayed unaccepted mission using an explicit existing catalog entry.
 func refresh_current_mission(current_time_seconds: int) -> void:

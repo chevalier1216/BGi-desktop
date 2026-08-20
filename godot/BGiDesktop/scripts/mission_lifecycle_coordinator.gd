@@ -139,6 +139,10 @@ func get_persisted_runs() -> Dictionary:
 		"active_run_id_by_task_id": _active_run_id_by_task_id.duplicate(true),
 	}
 
+## Returns the already-persisted receipt for a mission run without changing its state.
+func get_claim_receipt(mission_run_id: String) -> Dictionary:
+	return _claim_receipt_store.get_receipt(mission_run_id)
+
 func _find_mission_run_id(task_id: String) -> String:
 	var active_run_id: String = str(_active_run_id_by_task_id.get(task_id, ""))
 	if not active_run_id.is_empty():

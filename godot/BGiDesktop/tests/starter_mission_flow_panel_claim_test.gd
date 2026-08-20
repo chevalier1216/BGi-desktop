@@ -28,6 +28,7 @@ func _run() -> void:
 	first_panel.current_time_override = clock.started_at_seconds + 5
 	first_panel.claim_button.emit_signal("pressed")
 	_expect(first_panel._task_id == "starter_02", "claim must advance to the next fixed tutorial task")
+	_expect(first_panel.claim_receipt_label.text.contains("starter_01:100:claim"), "claim must keep the persisted receipt visible after advancing")
 	_expect(first_panel.status_label.text == "已選 0/5 名小弟", "claim must return the next task to a selectable crew state")
 	_expect(first_panel.claim_button.disabled, "claimed task must disable repeated claim")
 	_expect(first_panel._snapshot_collection.restore_clock("starter_01") == null, "claim must clear the completed task execution clock")
@@ -47,6 +48,7 @@ func _run() -> void:
 
 	var reopened_panel: StarterMissionFlowPanel = _create_panel("ReopenedPanel", 999)
 	_expect(reopened_panel._task_id == "starter_02", "reopened panel must restore the next fixed tutorial task")
+	_expect(reopened_panel.claim_receipt_label.text.contains("starter_01:100:claim"), "reopened panel must restore the latest persisted receipt")
 	_expect(reopened_panel.status_label.text == "已選 0/5 名小弟", "reopened panel must offer the next task for crew selection")
 	_expect(reopened_panel.claim_button.disabled, "reopened next task must not allow a stale claim")
 	_expect(reopened_panel.start_button.disabled, "reopened next task must require a crew selection")

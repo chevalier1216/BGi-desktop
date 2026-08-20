@@ -138,7 +138,16 @@ func _ready() -> void:
 	var current_time_seconds: int = _get_current_time_seconds()
 	_refresh_state_store = MissionRefreshStateStoreScript.new(refresh_state_store_path)
 	var refresh_state_result: Dictionary = _refresh_state_store.load(current_time_seconds - MissionRefreshAllowanceScript.REFILL_INTERVAL_SECONDS)
-	_refresh_allowance = MissionRefreshAllowanceScript.from_data(Dictionary(envelope.get("refresh_state", {})))["allowance"] if has_envelope else refresh_state_result["allowance"]
+	if has_envelope:
+		var parsed_refresh_state: Dictionary = MissionRefreshAllowanceScript.from_data(Dictionary(envelope.get("refresh_state", {})))
+		if not bool(parsed_refresh_state.get("is_valid", false)):
+			var refresh_state_error: String = str(parsed_refresh_state.get("error_code", "mission_refresh_state_invalid"))
+			_record_tutorial_event("tutorial_state_recovery_failed", "", "recovery_hold", "", {"reason": refresh_state_error})
+			_enter_recovery_hold(refresh_state_error)
+			return
+		_refresh_allowance = parsed_refresh_state["allowance"]
+	else:
+		_refresh_allowance = refresh_state_result["allowance"]
 	_refresh_allowance.update(current_time_seconds)
 	if bool(refresh_state_result["was_missing"]):
 		_refresh_state_store.save(_refresh_allowance)

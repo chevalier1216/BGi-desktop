@@ -69,6 +69,27 @@ func _run() -> void:
 	loaded_crew_file.close()
 	_expect(preserved_crew_payload == original_crew_payload, "crew recovery hold must never overwrite the valid outer envelope")
 	crew_panel.queue_free()
+	await process_frame
+
+	var valid_crew: Array = []
+	for index: int in range(5):
+		valid_crew.append({"id": "crew_%02d" % (index + 1), "status": 0})
+	var invalid_refresh_envelope: Dictionary = PlayerSaveEnvelopeStoreScript.make_envelope(valid_crew, [], valid_execution_state, {}, {}, {}, {})
+	var refresh_save_result: Dictionary = PlayerSaveEnvelopeStoreScript.new(PLAYER_SAVE_PATH).save(invalid_refresh_envelope)
+	_expect(bool(refresh_save_result["is_saved"]), "outer envelope with invalid refresh state must remain writable for recovery validation")
+	var refresh_file: FileAccess = FileAccess.open(PLAYER_SAVE_PATH, FileAccess.READ)
+	var original_refresh_payload: String = refresh_file.get_as_text()
+	refresh_file.close()
+	var refresh_panel: StarterMissionFlowPanel = StarterMissionFlowPanelScene.instantiate() as StarterMissionFlowPanel
+	refresh_panel.player_save_store_path = PLAYER_SAVE_PATH
+	root.add_child(refresh_panel)
+	_expect(refresh_panel._is_recovery_hold, "invalid refresh state inside a valid envelope must enter recovery hold")
+	_expect(refresh_panel.status_label.text == "錯誤：mission_refresh_state_invalid", "refresh recovery hold must expose the validation error")
+	var loaded_refresh_file: FileAccess = FileAccess.open(PLAYER_SAVE_PATH, FileAccess.READ)
+	var preserved_refresh_payload: String = loaded_refresh_file.get_as_text()
+	loaded_refresh_file.close()
+	_expect(preserved_refresh_payload == original_refresh_payload, "refresh recovery hold must never overwrite the valid outer envelope")
+	refresh_panel.queue_free()
 	quit(1 if _failed else 0)
 
 func _expect(condition: bool, message: String) -> void:

@@ -22,14 +22,20 @@ Do not duplicate a workflow across these layers. Resolve a conflict by escalatin
 - After an approved mission completes, PM may proceed directly to the next mission when the execution order and acceptance are already clear and no human decision is required. Do not require repeated "go" or "continue" messages.
 - Do not end a run with a user-facing progress report while an active mission has a spec-defined next necessary step and no genuine blocker, human decision, approval boundary, or usage stop threshold. Continue implementation and targeted verification directly; locating a gap, passing a targeted test, or completing a micro-step is not a reporting checkpoint.
 - A run may end only after the coherent mission is verified and delivered, or because a genuine blocker, human decision, approval boundary, usage threshold, or platform interruption prevents continuation. For a platform interruption before mission completion, report `RUN INTERRUPTED — mission incomplete` with the active mission, completed checkpoint, exact next executable step, and whether a blocker exists.
-- Use roles on demand: `coding` implements and tests; `design` resolves genuine design or operational-data questions; `art_direction` handles approved asset work and visual decisions; `oplog` is used only for release checkpoints, substantial consolidation, or historical audit.
+- PM / orchestrator manages the approved queue, priority, dependencies, and routing. When authoritative specs do not uniquely determine product, gameplay, or UX behavior, do not invent it: create a Design Decision Packet for the design context.
+- Design owns product, gameplay, UX, and authoritative specifications; it does not modify production code. Completed decisions must be written to an authoritative spec, not retained only in conversation.
+- Coding implements and verifies approved specifications without changing product, gameplay, or UX behavior. A genuine implementation ambiguity is returned as `DESIGN_DECISION_REQUIRED`.
+- Art direction is used only when visual direction, assets, or art decisions are actually needed. `oplog` is used only for release checkpoints, substantial consolidation, or historical audit.
+- Cross-context handoffs contain only a Mission Brief, Design Decision Packet, or Durable Handoff. Authoritative specs and actual Git state are the durable source of truth; do not hand off full conversation history.
 - Do not treat a Codex thread as a permanent Git branch. Use short-lived Git branches only when code isolation has real value; `main` remains the verified launch baseline.
 
 ## Global Skills
 
-- Use `$lean-mission-execution` for a defined implementation mission.
-- Add `$visible-ux-validation` whenever a mission changes or validates a user-facing flow.
-- These Skills provide reusable execution methods. Do not copy their workflows into BGi documents.
+- `$continuous-mission-orchestration`: PM / orchestrator continuity between coherent mission checkpoints.
+- `$lean-mission-execution`: continuous work within one defined implementation mission to its acceptance checkpoint.
+- `$visible-ux-validation`: only when a user-facing flow is changed or validated.
+- `$durable-execution-handoff`: before or after a usage, context, runtime, machine, or agent boundary.
+- Load skills by trigger; no role must load all four for every task. These skills provide reusable methods; do not copy their workflows into BGi documents.
 
 ## Background-safe validation
 

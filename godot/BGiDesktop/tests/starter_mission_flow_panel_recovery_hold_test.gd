@@ -74,6 +74,7 @@ func _run() -> void:
 	var valid_crew: Array = []
 	for index: int in range(5):
 		valid_crew.append({"id": "crew_%02d" % (index + 1), "status": 0})
+	var valid_refresh_state: Dictionary = {"allowance": 0, "last_refill_check_seconds": 100}
 	var invalid_refresh_envelope: Dictionary = PlayerSaveEnvelopeStoreScript.make_envelope(valid_crew, [], valid_execution_state, {}, {}, {}, {})
 	var refresh_save_result: Dictionary = PlayerSaveEnvelopeStoreScript.new(PLAYER_SAVE_PATH).save(invalid_refresh_envelope)
 	_expect(bool(refresh_save_result["is_saved"]), "outer envelope with invalid refresh state must remain writable for recovery validation")
@@ -90,6 +91,24 @@ func _run() -> void:
 	loaded_refresh_file.close()
 	_expect(preserved_refresh_payload == original_refresh_payload, "refresh recovery hold must never overwrite the valid outer envelope")
 	refresh_panel.queue_free()
+	await process_frame
+
+	var invalid_receipt_envelope: Dictionary = PlayerSaveEnvelopeStoreScript.make_envelope(valid_crew, [], valid_execution_state, {"starter_01:100": {}}, valid_refresh_state, {}, {})
+	var receipt_save_result: Dictionary = PlayerSaveEnvelopeStoreScript.new(PLAYER_SAVE_PATH).save(invalid_receipt_envelope)
+	_expect(bool(receipt_save_result["is_saved"]), "outer envelope with invalid claim receipt must remain writable for recovery validation")
+	var receipt_file: FileAccess = FileAccess.open(PLAYER_SAVE_PATH, FileAccess.READ)
+	var original_receipt_payload: String = receipt_file.get_as_text()
+	receipt_file.close()
+	var receipt_panel: StarterMissionFlowPanel = StarterMissionFlowPanelScene.instantiate() as StarterMissionFlowPanel
+	receipt_panel.player_save_store_path = PLAYER_SAVE_PATH
+	root.add_child(receipt_panel)
+	_expect(receipt_panel._is_recovery_hold, "invalid claim receipt inside a valid envelope must enter recovery hold")
+	_expect(receipt_panel.status_label.text == "錯誤：claim_receipt_store_data_invalid", "claim receipt recovery hold must expose the validation error")
+	var loaded_receipt_file: FileAccess = FileAccess.open(PLAYER_SAVE_PATH, FileAccess.READ)
+	var preserved_receipt_payload: String = loaded_receipt_file.get_as_text()
+	loaded_receipt_file.close()
+	_expect(preserved_receipt_payload == original_receipt_payload, "claim receipt recovery hold must never overwrite the valid outer envelope")
+	receipt_panel.queue_free()
 	quit(1 if _failed else 0)
 
 func _expect(condition: bool, message: String) -> void:

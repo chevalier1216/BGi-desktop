@@ -129,7 +129,13 @@ func _ready() -> void:
 			_enter_recovery_hold(crew_restore_error)
 			return
 	if has_envelope:
-		_claim_receipt_collection = ClaimReceiptCollectionScript.new(Dictionary(envelope.get("claim_receipts_by_mission_run_id", {})))
+		_claim_receipt_collection = ClaimReceiptCollectionScript.new()
+		var receipt_load_result: Dictionary = _claim_receipt_collection.load_data(Dictionary(envelope.get("claim_receipts_by_mission_run_id", {})))
+		if not bool(receipt_load_result.get("is_loaded", false)):
+			var receipt_error: String = str(receipt_load_result.get("error_code", "claim_receipt_store_data_invalid"))
+			_record_tutorial_event("tutorial_state_recovery_failed", "", "recovery_hold", "", {"reason": receipt_error})
+			_enter_recovery_hold(receipt_error)
+			return
 	else:
 		var legacy_receipts: Dictionary = ClaimReceiptStoreScript.new().load()
 		_claim_receipt_collection = ClaimReceiptCollectionScript.new(Dictionary(legacy_receipts.get("receipts_by_mission_run_id", {})))

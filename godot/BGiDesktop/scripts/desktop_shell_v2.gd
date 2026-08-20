@@ -22,11 +22,17 @@ const STATUS_LABELS := {
 	2: "已完成待收取",
 }
 
+const POPUP_MARGIN := 24
+const POPUP_CASCADE_STEP := Vector2i(36, 30)
+
 var _game_state: Node
 var _popup_windows: Dictionary = {}
 var _mission_panel: StarterMissionFlowPanel
 
 func _ready() -> void:
+	# These are desktop tool windows, not controls inside the 450px bottom-stage viewport.
+	# Native windows provide the operating-system title bar, drag surface and close control.
+	get_tree().root.gui_embed_subwindows = false
 	_game_state = get_node_or_null("/root/GameState")
 	if _game_state != null:
 		_render_crew_status()
@@ -124,16 +130,31 @@ func _open_popup(key: String, title: String, size: Vector2i) -> Window:
 		existing.show()
 		return existing
 	var window := Window.new()
+	window.hide()
 	window.title = title
 	window.size = size
 	window.min_size = Vector2i(320, 220)
+	window.force_native = true
+	window.transient = false
+	window.borderless = false
 	window.unresizable = false
 	window.exclusive = false
+	window.position = _initial_popup_position(size)
 	window.close_requested.connect(window.hide)
 	add_child(window)
 	_popup_windows[key] = window
 	window.show()
 	return window
+
+func _initial_popup_position(size: Vector2i) -> Vector2i:
+	var parent_window := get_window()
+	var usable_rect := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
+	var cascade_index := _popup_windows.size()
+	var preferred := parent_window.position + Vector2i(POPUP_MARGIN, -size.y + POPUP_MARGIN) + POPUP_CASCADE_STEP * cascade_index
+	return Vector2i(
+		clampi(preferred.x, usable_rect.position.x + POPUP_MARGIN, usable_rect.end.x - size.x - POPUP_MARGIN),
+		clampi(preferred.y, usable_rect.position.y + POPUP_MARGIN, usable_rect.end.y - size.y - POPUP_MARGIN)
+	)
 
 func _replace_popup_content(window: Window, content: Control) -> void:
 	for child in window.get_children():

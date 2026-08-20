@@ -113,6 +113,11 @@ func _ready() -> void:
 	var envelope: Dictionary = Dictionary(player_save_result.get("envelope", {}))
 	var has_envelope: bool = bool(player_save_result.get("is_loaded", false)) and not bool(player_save_result.get("was_missing", true))
 	var execution_state_result: Dictionary = MissionExecutionStateStoreScript.from_payload(Dictionary(envelope.get("execution_state", {}))) if has_envelope else _execution_state_store.load()
+	if has_envelope and not bool(execution_state_result.get("is_loaded", false)):
+		var execution_state_error: String = str(execution_state_result.get("error_code", "execution_state_store_data_invalid"))
+		_record_tutorial_event("tutorial_state_recovery_failed", "", "recovery_hold", "", {"reason": execution_state_error})
+		_enter_recovery_hold(execution_state_error)
+		return
 	_snapshot_collection = execution_state_result["collection"]
 	_result_state = execution_state_result["result_state"]
 	_crew_ids_by_task = Dictionary(execution_state_result["crew_ids_by_task"]).duplicate(true)
@@ -677,6 +682,8 @@ func _save_refresh_state() -> Dictionary:
 	return _save_player_state()
 
 func _process(_delta: float) -> void:
+	if _is_recovery_hold:
+		return
 	refresh_execution_status(_get_current_time_seconds())
 	update_refresh_allowance(_get_current_time_seconds())
 

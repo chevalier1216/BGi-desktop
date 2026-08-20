@@ -1,6 +1,7 @@
 extends SceneTree
 
 const StarterMissionFlowPanelScene = preload("res://scenes/starter_mission_flow_panel.tscn")
+const PlayerSaveEnvelopeStoreScript = preload("res://scripts/player_save_envelope_store.gd")
 
 const PLAYER_SAVE_PATH: String = "user://starter_mission_flow_panel_recovery_hold.json"
 
@@ -28,6 +29,26 @@ func _run() -> void:
 	loaded_file.close()
 	_expect(preserved_payload == original_payload, "recovery hold must never overwrite the invalid envelope")
 	panel.queue_free()
+	await process_frame
+
+	var malformed_execution_state: Dictionary = {"executions": [], "result_state": {}, "mission_runs": {}}
+	var envelope: Dictionary = PlayerSaveEnvelopeStoreScript.make_envelope([], [], malformed_execution_state, {}, {}, {}, {})
+	var save_result: Dictionary = PlayerSaveEnvelopeStoreScript.new(PLAYER_SAVE_PATH).save(envelope)
+	_expect(bool(save_result["is_saved"]), "outer envelope with invalid execution state must remain writable for recovery validation")
+	var execution_file: FileAccess = FileAccess.open(PLAYER_SAVE_PATH, FileAccess.READ)
+	var original_execution_payload: String = execution_file.get_as_text()
+	execution_file.close()
+	var execution_panel: StarterMissionFlowPanel = StarterMissionFlowPanelScene.instantiate() as StarterMissionFlowPanel
+	execution_panel.player_save_store_path = PLAYER_SAVE_PATH
+	root.add_child(execution_panel)
+	_expect(execution_panel._is_recovery_hold, "invalid execution state inside a valid envelope must enter recovery hold")
+	_expect(execution_panel.status_label.text == "錯誤：execution_state_store_data_invalid", "execution-state recovery hold must expose the validation error")
+	_expect(execution_panel.start_button.disabled and execution_panel.claim_button.disabled and execution_panel.refresh_button.disabled and execution_panel.explore_territory_button.disabled, "execution-state recovery hold must disable state-changing actions")
+	var loaded_execution_file: FileAccess = FileAccess.open(PLAYER_SAVE_PATH, FileAccess.READ)
+	var preserved_execution_payload: String = loaded_execution_file.get_as_text()
+	loaded_execution_file.close()
+	_expect(preserved_execution_payload == original_execution_payload, "execution-state recovery hold must never overwrite the valid outer envelope")
+	execution_panel.queue_free()
 	quit(1 if _failed else 0)
 
 func _expect(condition: bool, message: String) -> void:

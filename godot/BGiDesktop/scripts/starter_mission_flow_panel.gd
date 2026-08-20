@@ -124,11 +124,10 @@ func _ready() -> void:
 	if has_envelope:
 		var restore_crew_result: Dictionary = _game_state.restore_crew(Array(envelope.get("crew_by_id", [])))
 		if not bool(restore_crew_result.get("is_restored", false)):
-			has_envelope = false
-			execution_state_result = _execution_state_store.load()
-			_snapshot_collection = execution_state_result["collection"]
-			_result_state = execution_state_result["result_state"]
-			_crew_ids_by_task = Dictionary(execution_state_result["crew_ids_by_task"]).duplicate(true)
+			var crew_restore_error: String = str(restore_crew_result.get("error_code", "crew_restore_invalid"))
+			_record_tutorial_event("tutorial_state_recovery_failed", "", "recovery_hold", "", {"reason": crew_restore_error})
+			_enter_recovery_hold(crew_restore_error)
+			return
 	if has_envelope:
 		_claim_receipt_collection = ClaimReceiptCollectionScript.new(Dictionary(envelope.get("claim_receipts_by_mission_run_id", {})))
 	else:

@@ -49,6 +49,26 @@ func _run() -> void:
 	loaded_execution_file.close()
 	_expect(preserved_execution_payload == original_execution_payload, "execution-state recovery hold must never overwrite the valid outer envelope")
 	execution_panel.queue_free()
+	await process_frame
+
+	var valid_execution_state: Dictionary = {"executions": {}, "result_state": {}, "mission_runs": {}}
+	var invalid_crew_envelope: Dictionary = PlayerSaveEnvelopeStoreScript.make_envelope([{"id": "crew_01", "status": 99}], [], valid_execution_state, {}, {}, {}, {})
+	var crew_save_result: Dictionary = PlayerSaveEnvelopeStoreScript.new(PLAYER_SAVE_PATH).save(invalid_crew_envelope)
+	_expect(bool(crew_save_result["is_saved"]), "outer envelope with invalid crew data must remain writable for recovery validation")
+	var crew_file: FileAccess = FileAccess.open(PLAYER_SAVE_PATH, FileAccess.READ)
+	var original_crew_payload: String = crew_file.get_as_text()
+	crew_file.close()
+	var crew_panel: StarterMissionFlowPanel = StarterMissionFlowPanelScene.instantiate() as StarterMissionFlowPanel
+	crew_panel.player_save_store_path = PLAYER_SAVE_PATH
+	root.add_child(crew_panel)
+	_expect(crew_panel._is_recovery_hold, "invalid crew data inside a valid envelope must enter recovery hold")
+	_expect(crew_panel.status_label.text == "錯誤：crew_restore_invalid", "crew recovery hold must expose the validation error")
+	_expect(crew_panel.start_button.disabled and crew_panel.claim_button.disabled and crew_panel.refresh_button.disabled and crew_panel.explore_territory_button.disabled, "crew recovery hold must disable state-changing actions")
+	var loaded_crew_file: FileAccess = FileAccess.open(PLAYER_SAVE_PATH, FileAccess.READ)
+	var preserved_crew_payload: String = loaded_crew_file.get_as_text()
+	loaded_crew_file.close()
+	_expect(preserved_crew_payload == original_crew_payload, "crew recovery hold must never overwrite the valid outer envelope")
+	crew_panel.queue_free()
 	quit(1 if _failed else 0)
 
 func _expect(condition: bool, message: String) -> void:

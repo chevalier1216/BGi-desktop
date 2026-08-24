@@ -2,7 +2,7 @@
 
 > Human-readable design view，不是 authoritative source。
 > Authoritative sources 為 Git repository 中的正式 specs / decisions；若本文件與其衝突，以正式來源為準。
-> Source baseline：`ec34d1a7e36c18b16eea9e7b3ca7eb72d09cdf0c`；本文件已納入本次 P1-1～P1-3 規格同步，實際發布 revision 以 Git commit 記錄為準。
+> Source baseline：`231f43a0068a3d4d09089b3897847eb393f681e3`；本文件已同步目前 worktree 的 P1 固定效果對照，實際發布 revision 以 Git commit 記錄為準。
 
 ## 1. 遊戲概念與玩家身份
 
@@ -47,6 +47,8 @@
 正式任務刷新每 6 小時補充 1 次額度，上限為 1，只能替換尚未接受的任務。已派遣、待收取與已收取任務都不可被刷新。
 
 第一版不提供玩家取消任務。
+
+首批固定的教學任務成果以 canonical `mission_template_id` 記錄：`starter_18` 觸及 `territory_02` 並解鎖 `character_06`；`starter_19`–`starter_23` 分別取得特級金磚、水果禮盒、LED 霓虹招牌、BEMZ 豪華保母車與城市建築套組，各為固定 1 份。這些成果在任務完成時固定，成功收取才入帳。
 
 ## 6. 報酬與收取
 
@@ -98,6 +100,8 @@
 收藏可為 Unique、Stackable 或 Series。水果禮盒確認可堆疊；LED、懸賞令與後續多款 BEMZ 原則上屬不同具名收藏的 Series 成員。
 
 任務在完成時可固定一筆收藏取得成果，成功收取才寫入收藏庫。Unique 未擁有時取得；重複取得不會改抽或替換。Stackable 依完成時已固定的數量只增加一次；Series 採相同收取方式，系列關係只作內容分類。
+
+上述新手固定成果只定義這六個任務；其餘新手任務、完整收藏對照、掉落／機率、未來水果禮盒數量、Stackable 用途與 Series 完成獎勵均尚待決策。
 
 收藏與資源採 identity-first ID；內容身份、展示方式、所有權規則與 Series 關係分開表示。
 

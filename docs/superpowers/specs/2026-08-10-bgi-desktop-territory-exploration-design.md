@@ -184,6 +184,21 @@
 - 收藏採 identity-first 穩定 ID。ID 不得編碼可變的展示能力、所有權或玩法分類；展示以獨立屬性（如 `foreground`、`scene_prop`、`scene_set`、`none`）表示，Unique／Stackable 亦為獨立屬性，Series 為內容關係。命名空間採 `region.r01`、`collectible.r01.<identity>`、`background.r01.<identity>` 與 `resource.<identity>`；不採 `item-region01-1-001`、`item-region01-2-001` 或一般資源 `item-00`。
 - Resource 與 Collectible 是不同概念與命名空間。資源可由任務及放置產出；收藏的具體任務、地區、進度、掉落表與機率，以及資源類型、用途、速度、容量和收取規則，均為 `[PLACEHOLDER]`。
 
+### 第一批固定的新手任務效果對照
+
+下列是唯一已核准的 `mission_template_id → effect` 產品對照。`T18`–`T23` 僅是教學步驟標籤；本表一律使用 canonical `mission_template_id` `starter_18`–`starter_23`。
+
+| `mission_template_id` | 固定效果 | 固定 identity／數量 | 收藏屬性與邊界 |
+| --- | --- | --- | --- |
+| `starter_18` | `territory_first_touch` | `territory_02`、`character_06` | 成功收取才首次觸及並解鎖人物；同一地盤不重複套用。 |
+| `starter_19` | `collectible_grant` | `collectible.r01.goldbar_001` ×1 | Unique、Pure Collectible。 |
+| `starter_20` | `collectible_grant` | `collectible.r01.gift_001` ×1 | Stackable；此數量只適用於本任務，不決定未來來源數量或用途。 |
+| `starter_21` | `collectible_grant` | `collectible.r01.neon_001` ×1 | Series 成員；不決定系列完成獎勵。 |
+| `starter_22` | `collectible_grant` | `collectible.r01.vehicle_001` ×1 | Scene Prop；只建立所有權，不自動放置、顯示、移動或替換。 |
+| `starter_23` | `collectible_grant` | `collectible.r01.cityset_001` ×1 | Scene Set；只建立所有權，不自動套用或切換。 |
+
+此表不決定 `starter_01`–`starter_17`、其餘收藏 mapping、掉落／機率、Stackable 用途、Series 完成獎勵、展示／placement UX、資源經濟、地盤門檻、地盤受損或黑市。既有 `starter_01:100 → territory_02` 僅為 implementation/test fixture，不能作為產品 mapping。
+
 ### 背景收藏與前景掛件
 
 - 每個地區可在設定的地盤推進獎勵節點解鎖 1 張完整背景布景；第一張背景主題為「高架線與霧金天際線」。背景名稱只定義主題，不包含素材導入或美術授權決定。
@@ -363,3 +378,4 @@
 | 0.7 | 2026-08-10 | 定義新手教學固定順序、中斷復原與本機匿名玩家行為日誌。 |
 | 0.8 | 2026-08-10 | 定義掛件首次預設、自由拖放、相對座標保存與畫布變更邊界夾回規則。 |
 | 0.9 | 2026-08-24 | 納入地盤受損／修復，並以已審核的衝突校正更新收藏來源、展示類型、所有權與 identity-first ID；任務與放置產出邊界維持 `[PLACEHOLDER]`。 |
+| 1.0 | 2026-08-24 | 納入 `starter_18`–`starter_23` 的首批固定地盤觸及與收藏效果對照；其餘 mapping 與 deferred 系統維持未定。 |

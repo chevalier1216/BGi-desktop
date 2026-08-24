@@ -108,6 +108,21 @@ P1 已核准的描述符為：
 
 場景道具與場景組的 `collectible_grant` 僅建立所有權，不會自動顯示、套用或放置。任務對照、掉落表、機率、數量、用途、系列獎勵與完整放置互動均不在本次範圍。
 
+### 3.4 P1 固定 `mission_template_id` 效果對照
+
+下列 effect 必須在相應 `mission_template_id` 完成時解析，並與該次 `result_snapshot` 一併保存；`ClaimReceipt`、重試與讀檔只使用保存後的描述符。`starter_18`–`starter_23` 是 canonical tutorial mission identities，不以 `T18`–`T23` 教學標籤作為資料鍵。
+
+| `mission_template_id` | 已固定 `ClaimEffectDescriptor` |
+| --- | --- |
+| `starter_18` | `territory_first_touch { territory_id: territory_02, character_id: character_06 }` |
+| `starter_19` | `collectible_grant { collectible_id: collectible.r01.goldbar_001, quantity: 1 }` |
+| `starter_20` | `collectible_grant { collectible_id: collectible.r01.gift_001, quantity: 1 }` |
+| `starter_21` | `collectible_grant { collectible_id: collectible.r01.neon_001, quantity: 1 }` |
+| `starter_22` | `collectible_grant { collectible_id: collectible.r01.vehicle_001, quantity: 1 }` |
+| `starter_23` | `collectible_grant { collectible_id: collectible.r01.cityset_001, quantity: 1 }` |
+
+`starter_19` 的 Unique 重複處理不另給一份；`starter_20` 的 quantity 只界定該任務本身，不推導未來 gift 來源或 Stackable 用途；`starter_21` 不產生 Series 完成獎勵；`starter_22`、`starter_23` 維持 ownership-only。未列在本表的 tutorial／正式任務不因此取得 mapping。`starter_01:100 → territory_02` 仍僅是 implementation/test fixture，不是產品內容來源。
+
 ## 4. 刷新、地盤與人物解鎖契約
 
 ### 4.1 `RefreshState`

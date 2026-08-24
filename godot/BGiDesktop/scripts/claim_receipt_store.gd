@@ -51,6 +51,24 @@ func get_receipt(mission_run_id: String) -> Dictionary:
 		return {"is_found": false, "error_code": "claim_receipt_store_data_invalid", "receipt": {}}
 	return {"is_found": true, "error_code": "", "receipt": Dictionary(receipt_result["receipt"]).duplicate(true)}
 
+## Removes one receipt when an enclosing player-save transaction fails to commit.
+func remove_receipt(mission_run_id: String) -> Dictionary:
+	if mission_run_id.is_empty():
+		return {"is_removed": false, "did_remove": false, "error_code": "claim_receipt_store_data_invalid"}
+	var loaded: Dictionary = self.load()
+	if not bool(loaded["is_loaded"]):
+		return {"is_removed": false, "did_remove": false, "error_code": str(loaded["error_code"])}
+	var receipts_by_mission_run_id: Dictionary = Dictionary(loaded["receipts_by_mission_run_id"]).duplicate(true)
+	if not receipts_by_mission_run_id.has(mission_run_id):
+		return {"is_removed": true, "did_remove": false, "error_code": ""}
+	receipts_by_mission_run_id.erase(mission_run_id)
+	var file: FileAccess = FileAccess.open(_file_path, FileAccess.WRITE)
+	if file == null:
+		return {"is_removed": false, "did_remove": false, "error_code": "claim_receipt_store_write_failed"}
+	file.store_string(JSON.stringify({"receipts_by_mission_run_id": receipts_by_mission_run_id}))
+	file.close()
+	return {"is_removed": true, "did_remove": true, "error_code": ""}
+
 func load() -> Dictionary:
 	if not _file_path.begins_with("user://"):
 		return _rejected("claim_receipt_store_path_invalid")

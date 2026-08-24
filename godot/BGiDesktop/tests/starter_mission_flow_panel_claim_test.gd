@@ -26,7 +26,7 @@ func _run() -> void:
 	_expect(not first_panel.claim_button.disabled, "locked result must enable exactly one claim action")
 	_expect(Array(first_panel.get_task_directory_entries()["current"]).is_empty(), "completion must not make the next fixed tutorial task dispatchable before claim")
 	for crew_id: String in dispatched_crew_ids:
-		_expect(_status_for(first_panel._game_state.get_crew(), crew_id) == 2, "completion must keep every dispatched crew member unavailable before result claim")
+		_expect(_status_for(first_panel._game_state.get_crew(), crew_id) == 0, "completion must release every dispatched crew member before result claim")
 	var locked_result: Dictionary = Dictionary(first_panel._lifecycle._locked_results_by_task_id[first_panel._task_id]).duplicate(true)
 	first_panel.current_time_override = clock.started_at_seconds + 5
 	first_panel.claim_button.emit_signal("pressed")

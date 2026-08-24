@@ -36,8 +36,8 @@ func _run() -> void:
 	var resolved: Dictionary = lifecycle.resolve_completed_result("starter_01", 105)
 	_expect(bool(resolved["is_resolved"]), "expired task must lock a pending result")
 	_expect(str(progression.get_current_task()["id"]) == "starter_01", "a fixed result must not advance tutorial progression before collection")
-	_expect(_status_for(game_state.get_crew(), "crew_01") == GameStateScript.CrewStatus.COMPLETED, "completion must keep crew unavailable before collection")
-	_expect(not assignment_state.get_assigned_crew_ids("starter_01").is_empty(), "completion must retain the resolved task assignment before collection")
+	_expect(_status_for(game_state.get_crew(), "crew_01") == GameStateScript.CrewStatus.AVAILABLE, "completion must release crew before collection")
+	_expect(assignment_state.get_assigned_crew_ids("starter_01").is_empty(), "completion must release the resolved task assignment before collection")
 
 	var claim: Dictionary = lifecycle.claim_completed_result("starter_01", 105)
 	_expect(bool(claim["is_claimed"]) and bool(claim["did_claim"]), "claim receipt must save before the claim transaction completes")

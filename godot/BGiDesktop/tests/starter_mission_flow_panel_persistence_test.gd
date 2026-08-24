@@ -45,7 +45,7 @@ func _run() -> void:
 	_expect(int(restored_result["resolved_at_seconds"]) == int(locked_result["resolved_at_seconds"]), "reopened locked result must retain its first resolution time")
 	_expect(locked_panel._selected_crew_ids.is_empty(), "completed restoration must not present a stale crew selection")
 	for crew_id: String in ["crew_01", "crew_02", "crew_03"]:
-		_expect(_status_for(locked_panel._game_state.get_crew(), crew_id) == 2, "completed restoration must keep dispatched crew unavailable before result claim")
+		_expect(_status_for(locked_panel._game_state.get_crew(), crew_id) == 0, "completed restoration must keep released crew available before result claim")
 	locked_panel.queue_free()
 
 	quit(1 if _failed else 0)

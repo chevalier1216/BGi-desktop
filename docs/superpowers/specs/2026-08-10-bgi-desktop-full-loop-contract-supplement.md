@@ -71,7 +71,7 @@ PlayerSaveEnvelope
 | `crew_reward_multiplier` | 是 | 派遣確認當下已明示的團隊報酬倍率；實際公式維持 `[PLACEHOLDER]`。 |
 | `started_at_seconds`、`due_at_seconds` | 是 | 執行開始與預計完成時間；`due_at_seconds = started_at_seconds + duration_seconds`。 |
 | `run_state` | 是 | `active`、`completed_pending_claim`、`claimed`、`recovery_hold` 之一。 |
-| `result_snapshot` | 條件必填 | 只有完成後存在；一經寫入不得改變。 |
+| `result_snapshot` | 條件必填 | 只有完成後存在；其中含完成時已解析的 `ClaimEffectDescriptor`；一經寫入不得改變。 |
 | `claim_receipt_id` | 條件必填 | 只有 `claimed` 時存在，指向唯一收取收據。 |
 | `recovery_reason` | 條件必填 | 只有 `recovery_hold` 時存在；不可用此狀態產生或收取結果。 |
 
@@ -84,7 +84,7 @@ recovery_hold --修復後仍能識別原 run--> active 或 completed_pending_cla
 ```
 
 - `active` 期間，所有 `assigned_crew_ids` 對應人物皆為派遣中，不能加入另一任務。
-- `completed_pending_claim` 時，必須先建立固定的 `result_snapshot`，並安全保存原派遣人物恢復可用，才允許 UI 顯示收取按鈕。人物恢復可用不代表報酬或任何長期效果已提交；後續收取保存失敗不得把人物狀態回退為派遣中。
+- `completed_pending_claim` 時，必須先建立固定的 `result_snapshot`（含已解析的 `ClaimEffectDescriptor`），並安全保存原派遣人物恢復可用，才允許 UI 顯示收取按鈕。人物恢復可用不代表報酬或任何長期效果已提交；後續收取保存失敗不得把人物狀態回退為派遣中。
 - `claimed` 任務保留作歷史／教學進度依據；不得重新回到可派遣狀態。
 - 第一版不需要玩家取消任務。既有取消／釋放服務不得被視為產品流程授權，除非日後另行核准。
 
@@ -94,10 +94,19 @@ recovery_hold --修復後仍能識別原 run--> active 或 completed_pending_cla
 
 | 資料 | 必填欄位 | 不變性 |
 | --- | --- | --- |
-| `result_snapshot` | `result_id`、`mission_run_id`、`resolved_at_seconds`、`guaranteed_reward`、`bonus_reward`、`bonus_outcome` | `bonus_outcome` 只能是 `granted` 或 `not_granted`；完成任務一定有保底。結果首次建立後不可重算。 |
-| `ClaimReceipt` | `claim_receipt_id`、`mission_run_id`、`result_id`、`claimed_at_seconds`、`applied_effect_ids` | 同一 `mission_run_id` 最多一張。重複請求回傳既有收據，不得再次套用效果。 |
+| `result_snapshot` | `result_id`、`mission_run_id`、`resolved_at_seconds`、`guaranteed_reward`、`bonus_reward`、`bonus_outcome`、`claim_effect_descriptors` | `bonus_outcome` 只能是 `granted` 或 `not_granted`；完成任務一定有保底。結果與效果描述符首次建立後不可重算。 |
+| `ClaimReceipt` | `claim_receipt_id`、`mission_run_id`、`result_id`、`claimed_at_seconds`、`applied_effect_ids`、`effect_descriptors` | 同一 `mission_run_id` 最多一張；`effect_descriptors` 是結果快照內已固定描述符的保存引用或等值副本。重複請求回傳既有收據，不得再次套用效果。 |
 
 `applied_effect_ids` 僅記錄效果識別，不以本文件決定數值：例如 `territory_progress:[PLACEHOLDER]`、`collection:[PLACEHOLDER]`、`decoration:[PLACEHOLDER]`、`currency:[PLACEHOLDER]`。若某效果不適用，使用空集合；不可憑空補出報酬。
+
+`ClaimEffectDescriptor` 是完成時已解析、在進入 `completed_pending_claim` 前即隨固定結果保存的效果橋接資料。收取及讀檔只能讀取此固定資料，不得由當前任務設定、掉落表或內容對照重新推導。
+
+P1 已核准的描述符為：
+
+- `territory_first_touch`：含 `territory_id`、`character_id`。第一次成功套用時建立該地盤的 `TerritoryTouchReceipt`、將地盤由未涉足改為已觸及，並解鎖已固定的 1 名人物；已套用時為 no-op。
+- `collectible_grant`：含 `collectible_id`、`quantity`。`unique` 未擁有時取得，已擁有時不重抽、不替代；`stackable` 以固定數量只增加一次；`series` 沿用相同收取契約，系列歸屬僅為 metadata。
+
+場景道具與場景組的 `collectible_grant` 僅建立所有權，不會自動顯示、套用或放置。任務對照、掉落表、機率、數量、用途、系列獎勵與完整放置互動均不在本次範圍。
 
 ## 4. 刷新、地盤與人物解鎖契約
 
@@ -120,7 +129,7 @@ recovery_hold --修復後仍能識別原 run--> active 或 completed_pending_cla
 | `TerritoryState` | `territory_id`、`territory_progress`、`exploration_collection_count`、`environment_decoration_owned_count` | 三個長期成長值可先以 `[PLACEHOLDER]` 顯示，但欄位與 ID 必須存在。 |
 | `TerritoryTouchReceipt` | `territory_id`、`source_claim_receipt_id`、`touched_at_seconds`、`unlocked_crew_id` | 同一 `territory_id` 只建立一次。首次觸及新地盤必須解鎖恰好 1 名新人物。 |
 
-- 地盤觸及只能由已成功建立的 `ClaimReceipt` 觸發；任務完成待收取、重看結果或背景切換不能觸發。
+- 地盤觸及只能由已成功建立的 `ClaimReceipt` 及其已固定 `territory_first_touch` 描述符觸發；任務完成待收取、重看結果或背景切換不能觸發。
 - 解鎖人物時必須把新人物完整寫入 `crew_by_id`，初始狀態為可用；不能只遞增一個人數計數器。
 - 背景、收藏與環境布置可由有效收取效果解鎖，但它們的所有權與顯示資料不得充當地盤首次觸及的唯一證據。
 
@@ -155,8 +164,8 @@ recovery_hold --修復後仍能識別原 run--> active 或 completed_pending_cla
 
 ### P1：地盤與人物
 
-1. 有效收取第一次觸及 `territory_02` 時，建立一張 `TerritoryTouchReceipt` 並加入 1 名可用人物。
-2. 對同一任務重複收取、重新載入、或再觸及 `territory_02`，人物數不再增加。
+1. 有效收取已固定的 `territory_first_touch` 描述符時，建立一張 `TerritoryTouchReceipt` 並加入其已固定的 1 名可用人物。
+2. 對同一任務重複收取、重新載入、或再觸及同一地盤，人物數不再增加。既有 `starter_01:100 → territory_02` 僅可作測試 fixture，不是產品內容對照。
 3. 文字暫代 UI 可看見地盤長期成長欄位與人物可用／忙碌數，即使所有數值仍為 `[PLACEHOLDER]`。
 
 建議交付順序：`P0-A` → `P0-B` → 文字暫代 UI → `P1`。這是後續完整一輪的整合順序，並不要求中止既有 coding 小目標或提前建立 `BGi-desktop_QA`。

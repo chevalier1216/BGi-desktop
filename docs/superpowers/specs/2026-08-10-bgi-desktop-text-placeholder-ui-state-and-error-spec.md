@@ -54,7 +54,7 @@ UiActionResponse
 | 前置 | `MissionRunRecord.run_state=active`，且具有效 `mission_run_id`、`assigned_crew_ids`、`started_at_seconds`、`due_at_seconds`。 |
 | 可用操作 | 查看指派人物、預計完成時間與剩餘時間；重啟後繼續讀取同一筆執行資料。 |
 | 禁止操作 | 不可重派、收取、刷新替換、重新抽取結果或取消任務。 |
-| 到期轉換 | `now_seconds >= due_at_seconds` 時，先固定並保存 `result_snapshot`、`completed_pending_claim` 與原派遣人物恢復可用狀態。 |
+| 到期轉換 | `now_seconds >= due_at_seconds` 時，先固定並保存 `result_snapshot`、其中已解析的 `ClaimEffectDescriptor`、`completed_pending_claim` 與原派遣人物恢復可用狀態。 |
 | 文字鍵 | `ui.mission.active.title`＝「派遣中」、`ui.mission.remaining_time`＝「剩餘時間：{remaining_time}」、`ui.mission.complete_ready`＝「任務已完成，可收取成果。」 |
 | 無美術驗收 | 用可注入時間完成 5 秒新手任務；程式重啟或重複檢查後，仍顯示同一任務、同一隊伍與同一結果識別，且原派遣人物可再選。 |
 
@@ -96,12 +96,12 @@ UiActionResponse
 
 | 項目 | 規格 |
 | --- | --- |
-| 前置 | 成功保存 `ClaimReceipt`；收取效果指向新 `territory_id`；該地盤尚無 `TerritoryTouchReceipt`。 |
-| 可用操作 | 在收取結果中查看地盤變化、新人物與長期成長欄位；關閉結果後於地盤／人物區查看。 |
-| 禁止操作 | 任務完成待收取、重看結果、背景切換或重複收取不得觸發觸及或人物增加。 |
-| 成功狀態 | 建立並保存一張 `TerritoryTouchReceipt`，新增恰好 1 名初始可用人物。 |
+| 前置 | 成功保存 `ClaimReceipt`；其引用的已固定 `territory_first_touch` 描述符指向新 `territory_id` 與 1 名人物；該地盤尚無 `TerritoryTouchReceipt`。 |
+| 可用操作 | 成功套用後只呈現兩項玩家可見成果：地盤聯絡／開啟（`未涉足 → 已觸及`）與解鎖人物 ×1；關閉結果後可於地盤／人物區查看。 |
+| 禁止操作 | 任務完成待收取、重看結果、背景切換、載入或重複收取不得觸發觸及、人物增加或新的解鎖通知。 |
+| 成功狀態 | 以固定描述符建立並保存一張 `TerritoryTouchReceipt`，新增恰好 1 名初始可用人物；UI 只讀取已保存的套用結果，不由目前設定推論。 |
 | 文字鍵 | `ui.territory.first_touch.title`＝「觸及新地盤」、`ui.territory.first_touch.body`＝「已建立新的勢力據點。」、`ui.crew.unlocked`＝「新人物已加入：{crew_id}」、`ui.territory.progress`＝「地盤進度：{territory_progress}」。 |
-| 無美術驗收 | 首次收取後人物總數增加 1；再次載入、重看或重複收取不再增加。三項長期成長欄位即使為 `[PLACEHOLDER]` 也持續可見。 |
+| 無美術驗收 | 首次收取後人物總數增加 1，且首次套用才呈現兩項成果；再次載入、重看或重複收取不再增加或重播。三項長期成長欄位即使為 `[PLACEHOLDER]` 也持續可見。 |
 
 ### 3.7 未解鎖內容
 

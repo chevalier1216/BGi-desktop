@@ -84,7 +84,7 @@ recovery_hold --修復後仍能識別原 run--> active 或 completed_pending_cla
 ```
 
 - `active` 期間，所有 `assigned_crew_ids` 對應人物皆為派遣中，不能加入另一任務。
-- `completed_pending_claim` 時，必須先建立固定的 `result_snapshot`，再允許 UI 顯示收取按鈕。
+- `completed_pending_claim` 時，必須先建立固定的 `result_snapshot`，並安全保存原派遣人物恢復可用，才允許 UI 顯示收取按鈕。人物恢復可用不代表報酬或任何長期效果已提交；後續收取保存失敗不得把人物狀態回退為派遣中。
 - `claimed` 任務保留作歷史／教學進度依據；不得重新回到可派遣狀態。
 - 第一版不需要玩家取消任務。既有取消／釋放服務不得被視為產品流程授權，除非日後另行核准。
 
@@ -133,7 +133,7 @@ recovery_hold --修復後仍能識別原 run--> active 或 completed_pending_cla
 | 任務列表 | 任務 ID、時長、最低／最多人數、保底、額外範圍／機率、目前狀態 | 選取可用任務 | 開啟派遣選擇 | 已接受或已收取項目只可查看，不提供派遣。 |
 | 派遣選擇 | 可用人物、已選人數、最低／最多人數、團隊倍率 | 確認派遣 | 任務改為派遣中、人物改為派遣中、倒數開始 | 顯示 `crew_count_below_min`、`crew_count_above_max`、`crew_busy`、`crew_duplicate` 或 `global_cap_reached`。目前全域上限為 0 時，不顯示阻擋。 |
 | 派遣中卡片 | 指派人物、預計完成時間、剩餘時間 | 查看 | 到期時改為可收取 | 不提供刷新或重派。 |
-| 可收取卡片 | 固定保底、已固定的額外結果；額外為 0 時顯示「未取得額外獎勵」 | 收取 | 顯示本次已套用效果、地盤／收藏／布置變化與人物解鎖（如有） | 若存檔交易未完成，保留可收取狀態並顯示 `claim_save_pending`；不可假定已領取。 |
+| 可收取卡片 | 固定保底、已固定的額外結果；額外為 0 時顯示「未取得額外獎勵」；原派遣人物已可再派遣 | 收取 | 顯示本次已套用效果、地盤／收藏／布置變化與人物解鎖（如有） | 若存檔交易未完成，保留可收取狀態與既有的人物可用狀態並顯示 `claim_save_pending`；不可假定已領取。 |
 | 刷新區 | 額度 `0/1`、下次可用時間、可替換數量 | 手動刷新 | 只更新可用任務並扣除額度 | 顯示 `refresh_allowance_unavailable` 或 `no_refreshable_replacement`。 |
 | 地盤／人物區 | 目前地盤 ID、三個長期成長欄位、人物總數與可用／忙碌數 | 查看細節 | 首次觸及時顯示新人物已加入 | 重複觸及僅顯示既有地盤狀態，不再顯示解鎖。 |
 
@@ -144,7 +144,7 @@ recovery_hold --修復後仍能識別原 run--> active 或 completed_pending_cla
 ### P0-A：任務實例與離線完成
 
 1. 對一項新手任務派遣符合最低／最多人數的隊伍，存檔後重啟。
-2. 以 `now_seconds >= due_at_seconds` 載入，任務只轉為 `completed_pending_claim` 一次，且 `result_snapshot.result_id` 固定。
+2. 以 `now_seconds >= due_at_seconds` 載入，任務只轉為 `completed_pending_claim` 一次，且 `result_snapshot.result_id` 固定；原派遣人物在完成保存後恢復可用。
 3. 再次重啟或再次檢查時計，結果 ID、保底與額外結果均不改變。
 
 ### P0-B：收取冪等與刷新邊界

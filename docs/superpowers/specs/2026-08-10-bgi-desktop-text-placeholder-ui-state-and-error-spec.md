@@ -54,9 +54,9 @@ UiActionResponse
 | 前置 | `MissionRunRecord.run_state=active`，且具有效 `mission_run_id`、`assigned_crew_ids`、`started_at_seconds`、`due_at_seconds`。 |
 | 可用操作 | 查看指派人物、預計完成時間與剩餘時間；重啟後繼續讀取同一筆執行資料。 |
 | 禁止操作 | 不可重派、收取、刷新替換、重新抽取結果或取消任務。 |
-| 到期轉換 | `now_seconds >= due_at_seconds` 時，先固定並保存 `result_snapshot`，再轉為 `completed_pending_claim`。 |
+| 到期轉換 | `now_seconds >= due_at_seconds` 時，先固定並保存 `result_snapshot`、`completed_pending_claim` 與原派遣人物恢復可用狀態。 |
 | 文字鍵 | `ui.mission.active.title`＝「派遣中」、`ui.mission.remaining_time`＝「剩餘時間：{remaining_time}」、`ui.mission.complete_ready`＝「任務已完成，可收取成果。」 |
-| 無美術驗收 | 用可注入時間完成 5 秒新手任務；程式重啟或重複檢查後，仍顯示同一任務、同一隊伍與同一結果識別。 |
+| 無美術驗收 | 用可注入時間完成 5 秒新手任務；程式重啟或重複檢查後，仍顯示同一任務、同一隊伍與同一結果識別，且原派遣人物可再選。 |
 
 ### 3.3 完成待收取與已收取
 
@@ -67,7 +67,7 @@ UiActionResponse
 | 禁止操作 | 不可重派、刷新替換、重骰額外報酬或取消。 | 不可再次收取、重骰、重派或取消。 |
 | 成功狀態 | 收取交易保存後寫入唯一 `ClaimReceipt`，轉為 `claimed`。 | 維持 `claimed`。 |
 | 文字鍵 | `ui.mission.claimable.title`＝「可收取」、`ui.action.claim`＝「收取成果」、`ui.reward.guaranteed`＝「保底獎勵：{guaranteed_reward}」、`ui.reward.bonus`＝「額外獎勵：{bonus_reward}」、`ui.reward.bonus_not_granted`＝「未取得額外獎勵」。 | `ui.mission.claimed.title`＝「已收取」、`ui.mission.claimed_at`＝「收取時間：{claimed_at}」、`ui.action.view_receipt`＝「查看收取紀錄」。 |
-| 無美術驗收 | 連續觸發兩次收取，第二次只顯示同一張收據；額外為 0 時保底仍出現在收據與長期成長結果。 | 重啟後仍為已收取，不出現收取按鈕，人物恢復可用。 |
+| 無美術驗收 | 完成待收取時人物已可再選；收取保存失敗時仍保持待收取與人物可用；連續觸發兩次收取，第二次只顯示同一張收據；額外為 0 時保底仍出現在收據與長期成長結果。 | 重啟後仍為已收取，不出現收取按鈕；不改變人物現有派遣狀態。 |
 
 ### 3.4 取消請求（第一版明確阻擋）
 
@@ -137,7 +137,7 @@ UiActionResponse
 | `global_cap_reached` | `ui.dispatch.error.global_cap_reached` | 「目前同時執行任務數已達上限。」 | 目前參數為 0 時不應出現。 |
 | `refresh_allowance_unavailable` | `ui.refresh.error.allowance_unavailable` | 「目前沒有可用刷新額度。」 | 任務看板與刷新額度。 |
 | `no_refreshable_replacement` | `ui.refresh.error.no_replacement` | 「目前沒有可替換的未接受任務。」 | 同上。 |
-| `claim_save_pending` | `ui.claim.error.save_pending` | 「成果尚未安全保存，請稍後再試。」 | 固定結果、人物與所有長期成長資料。 |
+| `claim_save_pending` | `ui.claim.error.save_pending` | 「成果尚未安全保存，請稍後再試。」 | 固定結果與人物目前可用狀態；所有長期成長資料不變。 |
 | `mission_cancel_not_supported` | `ui.mission.cancel_unavailable.body` | 「已派遣任務將持續至完成。完成後可收取成果。」 | 任務、隊伍、時計與結果。 |
 | `save_contract_unsupported` | `ui.save.load_error.title` | 「此存檔版本目前無法安全讀取。」 | 原存檔。 |
 | `save_required_field_missing` | `ui.save.load_error.title` | 「存檔缺少必要資料，無法安全繼續。」 | 原存檔與未驗證結果。 |

@@ -41,7 +41,7 @@ func load() -> Dictionary:
 		return _rejected(validation_error)
 	return {"is_loaded": true, "was_missing": false, "error_code": "", "envelope": envelope.duplicate(true)}
 
-static func make_envelope(crew_by_id: Array, mission_board: Array, execution_state: Dictionary, claim_receipts_by_mission_run_id: Dictionary, refresh_state: Dictionary, territory_state_by_id: Dictionary, territory_touch_receipts_by_id: Dictionary, progression_summary: Dictionary = {}) -> Dictionary:
+static func make_envelope(crew_by_id: Array, mission_board: Array, execution_state: Dictionary, claim_receipts_by_mission_run_id: Dictionary, refresh_state: Dictionary, territory_state_by_id: Dictionary, territory_touch_receipts_by_id: Dictionary, progression_summary: Dictionary = {}, collectible_grants_by_claim_receipt_id: Dictionary = {}) -> Dictionary:
 	return {
 		"contract_version": CONTRACT_VERSION,
 		"crew_by_id": crew_by_id.duplicate(true),
@@ -52,6 +52,7 @@ static func make_envelope(crew_by_id: Array, mission_board: Array, execution_sta
 		"territory_state_by_id": territory_state_by_id.duplicate(true),
 		"territory_touch_receipts_by_id": territory_touch_receipts_by_id.duplicate(true),
 		"progression_summary": progression_summary.duplicate(true),
+		"collectible_grants_by_claim_receipt_id": collectible_grants_by_claim_receipt_id.duplicate(true),
 	}
 
 static func _is_valid(envelope: Dictionary) -> bool:

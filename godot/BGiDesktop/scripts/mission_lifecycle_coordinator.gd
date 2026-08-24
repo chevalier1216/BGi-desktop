@@ -48,7 +48,7 @@ func accept_execution(task_id: String, crew_ids: Array[String], started_at_secon
 	return {"is_accepted": true, "error_code": "", "mission_run_id": mission_run_id}
 
 ## Locks the completed result once and releases its crew for the pending-claim state.
-func resolve_completed_result(task_id: String, current_time_seconds: int) -> Dictionary:
+func resolve_completed_result(task_id: String, current_time_seconds: int, claim_effect_descriptors: Array = []) -> Dictionary:
 	var mission_run_id: String = _find_mission_run_id(task_id)
 	if mission_run_id.is_empty():
 		return _rejected("is_resolved", "mission_run_not_found")
@@ -56,7 +56,7 @@ func resolve_completed_result(task_id: String, current_time_seconds: int) -> Dic
 	if clock == null:
 		return _rejected("is_resolved", "task_execution_not_found")
 	var existing_result: Dictionary = Dictionary(_locked_results_by_mission_run_id.get(mission_run_id, {}))
-	var resolution: Dictionary = MissionCompletionResultLockScript.resolve(clock, current_time_seconds, existing_result)
+	var resolution: Dictionary = MissionCompletionResultLockScript.resolve(clock, current_time_seconds, existing_result, claim_effect_descriptors)
 	if not bool(resolution["is_resolved"]):
 		return _rejected("is_resolved", str(resolution["error_code"]))
 	if not bool(resolution["did_resolve"]):
@@ -123,7 +123,9 @@ func claim_completed_result(task_id: String, current_time_seconds: int) -> Dicti
 		"%s:claim" % mission_run_id,
 		mission_run_id,
 		result_id,
-		current_time_seconds
+		current_time_seconds,
+		[],
+		Array(fixed_result.get("claim_effect_descriptors", []))
 	)
 	if not bool(receipt_result["is_valid"]):
 		return _rejected("is_claimed", str(receipt_result["error_code"]))

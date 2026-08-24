@@ -86,7 +86,7 @@ static func from_data(data: Dictionary) -> Dictionary:
 		var result: Dictionary = Dictionary(locked_results[key])
 		var mission_run_id: String = str(result.get("mission_run_id", ""))
 		var expected_key: String = mission_run_id if not mission_run_id.is_empty() else str(result.get("task_id", ""))
-		if key.is_empty() or expected_key != key:
+		if key.is_empty() or expected_key != key or not result.has("claim_effect_descriptors"):
 			return {"is_valid": false, "error_code": "mission_result_state_invalid", "snapshot": snapshot_script.new()}
 	return {
 		"is_valid": true,

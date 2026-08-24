@@ -52,10 +52,10 @@ func _run() -> void:
 	_expect(bool(Dictionary(execution_state["result_state"])["claimed_task_ids"].get("starter_01", false)), "saved claimed state must retain the claimed task id")
 	var saved_envelope: Dictionary = Dictionary(stored_state["envelope"])
 	_expect(Dictionary(saved_envelope["claim_receipts_by_mission_run_id"]).has("starter_01:100"), "claimed run receipt must share the player envelope")
-	_expect(Dictionary(saved_envelope["territory_touch_receipts_by_id"]).has("territory_02"), "first territory touch must share the player envelope")
+	_expect(Dictionary(saved_envelope["territory_touch_receipts_by_id"]).is_empty(), "a mission without a fixed territory descriptor must not infer a territory touch")
 	_expect(Dictionary(saved_envelope["territory_state_by_id"]).has("territory_02"), "territory progress state must share the player envelope")
 	_expect(Dictionary(saved_envelope["refresh_state"]).has("allowance"), "refresh state must share the player envelope")
-	_expect(Array(saved_envelope["crew_by_id"]).size() == 6, "unlocked crew must share the player envelope")
+	_expect(Array(saved_envelope["crew_by_id"]).size() == 5, "a mission without a fixed character descriptor must not infer an unlock")
 
 	var reopened_panel: StarterMissionFlowPanel = _create_panel("ReopenedPanel", 999)
 	_expect(reopened_panel._task_id == "starter_02", "reopened panel must restore the next fixed tutorial task")

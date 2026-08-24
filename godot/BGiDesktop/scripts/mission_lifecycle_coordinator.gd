@@ -7,6 +7,7 @@ const MissionResultClaimServiceScript = preload("res://scripts/mission_result_cl
 const ClaimReceiptScript = preload("res://scripts/claim_receipt.gd")
 const ClaimReceiptStoreScript = preload("res://scripts/claim_receipt_store.gd")
 const MissionRunRecordScript = preload("res://scripts/mission_run_record.gd")
+const TutorialClaimEffectMappingScript = preload("res://scripts/tutorial_claim_effect_mapping.gd")
 
 var _assignment_coordinator: RefCounted
 var _expired_release_service: RefCounted
@@ -56,7 +57,10 @@ func resolve_completed_result(task_id: String, current_time_seconds: int, claim_
 	if clock == null:
 		return _rejected("is_resolved", "task_execution_not_found")
 	var existing_result: Dictionary = Dictionary(_locked_results_by_mission_run_id.get(mission_run_id, {}))
-	var resolution: Dictionary = MissionCompletionResultLockScript.resolve(clock, current_time_seconds, existing_result, claim_effect_descriptors)
+	var descriptors_to_lock: Array = claim_effect_descriptors
+	if descriptors_to_lock.is_empty():
+		descriptors_to_lock = TutorialClaimEffectMappingScript.for_mission_template(task_id)
+	var resolution: Dictionary = MissionCompletionResultLockScript.resolve(clock, current_time_seconds, existing_result, descriptors_to_lock)
 	if not bool(resolution["is_resolved"]):
 		return _rejected("is_resolved", str(resolution["error_code"]))
 	if not bool(resolution["did_resolve"]):

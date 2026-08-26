@@ -31,9 +31,6 @@ var _mission_panel: StarterMissionFlowPanel
 var _is_shutting_down: bool = false
 
 func _ready() -> void:
-	# These are desktop tool windows, not controls inside the 450px bottom-stage viewport.
-	# Native windows provide the operating-system title bar, drag surface and close control.
-	get_tree().root.gui_embed_subwindows = false
 	_game_state = get_node_or_null("/root/GameState")
 	if _game_state != null:
 		_render_crew_status()
@@ -64,10 +61,10 @@ func _ensure_mission_panel() -> void:
 	_mission_panel = StarterMissionFlowPanelScene.instantiate() as StarterMissionFlowPanel
 	if _mission_panel == null:
 		return
-	detail_window.add_child(_mission_panel)
+	detail_window.get_node("PopupLayout/Content").add_child(_mission_panel)
 	_mission_panel.directory_changed.connect(_on_mission_directory_changed)
 
-func _render_task_directory(window: Window) -> void:
+func _render_task_directory(window: Control) -> void:
 	if not is_instance_valid(window) or window.is_queued_for_deletion():
 		return
 	if _mission_panel == null or not is_instance_valid(_mission_panel) or _mission_panel.is_queued_for_deletion():
@@ -141,7 +138,7 @@ func _show_task_detail(task_id: String) -> void:
 	var detail_window := _get_popup("task_detail")
 	if detail_window == null:
 		return
-	detail_window.title = _mission_panel.task_label.text
+	detail_window.set_meta("title", _mission_panel.task_label.text)
 	detail_window.show()
 
 func _on_mission_directory_changed() -> void:
@@ -221,32 +218,50 @@ func _show_text_popup(key: String, title: String, summary: String, detail: Strin
 		content.add_child(label)
 	_replace_popup_content(window, content)
 
-func _open_popup(key: String, title: String, size: Vector2i) -> Window:
+func _open_popup(key: String, title: String, size: Vector2i) -> PanelContainer:
 	var existing := _get_popup(key)
 	if existing != null:
 		existing.show()
-		return existing
-	var window := Window.new()
-	window.hide()
-	window.title = title
-	window.size = size
-	window.min_size = Vector2i(320, 220)
-	window.force_native = true
-	window.transient = false
-	window.borderless = false
-	window.unresizable = false
-	window.exclusive = false
-	window.position = _initial_popup_position(size)
-	window.close_requested.connect(_on_popup_close_requested.bind(key))
-	add_child(window)
-	_popup_windows[key] = window
-	window.show()
-	return window
-
-func _get_popup(key: String) -> Window:
+		return existing as PanelContainer
+	var popup := PanelContainer.new()
+	popup.name = "Popup_" + key
+	popup.custom_minimum_size = Vector2(size)
+	popup.set_meta("title", title)
+	popup.set_meta("popup_key", key)
+	popup.set_anchors_preset(Control.PRESET_CENTER)
+	popup.position -= Vector2(size) / 2.0
+	popup.mouse_filter = Control.MOUSE_FILTER_STOP
+	var layout := VBoxContainer.new()
+	layout.name = "PopupLayout"
+	layout.add_theme_constant_override("separation", 8)
+	popup.add_child(layout)
+	var header := HBoxContainer.new()
+	header.name = "Header"
+	layout.add_child(header)
+	var heading := Label.new()
+	heading.name = "Title"
+	heading.text = title
+	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	heading.add_theme_font_size_override("font_size", 20)
+	header.add_child(heading)
+	var close_button := Button.new()
+	close_button.name = "CloseButton"
+	close_button.text = "關閉"
+	close_button.pressed.connect(_on_popup_close_requested.bind(key))
+	header.add_child(close_button)
+	var body := VBoxContainer.new()
+	body.name = "Content"
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.clip_contents = true
+	layout.add_child(body)
+	add_child(popup)
+	_popup_windows[key] = popup
+	popup.show()
+	return popup
+func _get_popup(key: String) -> Control:
 	if not _popup_windows.has(key):
 		return null
-	var popup := _popup_windows[key] as Window
+	var popup := _popup_windows[key] as Control
 	if popup == null or not is_instance_valid(popup) or popup.is_queued_for_deletion():
 		_popup_windows.erase(key)
 		return null
@@ -257,29 +272,22 @@ func _on_popup_close_requested(key: String) -> void:
 	if popup != null and not _is_shutting_down:
 		popup.hide()
 
-func _initial_popup_position(size: Vector2i) -> Vector2i:
-	var parent_window := get_window()
-	var usable_rect := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
-	var cascade_index := _popup_windows.size()
-	var preferred := parent_window.position + Vector2i(POPUP_MARGIN, -size.y + POPUP_MARGIN) + POPUP_CASCADE_STEP * cascade_index
-	return Vector2i(
-		clampi(preferred.x, usable_rect.position.x + POPUP_MARGIN, usable_rect.end.x - size.x - POPUP_MARGIN),
-		clampi(preferred.y, usable_rect.position.y + POPUP_MARGIN, usable_rect.end.y - size.y - POPUP_MARGIN)
-	)
-
-func _replace_popup_content(window: Window, content: Control) -> void:
+func _replace_popup_content(window: Control, content: Control) -> void:
 	if not is_instance_valid(window) or window.is_queued_for_deletion() or _is_shutting_down:
 		return
-	for child in window.get_children():
+	var body := window.get_node_or_null("PopupLayout/Content") as Control
+	if body == null:
+		return
+	for child in body.get_children():
 		if child != _mission_panel and is_instance_valid(child) and not child.is_queued_for_deletion():
 			child.queue_free()
 	if content.get_parent() == null:
-		window.add_child(content)
+		body.add_child(content)
 
 func _exit_tree() -> void:
 	_is_shutting_down = true
 	for key in _popup_windows.keys():
-		var popup := _popup_windows[key] as Window
+		var popup := _popup_windows[key] as Control
 		if popup != null and is_instance_valid(popup):
 			popup.hide()
 	_popup_windows.clear()

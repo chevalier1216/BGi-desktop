@@ -18,13 +18,13 @@ func _run() -> void:
 	root.add_child(shell)
 	(shell.get_node("TerrainStage/Content/TaskWindowButton") as Button).emit_signal("pressed")
 	_expect(shell._popup_windows.has("tasks"), "task entry must open a mission directory window")
-	var directory := shell._popup_windows["tasks"] as Window
-	_expect(directory.title == "任務清單", "task entry must identify the first window as a mission directory")
-	_expect(directory.has_node("Content/CurrentMissions"), "mission directory must expose a current-mission section")
-	_expect(directory.has_node("Content/CompletedMissions"), "mission directory must expose a completed-mission section")
-	_expect(directory.has_node("Content/RefreshInfo"), "refresh state must live in the mission directory")
-	_expect(not directory.has_node("Content/CrewSelector"), "mission directory must not mix crew selection into its list")
-	_expect(not shell._popup_windows.has("task_detail") or not (shell._popup_windows["task_detail"] as Window).visible, "opening the directory must not also force open a task detail window")
+	var directory := shell._popup_windows["tasks"] as Control
+	_expect(directory.get_meta("title") == "任務清單", "task entry must identify the first window as a mission directory")
+	_expect(directory.has_node("PopupLayout/Content/Content/CurrentMissions"), "mission directory must expose a current-mission section")
+	_expect(directory.has_node("PopupLayout/Content/Content/CompletedMissions"), "mission directory must expose a completed-mission section")
+	_expect(directory.has_node("PopupLayout/Content/Content/RefreshInfo"), "refresh state must live in the mission directory")
+	_expect(not directory.has_node("PopupLayout/Content/Content/CrewSelector"), "mission directory must not mix crew selection into its list")
+	_expect(not shell._popup_windows.has("task_detail") or not (shell._popup_windows["task_detail"] as Control).visible, "opening the directory must not also force open a task detail window")
 	_expect((shell.get_node("TerrainStage/Content/TaskWindowButton") as Button).text.contains("開啟"), "the desktop task entry must visibly communicate that it is a button")
 	_expect(not shell.get_node("TerrainStage/Content/CrewIndicators").visible, "unexplained green crew indicators must not remain on the desktop stage")
 

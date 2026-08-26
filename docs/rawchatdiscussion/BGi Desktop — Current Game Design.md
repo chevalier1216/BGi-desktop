@@ -2,7 +2,7 @@
 
 > Human-readable design view，不是 authoritative source。
 > Authoritative sources 為 Git repository 中的正式 specs / decisions；若本文件與其衝突，以正式來源為準。
-> Source baseline：`231f43a0068a3d4d09089b3897847eb393f681e3`；本文件已同步目前 worktree 的 P1 固定效果對照，實際發布 revision 以 Git commit 記錄為準。
+> Source revision：以 Git repository 中目前正式 specs / decisions 為準；實際發布 revision 以 Git commit 記錄為準。
 
 ## 1. 遊戲概念與玩家身份
 
@@ -127,9 +127,11 @@
 
 ## 12. UI 與桌面互動
 
-遊戲固定於 Windows 可用工作區底部、工作列上方。未繪製的區域保持透明，並可穿透至桌面。
+BGi Desktop 只使用一個覆蓋 Windows 桌面可用區的 OS-level 主視窗。未繪製 BGi UI 的透明區域可 click-through，讓玩家操作後方 Windows 桌面或其他應用程式。
 
-主要入口為地盤、黑市、角色、收藏與設定。場景區顯示完整背景、前景掛件、場景物件／套件與人物狀態；任務與收取區則是唯一可派遣、收取與刷新的位置。
+任務、任務詳情、地盤、黑市、角色、收藏與設定都使用同一主視窗內的 in-app panel／widget，不會開啟額外 Windows native child window。panel 可拖曳至整個桌面可用區，不受底部場景區域裁切；每個 panel 都有可見關閉操作。`ESC` 關閉目前 z-order 最上層 panel；重複按下會依 z-order 向下關閉。任務清單與任務詳情必須呈現實際內容，不得只開啟空白 panel。
+
+主要入口為地盤、黑市、角色、收藏與設定。場景區顯示完整背景、前景掛件、場景物件／套件與人物狀態；任務 panel 是唯一可派遣、收取與刷新的位置。
 
 UI 行動優先序：
 
@@ -140,7 +142,9 @@ UI 行動優先序：
 5. 首次觸及、人物解鎖、新背景與新收藏提示
 6. 報酬機率、黑市詳情與歷史紀錄
 
-次級面板不得遮擋可收取成果、派遣確認或 Windows 工作列。
+行動優先序決定提示與 panel z-order，不限制玩家把 panel 拖曳到桌面可用區的任何位置。
+
+日常 player-visible UI 驗收優先在 Godot editor 的 embedded game／in-editor execution 完成；headless 測試只能驗證狀態與資料契約，不能單獨證明可見 UI 已完成。桌面透明、click-through 與和 Windows／其他應用程式互動，則在 native desktop／exported executable 的 milestone 或 integration acceptance 驗證，不是每個一般 Coding mission 的例行方式。
 
 首次觸及成功套用後，玩家只會看到兩項新成果：地盤由「未涉足」變為「已觸及」，以及解鎖人物 ×1。重複收取、重新載入、重看結果與背景切換不會再產生人物、地盤變更或新的解鎖通知。
 
@@ -182,3 +186,4 @@ UI 行動優先序：
 - Lifecycle 狀態與復原：[mission-lifecycle-state-ownership.md](G:\Projects\BGi-Desktop\docs\superpowers\specs\2026-08-10-bgi-desktop-mission-lifecycle-state-ownership.md)
 - 首次觸及的玩家可見成果：[text-placeholder-ui-state-and-error-spec.md](G:\Projects\BGi-Desktop\docs\superpowers\specs\2026-08-10-bgi-desktop-text-placeholder-ui-state-and-error-spec.md)
 - 桌面 UI 與派遣：[bottom-ui-information-architecture.md](G:\Projects\BGi-Desktop\docs\superpowers\specs\2026-08-10-bgi-desktop-bottom-ui-information-architecture.md)、[mission-dispatch-confirmation-and-crew-configuration.md](G:\Projects\BGi-Desktop\docs\superpowers\specs\2026-08-10-bgi-desktop-mission-dispatch-confirmation-and-crew-configuration.md)
+- UI 驗收邊界：[full-loop-acceptance-matrix.md](G:\Projects\BGi-Desktop\docs\superpowers\specs\2026-08-10-bgi-desktop-full-loop-acceptance-matrix.md)、[GODOT_TESTING.md](G:\Projects\BGi-Desktop\docs\operations\GODOT_TESTING.md)

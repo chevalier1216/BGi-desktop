@@ -13,6 +13,12 @@
 - 通過後才可建立 `BGi-desktop_QA`；在此之前，既有 coding 可持續以小目標推進，不需等待矩陣完成。
 - 每次整合驗收都需保留：測試版本／commit、headless 指令與結束碼、文字走查紀錄、任務 ID、人物 ID、地盤 ID、`result_id`、收取前後存檔狀態及已知限制。不得藉此記錄或推導新的報酬／機率數值。
 
+### UI 驗收層級
+
+- 日常 UI implementation 驗收優先在 Godot editor 的 embedded game／in-editor execution 完成；此為 player-visible panel、實際任務內容與一般互動的標準驗收面，不應例行佔用使用者 Windows 桌面。
+- Headless 測試可驗證狀態、資料與輸入契約，但不能單獨宣稱 player-visible UI 完成。
+- desktop transparency、click-through 及與 Windows／其他應用程式互動，屬 OS-specific 行為；僅在 native desktop／exported executable 的 milestone 或 integration acceptance 驗證，不是一般 Coding mission 的例行門檻。
+
 ## 2. 八項循環要求驗收矩陣
 
 | # | 已核准要求 | 資料服務／權威資料 | 文字 UI 與可視化操作 | Headless 證據 | 手動文字暫代證據 | 尚缺接線／通過條件 |

@@ -211,10 +211,10 @@ func _get_territory_status() -> Dictionary:
 func _show_text_popup(key: String, title: String, summary: String, detail: String) -> void:
 	var window := _open_popup(key, title, Vector2i(460, 340))
 	var content := _make_content(title, summary)
-	var label := Label.new()
-	label.text = detail
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	if not detail.is_empty():
+		var label := Label.new()
+		label.text = detail
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		content.add_child(label)
 	_replace_popup_content(window, content)
 

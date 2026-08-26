@@ -22,6 +22,8 @@ func _run() -> void:
 	_expect(panel.task_label.text == "無法安全讀取存檔", "recovery hold must visibly name the safe load error")
 	_expect(panel.requirement_label.text == "資料尚未被變更。請重試讀取或保留錯誤代碼供檢查。", "recovery hold must state that the original data remains unchanged")
 	_expect(panel.status_label.text == "錯誤：save_data_corrupted", "recovery hold must expose the corruption error code")
+	var recovery_directory: Dictionary = panel.get_task_directory_entries()
+	_expect(Array(recovery_directory.get("current", [])).is_empty() and Array(recovery_directory.get("completed", [])).is_empty(), "recovery hold task directory must remain safe before tutorial progression initialization")
 	_expect(panel.start_button.disabled and panel.claim_button.disabled and panel.refresh_button.disabled and panel.explore_territory_button.disabled, "recovery hold must disable state-changing actions")
 	_expect(not panel.retry_load_button.disabled, "recovery hold must offer retry load")
 	var loaded_file: FileAccess = FileAccess.open(PLAYER_SAVE_PATH, FileAccess.READ)

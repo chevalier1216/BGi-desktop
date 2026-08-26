@@ -289,6 +289,8 @@ func _load_current_mission(mission_override: Dictionary = {}) -> void:
 func get_task_directory_entries() -> Dictionary:
 	var current_entries: Array[Dictionary] = []
 	var completed_entries: Array[Dictionary] = []
+	if not _is_player_state_ready or _is_recovery_hold or _tutorial_progression == null or _result_state == null:
+		return {"current": current_entries, "completed": completed_entries}
 	var current_task: Dictionary = _tutorial_progression.get_current_task()
 	var current_task_id := str(current_task.get("id", ""))
 	for mission: Dictionary in _current_missions:
@@ -886,6 +888,8 @@ func _record_tutorial_event(event_name: String, tutorial_step_id: String, outcom
 	_tutorial_event_logger.record(event_name, tutorial_step_id, _get_current_time_seconds(), outcome, mission_id, details)
 
 func _show_next_tutorial_task() -> void:
+	if _tutorial_progression == null or next_tutorial_task_label == null:
+		return
 	var next_task: Dictionary = _tutorial_progression.get_current_task()
 	if next_task.is_empty():
 		next_tutorial_task_label.text = "新手任務已完成"

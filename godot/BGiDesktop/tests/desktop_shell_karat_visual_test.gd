@@ -44,6 +44,12 @@ func _run() -> void:
 	_expect(not shell.has_node("TerrainStage/Content/SettingsActions"), "layout density controls must not be exposed on the main desktop shell")
 	(shell.get_node("TerrainStage/Content/TaskWindowButton") as Button).emit_signal("pressed")
 	_expect(shell._mission_panel != null, "task entry must open an independent task and collection window")
+	var task_window := shell._popup_windows["tasks"] as Window
+	task_window.close_requested.emit()
+	_expect(not task_window.visible, "closing the task directory must hide the native popup safely")
+	(shell.get_node("TerrainStage/Content/TaskWindowButton") as Button).emit_signal("pressed")
+	_expect(task_window.visible, "reopening the task directory after native close must restore the same popup")
+	_expect(shell._mission_panel != null and is_instance_valid(shell._mission_panel), "reopening the task directory must retain a valid mission panel")
 	for popup_key: String in ["territory", "market", "crew", "collection", "settings", "tasks"]:
 		var popup := shell._popup_windows[popup_key] as Window
 		_expect(popup.force_native and not popup.transient, "all shared desktop popups must use the native independent-window mechanism: %s" % popup_key)

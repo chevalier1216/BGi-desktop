@@ -28,6 +28,7 @@ const POPUP_CASCADE_STEP := Vector2i(36, 30)
 var _game_state: Node
 var _popup_windows: Dictionary = {}
 var _mission_panel: StarterMissionFlowPanel
+var _is_shutting_down: bool = false
 
 func _ready() -> void:
 	# These are desktop tool windows, not controls inside the 450px bottom-stage viewport.
@@ -44,20 +45,33 @@ func _ready() -> void:
 	settings_entry_button.pressed.connect(_show_settings)
 
 func _show_tasks() -> void:
+	if _is_shutting_down:
+		return
 	_ensure_mission_panel()
 	var window := _open_popup("tasks", "任務清單", Vector2i(520, 620))
+	if not is_instance_valid(window) or window.is_queued_for_deletion():
+		return
 	_render_task_directory(window)
 
 func _ensure_mission_panel() -> void:
-	if _mission_panel != null:
+	if _mission_panel != null and is_instance_valid(_mission_panel) and not _mission_panel.is_queued_for_deletion():
 		return
+	_mission_panel = null
 	var detail_window := _open_popup("task_detail", "任務詳情", Vector2i(760, 820))
+	if not is_instance_valid(detail_window) or detail_window.is_queued_for_deletion():
+		return
 	detail_window.hide()
 	_mission_panel = StarterMissionFlowPanelScene.instantiate() as StarterMissionFlowPanel
+	if _mission_panel == null:
+		return
 	detail_window.add_child(_mission_panel)
 	_mission_panel.directory_changed.connect(_on_mission_directory_changed)
 
 func _render_task_directory(window: Window) -> void:
+	if not is_instance_valid(window) or window.is_queued_for_deletion():
+		return
+	if _mission_panel == null or not is_instance_valid(_mission_panel) or _mission_panel.is_queued_for_deletion():
+		return
 	var content := VBoxContainer.new()
 	content.name = "Content"
 	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -120,15 +134,20 @@ func _render_task_directory(window: Window) -> void:
 
 func _show_task_detail(task_id: String) -> void:
 	_ensure_mission_panel()
+	if _mission_panel == null or not is_instance_valid(_mission_panel) or _mission_panel.is_queued_for_deletion():
+		return
 	if not _mission_panel.show_task_detail(task_id):
 		return
-	var detail_window := _popup_windows["task_detail"] as Window
+	var detail_window := _get_popup("task_detail")
+	if detail_window == null:
+		return
 	detail_window.title = _mission_panel.task_label.text
 	detail_window.show()
 
 func _on_mission_directory_changed() -> void:
-	if _popup_windows.has("tasks") and is_instance_valid(_popup_windows["tasks"]):
-		_render_task_directory(_popup_windows["tasks"] as Window)
+	var tasks_window := _get_popup("tasks")
+	if tasks_window != null:
+		_render_task_directory(tasks_window)
 
 func _show_territory() -> void:
 	var window := _open_popup("territory", "地盤／佈置", Vector2i(520, 560))
@@ -203,8 +222,8 @@ func _show_text_popup(key: String, title: String, summary: String, detail: Strin
 	_replace_popup_content(window, content)
 
 func _open_popup(key: String, title: String, size: Vector2i) -> Window:
-	if _popup_windows.has(key) and is_instance_valid(_popup_windows[key]):
-		var existing := _popup_windows[key] as Window
+	var existing := _get_popup(key)
+	if existing != null:
 		existing.show()
 		return existing
 	var window := Window.new()
@@ -218,11 +237,25 @@ func _open_popup(key: String, title: String, size: Vector2i) -> Window:
 	window.unresizable = false
 	window.exclusive = false
 	window.position = _initial_popup_position(size)
-	window.close_requested.connect(window.hide)
+	window.close_requested.connect(_on_popup_close_requested.bind(key))
 	add_child(window)
 	_popup_windows[key] = window
 	window.show()
 	return window
+
+func _get_popup(key: String) -> Window:
+	if not _popup_windows.has(key):
+		return null
+	var popup := _popup_windows[key] as Window
+	if popup == null or not is_instance_valid(popup) or popup.is_queued_for_deletion():
+		_popup_windows.erase(key)
+		return null
+	return popup
+
+func _on_popup_close_requested(key: String) -> void:
+	var popup := _get_popup(key)
+	if popup != null and not _is_shutting_down:
+		popup.hide()
 
 func _initial_popup_position(size: Vector2i) -> Vector2i:
 	var parent_window := get_window()
@@ -235,11 +268,22 @@ func _initial_popup_position(size: Vector2i) -> Vector2i:
 	)
 
 func _replace_popup_content(window: Window, content: Control) -> void:
+	if not is_instance_valid(window) or window.is_queued_for_deletion() or _is_shutting_down:
+		return
 	for child in window.get_children():
-		if child != _mission_panel:
+		if child != _mission_panel and is_instance_valid(child) and not child.is_queued_for_deletion():
 			child.queue_free()
 	if content.get_parent() == null:
 		window.add_child(content)
+
+func _exit_tree() -> void:
+	_is_shutting_down = true
+	for key in _popup_windows.keys():
+		var popup := _popup_windows[key] as Window
+		if popup != null and is_instance_valid(popup):
+			popup.hide()
+	_popup_windows.clear()
+	_mission_panel = null
 
 func _make_content(title: String, summary: String) -> VBoxContainer:
 	var content := VBoxContainer.new()

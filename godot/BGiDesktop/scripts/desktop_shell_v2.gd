@@ -27,8 +27,11 @@ const POPUP_CASCADE_STEP := Vector2i(36, 30)
 
 var _game_state: Node
 var _popup_windows: Dictionary = {}
+var _popup_stack: Array[String] = []
 var _mission_panel: StarterMissionFlowPanel
 var _is_shutting_down: bool = false
+var _drag_popup: PanelContainer
+var _drag_offset := Vector2.ZERO
 
 func _ready() -> void:
 	_game_state = get_node_or_null("/root/GameState")
@@ -40,6 +43,8 @@ func _ready() -> void:
 	crew_entry_button.pressed.connect(_show_crew)
 	collection_entry_button.pressed.connect(_show_collection)
 	settings_entry_button.pressed.connect(_show_settings)
+	resized.connect(_refresh_mouse_passthrough)
+	call_deferred("_refresh_mouse_passthrough")
 
 func _show_tasks() -> void:
 	if _is_shutting_down:
@@ -140,6 +145,8 @@ func _show_task_detail(task_id: String) -> void:
 		return
 	detail_window.set_meta("title", _mission_panel.task_label.text)
 	detail_window.show()
+	_bring_popup_to_front(detail_window as PanelContainer)
+	_refresh_mouse_passthrough()
 
 func _on_mission_directory_changed() -> void:
 	var tasks_window := _get_popup("tasks")
@@ -222,14 +229,16 @@ func _open_popup(key: String, title: String, size: Vector2i) -> PanelContainer:
 	var existing := _get_popup(key)
 	if existing != null:
 		existing.show()
+		_bring_popup_to_front(existing as PanelContainer)
+		_refresh_mouse_passthrough()
 		return existing as PanelContainer
 	var popup := PanelContainer.new()
 	popup.name = "Popup_" + key
 	popup.custom_minimum_size = Vector2(size)
 	popup.set_meta("title", title)
 	popup.set_meta("popup_key", key)
-	popup.set_anchors_preset(Control.PRESET_CENTER)
-	popup.position -= Vector2(size) / 2.0
+	popup.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	popup.position = _get_initial_popup_position(Vector2(size))
 	popup.mouse_filter = Control.MOUSE_FILTER_STOP
 	var layout := VBoxContainer.new()
 	layout.name = "PopupLayout"
@@ -237,6 +246,9 @@ func _open_popup(key: String, title: String, size: Vector2i) -> PanelContainer:
 	popup.add_child(layout)
 	var header := HBoxContainer.new()
 	header.name = "Header"
+	header.mouse_default_cursor_shape = Control.CURSOR_MOVE
+	header.mouse_filter = Control.MOUSE_FILTER_STOP
+	header.gui_input.connect(_on_popup_header_input.bind(popup))
 	layout.add_child(header)
 	var heading := Label.new()
 	heading.name = "Title"
@@ -256,8 +268,51 @@ func _open_popup(key: String, title: String, size: Vector2i) -> PanelContainer:
 	layout.add_child(body)
 	add_child(popup)
 	_popup_windows[key] = popup
+	_popup_stack.append(key)
 	popup.show()
+	_refresh_mouse_passthrough()
 	return popup
+
+func _get_initial_popup_position(popup_size: Vector2) -> Vector2:
+	var centered_position := (size - popup_size) / 2.0
+	return Vector2(maxf(POPUP_MARGIN, centered_position.x), maxf(POPUP_MARGIN, centered_position.y))
+
+func _bring_popup_to_front(popup: PanelContainer) -> void:
+	if popup == null or not is_instance_valid(popup):
+		return
+	var key := str(popup.get_meta("popup_key", ""))
+	_popup_stack.erase(key)
+	_popup_stack.append(key)
+	move_child(popup, get_child_count() - 1)
+
+func _on_popup_header_input(event: InputEvent, popup: PanelContainer) -> void:
+	if popup == null or not is_instance_valid(popup) or _is_shutting_down:
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_bring_popup_to_front(popup)
+			_drag_popup = popup
+			_drag_offset = popup.global_position - event.global_position
+		else:
+			_drag_popup = null
+	elif event is InputEventMouseMotion and _drag_popup == popup and event.button_mask & MOUSE_BUTTON_MASK_LEFT:
+		var desired_position: Vector2 = event.global_position + _drag_offset
+		var maximum_position := Vector2(maxf(0.0, size.x - popup.size.x), maxf(0.0, size.y - popup.size.y))
+		popup.global_position = desired_position.clamp(Vector2.ZERO, maximum_position)
+		_refresh_mouse_passthrough()
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+		_close_topmost_popup()
+
+func _close_topmost_popup() -> void:
+	for index in range(_popup_stack.size() - 1, -1, -1):
+		var key := _popup_stack[index]
+		var popup := _get_popup(key)
+		if popup != null and popup.visible:
+			_on_popup_close_requested(key)
+			return
+
 func _get_popup(key: String) -> Control:
 	if not _popup_windows.has(key):
 		return null
@@ -270,8 +325,63 @@ func _get_popup(key: String) -> Control:
 func _on_popup_close_requested(key: String) -> void:
 	var popup := _get_popup(key)
 	if popup != null and not _is_shutting_down:
+		_release_popup_focus(popup)
 		popup.hide()
+		if _drag_popup == popup:
+			_drag_popup = null
+		call_deferred("_refresh_mouse_passthrough")
 
+func _release_popup_focus(popup: Control) -> void:
+	var focus_owner := get_viewport().gui_get_focus_owner() as Control
+	if focus_owner != null and popup.is_ancestor_of(focus_owner):
+		focus_owner.release_focus()
+
+func _refresh_mouse_passthrough() -> void:
+	var window_controller := get_node_or_null("/root/DesktopWindowController")
+	if window_controller == null or not window_controller.has_method("set_mouse_passthrough_polygon"):
+		return
+	var regions: Array[Rect2] = []
+	var bottom_bar := get_node_or_null("BottomPersistentBar") as Control
+	if bottom_bar != null and bottom_bar.visible:
+		regions.append(bottom_bar.get_global_rect())
+	var task_button := get_node_or_null("TerrainStage/Content/TaskWindowButton") as Control
+	if task_button != null and task_button.visible:
+		regions.append(task_button.get_global_rect())
+	for popup in _popup_windows.values():
+		var popup_control := popup as Control
+		if popup_control != null and is_instance_valid(popup_control) and popup_control.visible:
+			regions.append(popup_control.get_global_rect())
+	window_controller.set_mouse_passthrough_polygon(_connected_hit_polygon(regions))
+
+func _connected_hit_polygon(regions: Array[Rect2]) -> PackedVector2Array:
+	if regions.is_empty():
+		return PackedVector2Array()
+	var combined := PackedVector2Array()
+	for region in regions:
+		var padded := region.grow(2.0)
+		var rectangle := PackedVector2Array([
+			padded.position,
+			Vector2(padded.end.x, padded.position.y),
+			padded.end,
+			Vector2(padded.position.x, padded.end.y),
+		])
+		if combined.is_empty():
+			combined = rectangle
+			continue
+		var bridge_x := clampf(padded.get_center().x, 0.0, size.x)
+		var bridge := PackedVector2Array([
+			Vector2(bridge_x - 1.0, padded.end.y),
+			Vector2(bridge_x + 1.0, padded.end.y),
+			Vector2(bridge_x + 1.0, size.y),
+			Vector2(bridge_x - 1.0, size.y),
+		])
+		var with_bridge := Geometry2D.merge_polygons(combined, bridge)
+		if not with_bridge.is_empty():
+			combined = with_bridge[0]
+		var merged := Geometry2D.merge_polygons(combined, rectangle)
+		if not merged.is_empty():
+			combined = merged[0]
+	return combined
 func _replace_popup_content(window: Control, content: Control) -> void:
 	if not is_instance_valid(window) or window.is_queued_for_deletion() or _is_shutting_down:
 		return
@@ -290,7 +400,10 @@ func _exit_tree() -> void:
 		var popup := _popup_windows[key] as Control
 		if popup != null and is_instance_valid(popup):
 			popup.hide()
+		if _drag_popup == popup:
+			_drag_popup = null
 	_popup_windows.clear()
+	_popup_stack.clear()
 	_mission_panel = null
 
 func _make_content(title: String, summary: String) -> VBoxContainer:

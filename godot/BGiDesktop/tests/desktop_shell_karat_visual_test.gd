@@ -7,6 +7,7 @@ extends SceneTree
 
 const DesktopShellScene = preload("res://scenes/desktop_shell.tscn")
 const KARAT_ROOT: String = "res://assets/third_party/subversionary_24_karat_gui/extracted/24K GUI/game/gui/"
+const POPUP_MARGIN := 24
 
 var _failed: bool = false
 var _apply_requests: int = 0
@@ -16,6 +17,12 @@ func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	await _exercise_visual()
+	await process_frame
+	print("DesktopShellKaratVisual: PASS" if not _failed else "DesktopShellKaratVisual: FAIL")
+	quit(1 if _failed else 0)
+
+func _exercise_visual() -> void:
 	var shell = DesktopShellScene.instantiate()
 	root.add_child(shell)
 	_expect(not (shell.get_node("Margin") as Control).visible, "legacy three-column shell must not remain visible")
@@ -25,6 +32,27 @@ func _run() -> void:
 	_expect(shell._popup_windows.has("territory"), "territory entry must open an in-app popup overlay")
 	var territory_window := shell._popup_windows["territory"] as Control
 	_expect(territory_window is PanelContainer and territory_window.has_node("PopupLayout/Header/CloseButton"), "territory entry must use an in-app overlay with close control")
+	_expect((territory_window.get_node("PopupLayout/Header") as Control).mouse_filter == Control.MOUSE_FILTER_STOP, "popup header must capture drag input")
+	_expect(shell._popup_stack.back() == "territory", "opened popup must be top of popup stack")
+	var window_controller := root.get_node_or_null("DesktopWindowController")
+	_expect(window_controller != null and not window_controller._mouse_passthrough_polygon.is_empty(), "drawn desktop controls must define a click-through hit region")
+	var header := territory_window.get_node("PopupLayout/Header") as Control
+	var original_position := territory_window.global_position
+	var drag_press := InputEventMouseButton.new()
+	drag_press.button_index = MOUSE_BUTTON_LEFT
+	drag_press.pressed = true
+	drag_press.global_position = original_position + Vector2(20, 20)
+	shell._on_popup_header_input(drag_press, territory_window)
+	var drag_motion := InputEventMouseMotion.new()
+	drag_motion.button_mask = MOUSE_BUTTON_MASK_LEFT
+	drag_motion.global_position = original_position + Vector2(100, 20)
+	shell._on_popup_header_input(drag_motion, territory_window)
+	_expect(territory_window.global_position.x > original_position.x, "dragging a panel header must move the panel within the desktop host")
+	_expect(territory_window.global_position.x >= 0.0 and territory_window.global_position.y >= 0.0, "dragged panel must remain inside the desktop host")
+	var drag_release := InputEventMouseButton.new()
+	drag_release.button_index = MOUSE_BUTTON_LEFT
+	drag_release.pressed = false
+	shell._on_popup_header_input(drag_release, territory_window)
 	shell._on_popup_close_requested("territory")
 	_expect(not territory_window.visible, "in-app close action must hide the popup")
 	(shell.get_node("BottomPersistentBar/Entries/TerritoryEntry/Button") as Button).emit_signal("pressed")
@@ -32,6 +60,11 @@ func _run() -> void:
 	(shell.get_node("BottomPersistentBar/Entries/MarketEntry/Button") as Button).emit_signal("pressed")
 	_expect(shell._popup_windows.has("market"), "market entry must open an in-app popup overlay")
 	_expect((shell._popup_windows["market"] as Control).visible, "market overlay must be visible")
+	var escape_event := InputEventKey.new()
+	escape_event.keycode = KEY_ESCAPE
+	escape_event.pressed = true
+	shell._input(escape_event)
+	_expect(not (shell._popup_windows["market"] as Control).visible and territory_window.visible, "ESC must close the topmost popup and preserve lower z-order panels")
 	(shell.get_node("BottomPersistentBar/Entries/CrewEntry/Button") as Button).emit_signal("pressed")
 	_expect(shell._popup_windows.has("crew"), "crew entry must open an in-app popup overlay")
 	(shell.get_node("BottomPersistentBar/Entries/CollectionEntry/Button") as Button).emit_signal("pressed")
@@ -42,10 +75,28 @@ func _run() -> void:
 	(shell.get_node("TerrainStage/Content/TaskWindowButton") as Button).emit_signal("pressed")
 	_expect(shell._mission_panel != null, "task entry must open an task and collection in-app overlays")
 	var task_window := shell._popup_windows["tasks"] as Control
+	var current_missions := task_window.get_node_or_null("PopupLayout/Content/Content/CurrentMissions") as VBoxContainer
+	_expect(current_missions != null and current_missions.get_child_count() > 1, "mission directory must render at least one actual task entry")
+	if current_missions != null and current_missions.get_child_count() > 1:
+		var first_task := current_missions.get_child(1) as Button
+		_expect(first_task != null, "mission directory entry must be actionable")
+		if first_task != null:
+			first_task.emit_signal("pressed")
+			await process_frame
+			var detail_popup := shell._popup_windows["task_detail"] as Control
+			_expect(detail_popup.visible and not shell._mission_panel.task_label.text.is_empty(), "mission detail must render the selected task content")
+			_expect(detail_popup.global_position.y >= POPUP_MARGIN, "an oversized task detail must keep its draggable header within the desktop host")
+			var detail_header := detail_popup.get_node("PopupLayout/Header") as Control
+			_expect(detail_header.get_global_rect().intersects(shell.get_global_rect()), "task detail header must remain visibly reachable in the desktop host")
+			_expect(shell._popup_stack.back() == "task_detail", "opening mission detail must promote it to topmost z-order")
 	shell._on_popup_close_requested("tasks")
+	await process_frame
 	_expect(not task_window.visible, "closing the task directory must hide the in-app popup safely")
+	_expect(not task_window.has_focus(), "closing the task directory must release stale popup focus")
 	(shell.get_node("TerrainStage/Content/TaskWindowButton") as Button).emit_signal("pressed")
+	await process_frame
 	_expect(task_window.visible, "reopening the task directory after in-app close must restore the same popup")
+	_expect(not window_controller._mouse_passthrough_polygon.is_empty(), "reopening a popup must rebuild the active hit region")
 	_expect(shell._mission_panel != null and is_instance_valid(shell._mission_panel), "reopening the task directory must retain a valid mission panel")
 	for popup_key: String in ["territory", "market", "crew", "collection", "settings", "tasks"]:
 		var popup := shell._popup_windows[popup_key] as Control
@@ -70,8 +121,8 @@ func _run() -> void:
 	_expect((shell.get_node("BottomPersistentBar/Entries") as HBoxContainer).get_child_count() == 5, "bottom persistent bar must expose five visual entry frames")
 
 	shell.queue_free()
-	print("DesktopShellKaratVisual: PASS" if not _failed else "DesktopShellKaratVisual: FAIL")
-	quit(1 if _failed else 0)
+	await shell.tree_exited
+	await process_frame
 
 func _resource_path(texture_rect: TextureRect) -> String:
 	if texture_rect.texture == null:

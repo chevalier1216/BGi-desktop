@@ -289,7 +289,7 @@ func _load_current_mission(mission_override: Dictionary = {}) -> void:
 func get_task_directory_entries() -> Dictionary:
 	var current_entries: Array[Dictionary] = []
 	var completed_entries: Array[Dictionary] = []
-	if not _is_player_state_ready or _is_recovery_hold or _tutorial_progression == null or _result_state == null:
+	if not _is_directory_projection_ready():
 		return {"current": current_entries, "completed": completed_entries}
 	var current_task: Dictionary = _tutorial_progression.get_current_task()
 	var current_task_id := str(current_task.get("id", ""))
@@ -302,14 +302,19 @@ func get_task_directory_entries() -> Dictionary:
 	return {"current": current_entries, "completed": completed_entries}
 
 func get_refresh_directory_state() -> Dictionary:
+	if not _is_directory_projection_ready() or _refresh_allowance == null:
+		return _get_unavailable_refresh_directory_state()
 	return {
 		"allowance": "刷新額度：%d/%d" % [_refresh_allowance.get_allowance(), MissionRefreshAllowanceScript.MAX_ALLOWANCE],
 		"next_available": "下次可用：%s" % _get_refresh_next_available_text(),
 		"replaceable": "可替換任務：0（新手固定任務）",
 		"can_refresh": false,
+		"is_ready": true,
 	}
 
 func show_task_detail(task_id: String) -> bool:
+	if not _is_directory_projection_ready():
+		return false
 	var mission: Dictionary = {}
 	for candidate: Dictionary in _current_missions:
 		if str(candidate["id"]) == task_id:
@@ -649,11 +654,31 @@ func _refresh_reward_disclosure_display() -> void:
 		reward_details.text = "%s｜%s｜%s" % [guaranteed_reward_label.text, extra_reward_range_label.text, extra_reward_probability_label.text]
 
 func get_territory_exploration_status() -> Dictionary:
+	if not _is_directory_projection_ready() or _territory_data.is_empty():
+		return {
+			"conditions": [{"label": "完成並保存首次任務收取成果", "is_met": false}],
+			"can_explore": false,
+			"is_ready": false,
+		}
 	var territory_id := str(_territory_data.get("territory_id", "territory_02"))
 	var is_first_claim_saved := _touched_territory_ids.has(territory_id)
 	return {
 		"conditions": [{"label": "完成並保存首次任務收取成果", "is_met": is_first_claim_saved}],
 		"can_explore": is_first_claim_saved,
+		"is_ready": true,
+	}
+
+func _is_directory_projection_ready() -> bool:
+	return _is_player_state_ready and not _is_recovery_hold and _tutorial_progression != null and _result_state != null
+
+func _get_unavailable_refresh_directory_state() -> Dictionary:
+	var availability_text := "資料尚未就緒" if not _is_recovery_hold else "無法讀取"
+	return {
+		"allowance": "刷新額度：%s" % availability_text,
+		"next_available": "下次可用：%s" % availability_text,
+		"replaceable": "可替換任務：0（新手固定任務）",
+		"can_refresh": false,
+		"is_ready": false,
 	}
 
 func _restore_latest_claim_receipt_display() -> void:

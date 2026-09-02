@@ -43,11 +43,16 @@ func _apply_window_mode() -> void:
 		return
 	window.borderless = true
 	window.transparent = true
-	window.size = usable_rect.size
-	window.position = usable_rect.position
+	_apply_native_window_geometry(window, usable_rect)
 	window.always_on_top = _always_on_top
 	if not _mouse_passthrough_polygon.is_empty():
 		DisplayServer.window_set_mouse_passthrough(_mouse_passthrough_polygon, window.get_window_id())
+
+## Keeps native pointer coordinates and Control layout in the same desktop work-area basis.
+func _apply_native_window_geometry(window: Window, usable_rect: Rect2i) -> void:
+	window.size = usable_rect.size
+	window.content_scale_size = usable_rect.size
+	window.position = usable_rect.position
 
 func _load_preferences() -> void:
 	var preferences := ConfigFile.new()

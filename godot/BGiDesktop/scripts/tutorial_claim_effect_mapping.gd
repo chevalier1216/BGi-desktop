@@ -16,5 +16,7 @@ static func for_mission_template(mission_template_id: String) -> Array[Dictionar
 			return [{"effect_type": "collectible_grant", "collectible_id": "collectible.r01.vehicle_001", "quantity": 1}]
 		"starter_23":
 			return [{"effect_type": "collectible_grant", "collectible_id": "collectible.r01.cityset_001", "quantity": 1}]
+		"mission.r01.explore_001":
+			return [{"effect_type": "collectible_grant", "collectible_id": "collectible.r01.poster_001", "quantity": 1}]
 		_:
 			return []

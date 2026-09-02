@@ -12,6 +12,9 @@ func _init() -> void:
 		var descriptor: Dictionary = Array(MappingScript.for_mission_template("starter_%d" % (19 + offset)))[0]
 		_expect(str(descriptor["effect_type"]) == "collectible_grant", "starter collectible missions must use the common grant contract")
 		_expect(str(descriptor["collectible_id"]) == expected_collectible_ids[offset] and int(descriptor["quantity"]) == 1, "starter collectible mapping must preserve its fixed identity and quantity")
+	var explore_descriptor: Dictionary = Array(MappingScript.for_mission_template("mission.r01.explore_001"))[0]
+	_expect(explore_descriptor == {"effect_type": "collectible_grant", "collectible_id": "collectible.r01.poster_001", "quantity": 1}, "explore_001 must preserve the sole approved poster grant")
+	_expect(Array(MappingScript.for_mission_template("mission.r01.explore_002")).is_empty(), "unapproved formal missions must not infer effects")
 	quit(1 if _failed else 0)
 
 func _expect(condition: bool, message: String) -> void:

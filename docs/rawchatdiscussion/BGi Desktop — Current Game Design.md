@@ -50,6 +50,8 @@
 
 首批固定的教學任務成果以 canonical `mission_template_id` 記錄：`starter_18` 觸及 `territory_02` 並解鎖 `character_06`；`starter_19`–`starter_23` 分別取得特級金磚、水果禮盒、LED 霓虹招牌、BEMZ 豪華保母車與城市建築套組，各為固定 1 份。這些成果在任務完成時固定，成功收取才入帳。
 
+另有一項已核准的正式探索任務 mapping：`mission.r01.explore_001` 在任務完成時固定 `collectible_grant`，成功收取後取得 `collectible.r01.poster_001` ×1。這只界定此任務的一次固定成果；不決定其他任務、掉落／機率、收藏用途、系列獎勵或展示／placement。
+
 ## 6. 報酬與收取
 
 每張任務需明示：

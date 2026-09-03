@@ -38,6 +38,15 @@ func _run() -> void:
 	_expect(Array(explore_replayed_result["result"]["claim_effect_descriptors"]) == [explore_expected], "reload path must retain the fixed poster descriptor")
 	var explore_claim: Dictionary = explore_lifecycle.claim_completed_result("mission.r01.explore_001", 205)
 	_expect(Array(explore_claim["receipt"]["effect_descriptors"]) == [explore_expected], "claim receipt must copy the fixed poster descriptor")
+	var second_explore_lifecycle: RefCounted = LifecycleScript.new(coordinator, ExpiredReleaseScript.new(coordinator, assignments, ValidityQueryScript.new()), SnapshotCollectionScript.new(), ReceiptStoreScript.new("user://explore_second_poster_claim_effect_mapping_lifecycle_test.json"))
+	var second_explore_expected: Dictionary = {"effect_type": "collectible_grant", "collectible_id": "collectible.r01.poster_002", "quantity": 1}
+	_expect(bool(second_explore_lifecycle.accept_execution("mission.r01.explore_002", crew_ids, 300, 5)["is_accepted"]), "explore_002 must accept")
+	var second_explore_result: Dictionary = second_explore_lifecycle.resolve_completed_result("mission.r01.explore_002", 305)
+	_expect(Array(second_explore_result["result"]["claim_effect_descriptors"]) == [second_explore_expected], "completion must snapshot the approved second poster descriptor")
+	var second_explore_replayed_result: Dictionary = second_explore_lifecycle.resolve_completed_result("mission.r01.explore_002", 999)
+	_expect(Array(second_explore_replayed_result["result"]["claim_effect_descriptors"]) == [second_explore_expected], "reload path must retain the fixed second poster descriptor")
+	var second_explore_claim: Dictionary = second_explore_lifecycle.claim_completed_result("mission.r01.explore_002", 305)
+	_expect(Array(second_explore_claim["receipt"]["effect_descriptors"]) == [second_explore_expected], "claim receipt must copy the fixed second poster descriptor")
 	state.queue_free()
 	quit(1 if _failed else 0)
 

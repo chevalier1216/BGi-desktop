@@ -52,6 +52,8 @@
 
 另有一項已核准的正式探索任務 mapping：`mission.r01.explore_001` 在任務完成時固定 `collectible_grant`，成功收取後取得 `collectible.r01.poster_001` ×1。這只界定此任務的一次固定成果；不決定其他任務、掉落／機率、收藏用途、系列獎勵或展示／placement。
 
+另一項已核准的正式探索任務 mapping：`mission.r01.explore_002` 在任務完成時固定 `collectible_grant`，成功收取後取得 `collectible.r01.poster_002` ×1。這同樣只界定此任務的一次固定成果；不決定其他任務、掉落／機率、收藏用途、系列獎勵或展示／placement。後續 territory-first-touch direction 尚待新的設計決策，未有任務、地盤、人物或效果 identity。
+
 ## 6. 報酬與收取
 
 每張任務需明示：

@@ -199,13 +199,14 @@
 
 此表不決定 `starter_01`–`starter_17`、其餘收藏 mapping、掉落／機率、Stackable 用途、Series 完成獎勵、展示／placement UX、資源經濟、地盤門檻、地盤受損或黑市。既有 `starter_01:100 → territory_02` 僅為 implementation/test fixture，不能作為產品 mapping。
 
-### 已核准的單一正式探索任務效果對照
+### 已核准的正式探索任務效果對照
 
 | `mission_template_id` | 固定效果 | 固定 identity／數量 | 邊界 |
 | --- | --- | --- | --- |
 | `mission.r01.explore_001` | `collectible_grant` | `collectible.r01.poster_001` ×1 | 此描述符在任務完成時固定，成功收取才套用所有權；不決定收藏類別、掉落／機率、Stackable 用途、Series 獎勵、顯示或 placement。 |
+| `mission.r01.explore_002` | `collectible_grant` | `collectible.r01.poster_002` ×1 | 此描述符在任務完成時固定，成功收取才套用所有權；不決定收藏類別、掉落／機率、Stackable 用途、Series 獎勵、顯示或 placement。 |
 
-此 mapping 不產生其他 `mission.r01.explore_*` 任務或其他收藏 mapping，也不變更任何既有 starter mapping。
+上述 mapping 不產生其他 `mission.r01.explore_*` 任務或其他收藏 mapping，也不變更任何既有 starter mapping。未核准的 territory-first-touch direction 不構成任務、地盤、人物或效果 mapping。
 
 ### 背景收藏與前景掛件
 
@@ -388,3 +389,4 @@
 | 0.9 | 2026-08-24 | 納入地盤受損／修復，並以已審核的衝突校正更新收藏來源、展示類型、所有權與 identity-first ID；任務與放置產出邊界維持 `[PLACEHOLDER]`。 |
 | 1.0 | 2026-08-24 | 納入 `starter_18`–`starter_23` 的首批固定地盤觸及與收藏效果對照；其餘 mapping 與 deferred 系統維持未定。 |
 | 1.1 | 2026-09-02 | 納入唯一已核准的正式探索任務 mapping：`mission.r01.explore_001` 固定授與 `collectible.r01.poster_001` ×1；其餘 mapping 與 deferred 系統維持未定。 |
+| 1.2 | 2026-09-03 | 納入 `mission.r01.explore_002` 固定授與 `collectible.r01.poster_002` ×1；territory-first-touch direction 維持未核准。 |

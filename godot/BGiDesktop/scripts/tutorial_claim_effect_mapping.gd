@@ -5,7 +5,7 @@ extends RefCounted
 static func for_mission_template(mission_template_id: String) -> Array[Dictionary]:
 	match mission_template_id:
 		"starter_18":
-			return [{"effect_type": "territory_first_touch", "territory_id": "territory_02", "character_id": "character_06"}]
+			return [{"effect_type": "territory_first_touch", "territory_id": "territory_02", "character_type_id": "character.worker01"}]
 		"starter_19":
 			return [{"effect_type": "collectible_grant", "collectible_id": "collectible.r01.goldbar_001", "quantity": 1}]
 		"starter_20":

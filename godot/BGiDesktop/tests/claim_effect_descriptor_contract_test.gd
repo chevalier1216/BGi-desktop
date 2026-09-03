@@ -10,7 +10,7 @@ var _failed := false
 func _init() -> void:
 	var clock: RefCounted = ClockScript.new("fixture_task", 100, 5)
 	var descriptors: Array = [
-		{"effect_type": "territory_first_touch", "territory_id": "fixture_territory", "character_id": "fixture_character"},
+		{"effect_type": "territory_first_touch", "territory_id": "fixture_territory", "character_type_id": "character.worker01"},
 		{"effect_type": "collectible_grant", "collectible_id": "fixture_collectible", "quantity": 3},
 	]
 	var resolved: Dictionary = ResultLockScript.resolve(clock, 105, {}, descriptors)
@@ -22,6 +22,9 @@ func _init() -> void:
 	_expect(not bool(missing["is_resolved"]) and str(missing["error_code"]) == "claim_effect_descriptor_missing", "legacy fixed result missing descriptors must be rejected")
 	var receipt_result: Dictionary = ClaimReceiptScript.create("fixture:claim", "fixture:run", "fixture:result", 105, [], descriptors)
 	_expect(bool(receipt_result["is_valid"]), "receipt must persist fixed descriptors")
+	var legacy_receipt_result: Dictionary = ClaimReceiptScript.create("legacy:claim", "legacy:run", "legacy:result", 105, [], [{"effect_type": "territory_first_touch", "territory_id": "fixture_territory", "character_id": "character_06"}])
+	_expect(bool(legacy_receipt_result["is_valid"]), "legacy character_06 receipt must migrate to the approved worker type")
+	_expect(Array(Dictionary(legacy_receipt_result["receipt"])["effect_descriptors"])[0] == {"effect_type": "territory_first_touch", "territory_id": "fixture_territory", "character_type_id": "character.worker01"}, "legacy receipt migration must persist the character type")
 	var ledger: RefCounted = CollectibleGrantLedgerScript.new()
 	var first_grant: Dictionary = ledger.apply_receipt(Dictionary(receipt_result["receipt"]))
 	var replay_grant: Dictionary = ledger.apply_receipt(Dictionary(receipt_result["receipt"]))

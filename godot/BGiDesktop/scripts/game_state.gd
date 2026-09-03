@@ -8,6 +8,7 @@ enum CrewStatus {
 
 const INITIAL_CREW_COUNT := 5
 const ASSIGNED_STATUS := CrewStatus.DISPATCHED
+const DEFAULT_CHARACTER_TYPE_ID := "character.worker01"
 
 var _crew: Array[Dictionary] = []
 
@@ -15,6 +16,7 @@ func _ready() -> void:
 	for index in INITIAL_CREW_COUNT:
 		_crew.append({
 			"id": "crew_%02d" % (index + 1),
+			"character_type_id": DEFAULT_CHARACTER_TYPE_ID,
 			"status": CrewStatus.AVAILABLE,
 		})
 
@@ -30,11 +32,12 @@ func restore_crew(crew: Array) -> Dictionary:
 			return _rejected("crew_restore_invalid")
 		var crew_member: Dictionary = Dictionary(crew_member_variant)
 		var crew_id: String = str(crew_member.get("id", ""))
+		var character_type_id: String = str(crew_member.get("character_type_id", DEFAULT_CHARACTER_TYPE_ID))
 		var status: int = int(crew_member.get("status", -1))
-		if crew_id.is_empty() or seen_ids.has(crew_id) or (status != CrewStatus.AVAILABLE and status != ASSIGNED_STATUS and status != CrewStatus.COMPLETED):
+		if crew_id.is_empty() or character_type_id.is_empty() or seen_ids.has(crew_id) or (status != CrewStatus.AVAILABLE and status != ASSIGNED_STATUS and status != CrewStatus.COMPLETED):
 			return _rejected("crew_restore_invalid")
 		seen_ids[crew_id] = true
-		restored.append({"id": crew_id, "status": status})
+		restored.append({"id": crew_id, "character_type_id": character_type_id, "status": status})
 	if restored.size() < INITIAL_CREW_COUNT:
 		return _rejected("crew_restore_invalid")
 	_crew = restored
@@ -50,14 +53,15 @@ func set_crew_status(crew_id: String, status: int) -> Dictionary:
 	return _rejected("crew_not_found")
 
 ## Adds one uniquely identified crew member in the available state.
-func add_available_crew(crew_id: String) -> Dictionary:
-	if crew_id.is_empty():
+func add_available_crew(crew_id: String, character_type_id: String = DEFAULT_CHARACTER_TYPE_ID) -> Dictionary:
+	if crew_id.is_empty() or character_type_id.is_empty():
 		return _rejected("crew_id_required")
 	for crew_member: Dictionary in _crew:
 		if str(crew_member["id"]) == crew_id:
 			return _rejected("crew_id_already_exists")
 	_crew.append({
 		"id": crew_id,
+		"character_type_id": character_type_id,
 		"status": CrewStatus.AVAILABLE,
 	})
 	return {"is_added": true, "error_code": ""}

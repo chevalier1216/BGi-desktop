@@ -20,10 +20,12 @@ static func _validate_one(descriptor: Dictionary) -> Dictionary:
 	match effect_type:
 		"territory_first_touch":
 			var territory_id: String = str(descriptor.get("territory_id", ""))
-			var character_id: String = str(descriptor.get("character_id", ""))
-			if territory_id.is_empty() or character_id.is_empty():
+			var character_type_id: String = str(descriptor.get("character_type_id", ""))
+			if character_type_id.is_empty() and str(descriptor.get("character_id", "")) == "character_06":
+				character_type_id = "character.worker01"
+			if territory_id.is_empty() or character_type_id.is_empty():
 				return _rejected("territory_first_touch_descriptor_invalid")
-			return {"is_valid": true, "error_code": "", "descriptor": {"effect_type": effect_type, "territory_id": territory_id, "character_id": character_id}}
+			return {"is_valid": true, "error_code": "", "descriptor": {"effect_type": effect_type, "territory_id": territory_id, "character_type_id": character_type_id}}
 		"collectible_grant":
 			var collectible_id: String = str(descriptor.get("collectible_id", ""))
 			var quantity: int = int(descriptor.get("quantity", 0))

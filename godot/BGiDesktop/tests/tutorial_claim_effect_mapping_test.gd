@@ -6,7 +6,7 @@ var _failed := false
 
 func _init() -> void:
 	_expect(Array(MappingScript.for_mission_template("starter_01")).is_empty(), "unapproved tutorial tasks must not infer effects")
-	_expect(Array(MappingScript.for_mission_template("starter_18")) == [{"effect_type": "territory_first_touch", "territory_id": "territory_02", "character_id": "character_06"}], "starter_18 must fix the approved territory and character")
+	_expect(Array(MappingScript.for_mission_template("starter_18")) == [{"effect_type": "territory_first_touch", "territory_id": "territory_02", "character_type_id": "character.worker01"}], "starter_18 must fix the approved territory and character")
 	var expected_collectible_ids: Array[String] = ["collectible.r01.goldbar_001", "collectible.r01.gift_001", "collectible.r01.neon_001", "collectible.r01.vehicle_001", "collectible.r01.cityset_001"]
 	for offset: int in range(expected_collectible_ids.size()):
 		var descriptor: Dictionary = Array(MappingScript.for_mission_template("starter_%d" % (19 + offset)))[0]

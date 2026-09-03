@@ -23,7 +23,7 @@ func _run() -> void:
 	var crew_ids: Array[String] = ["crew_01"]
 	_expect(bool(lifecycle.accept_execution("starter_18", crew_ids, 100, 5)["is_accepted"]), "starter_18 must accept")
 	var result: Dictionary = lifecycle.resolve_completed_result("starter_18", 105)
-	var expected: Dictionary = {"effect_type": "territory_first_touch", "territory_id": "territory_02", "character_id": "character_06"}
+	var expected: Dictionary = {"effect_type": "territory_first_touch", "territory_id": "territory_02", "character_type_id": "character.worker01"}
 	_expect(Array(result["result"]["claim_effect_descriptors"]) == [expected], "completion must snapshot the approved first-touch descriptor")
 	var replayed_result: Dictionary = lifecycle.resolve_completed_result("starter_18", 999)
 	_expect(Array(replayed_result["result"]["claim_effect_descriptors"]) == [expected], "reload path must retain fixed descriptor")

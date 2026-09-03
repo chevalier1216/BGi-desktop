@@ -508,7 +508,7 @@ func _on_claim_pressed() -> void:
 		return
 	if bool(touch_plan["did_touch"]):
 		_apply_territory_touch_plan(touch_plan)
-		if not _ensure_unlocked_crew(str(touch_plan["unlocked_crew_id"])):
+		if not _ensure_unlocked_crew(str(touch_plan["unlocked_crew_id"]), str(touch_plan["unlocked_crew_type_id"])):
 			_game_state.restore_crew(previous_crew)
 			_touched_territory_ids = previous_touched_territory_ids
 			_unlocked_crew_ids_by_territory = previous_unlocked_crew_ids
@@ -536,7 +536,7 @@ func _on_claim_pressed() -> void:
 		return
 	_show_claim_receipt(Dictionary(claim_result["receipt"]))
 	if bool(touch_plan["did_touch"]):
-		_append_crew_choice({"id": str(touch_plan["unlocked_crew_id"]), "status": GameStateScript.CrewStatus.AVAILABLE})
+		_append_crew_choice({"id": str(touch_plan["unlocked_crew_id"]), "character_type_id": str(touch_plan["unlocked_crew_type_id"]), "status": GameStateScript.CrewStatus.AVAILABLE})
 	for choice: CheckButton in crew_selector.get_children():
 		choice.disabled = true
 	_refresh_crew_card_overlays()
@@ -566,7 +566,7 @@ func _apply_first_claim_territory_touch(claim_receipt: Dictionary) -> void:
 			claim_receipt_label.text += "｜地盤已觸及"
 		return
 	_apply_territory_touch_plan(touch_plan)
-	if not _ensure_unlocked_crew(str(touch_plan["unlocked_crew_id"]), true):
+	if not _ensure_unlocked_crew(str(touch_plan["unlocked_crew_id"]), str(touch_plan["unlocked_crew_type_id"]), true):
 		claim_receipt_label.text += "｜新人物還原失敗"
 		return
 	var save_result: Dictionary = _save_player_state()
@@ -584,13 +584,13 @@ func _prepare_first_claim_territory_touch(claim_receipt: Dictionary) -> Dictiona
 		if str(descriptor.get("effect_type", "")) != "territory_first_touch":
 			continue
 		var territory_id: String = str(descriptor.get("territory_id", ""))
-		var character_id: String = str(descriptor.get("character_id", ""))
-		if territory_id.is_empty() or character_id.is_empty() or _touched_territory_ids.has(territory_id):
+		var character_type_id: String = str(descriptor.get("character_type_id", ""))
+		if territory_id.is_empty() or character_type_id.is_empty() or _touched_territory_ids.has(territory_id):
 			return {"did_touch": false}
 		var touch_result: Dictionary = TerritoryFirstTouchUnlockScript.touch(territory_id, _touched_territory_ids)
 		if not bool(touch_result["is_unlock_granted"]):
 			return {"did_touch": false}
-		return {"did_touch": true, "territory_id": territory_id, "source_claim_receipt_id": source_claim_receipt_id, "unlocked_crew_id": character_id, "touched_territory_ids": Dictionary(touch_result["touched_territory_ids"]).duplicate(true)}
+		return {"did_touch": true, "territory_id": territory_id, "source_claim_receipt_id": source_claim_receipt_id, "unlocked_crew_id": _get_unlocked_crew_id(territory_id), "unlocked_crew_type_id": character_type_id, "touched_territory_ids": Dictionary(touch_result["touched_territory_ids"]).duplicate(true)}
 	return {"did_touch": false}
 
 func _apply_territory_touch_plan(touch_plan: Dictionary) -> void:
@@ -609,7 +609,7 @@ func _restore_first_claim_territory_touch() -> void:
 		if not bool(touch_plan["did_touch"]):
 			continue
 		_apply_territory_touch_plan(touch_plan)
-		if not _ensure_unlocked_crew(str(touch_plan["unlocked_crew_id"])):
+		if not _ensure_unlocked_crew(str(touch_plan["unlocked_crew_id"]), str(touch_plan["unlocked_crew_type_id"])):
 			_enter_recovery_hold("territory_first_touch_restore_failed")
 			return
 
@@ -617,15 +617,15 @@ func _restore_unlocked_crew() -> void:
 	for territory_id_variant: Variant in _unlocked_crew_ids_by_territory:
 		_ensure_unlocked_crew(str(_unlocked_crew_ids_by_territory[territory_id_variant]))
 
-func _ensure_unlocked_crew(crew_id: String, append_choice: bool = false) -> bool:
+func _ensure_unlocked_crew(crew_id: String, character_type_id: String = GameStateScript.DEFAULT_CHARACTER_TYPE_ID, append_choice: bool = false) -> bool:
 	for crew_member: Dictionary in _game_state.get_crew():
 		if str(crew_member["id"]) == crew_id:
 			return true
-	var add_result: Dictionary = _game_state.add_available_crew(crew_id)
+	var add_result: Dictionary = _game_state.add_available_crew(crew_id, character_type_id)
 	if not bool(add_result["is_added"]):
 		return false
 	if append_choice:
-		_append_crew_choice({"id": crew_id, "status": GameStateScript.CrewStatus.AVAILABLE})
+		_append_crew_choice({"id": crew_id, "character_type_id": character_type_id, "status": GameStateScript.CrewStatus.AVAILABLE})
 	return true
 
 func _get_unlocked_crew_id(territory_id: String) -> String:

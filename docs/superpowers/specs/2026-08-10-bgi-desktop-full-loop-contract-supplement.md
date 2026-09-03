@@ -103,7 +103,7 @@ recovery_hold --修復後仍能識別原 run--> active 或 completed_pending_cla
 
 P1 已核准的描述符為：
 
-- `territory_first_touch`：含 `territory_id`、`character_id`。第一次成功套用時建立該地盤的 `TerritoryTouchReceipt`、將地盤由未涉足改為已觸及，並解鎖已固定的 1 名人物；已套用時為 no-op。
+- `territory_first_touch`：第一次成功套用時建立該地盤的 `TerritoryTouchReceipt`、將地盤由未涉足改為已觸及，並新增已固定的 1 名獨立 roster Unit；已套用時為 no-op。Character Type 與 Unit identity 必須分離；本產品規格不定義 Unit ID 格式、生成方式、技術欄位或描述符 schema。
 - `collectible_grant`：含 `collectible_id`、`quantity`。`unique` 未擁有時取得，已擁有時不重抽、不替代；`stackable` 以固定數量只增加一次；`series` 沿用相同收取契約，系列歸屬僅為 metadata。
 
 場景道具與場景組的 `collectible_grant` 僅建立所有權，不會自動顯示、套用或放置。任務對照、掉落表、機率、數量、用途、系列獎勵與完整放置互動均不在本次範圍。
@@ -114,7 +114,7 @@ P1 已核准的描述符為：
 
 | `mission_template_id` | 已固定 `ClaimEffectDescriptor` |
 | --- | --- |
-| `starter_18` | `territory_first_touch { territory_id: territory_02, character_id: character_06 }` |
+| `starter_18` | `territory_first_touch：觸及 territory_02，新增 1 名 roster Unit（Type：character.worker01）` |
 | `starter_19` | `collectible_grant { collectible_id: collectible.r01.goldbar_001, quantity: 1 }` |
 | `starter_20` | `collectible_grant { collectible_id: collectible.r01.gift_001, quantity: 1 }` |
 | `starter_21` | `collectible_grant { collectible_id: collectible.r01.neon_001, quantity: 1 }` |
@@ -144,10 +144,10 @@ P1 已核准的描述符為：
 | 資料 | 必填欄位 | 規則 |
 | --- | --- | --- |
 | `TerritoryState` | `territory_id`、`territory_progress`、`exploration_collection_count`、`environment_decoration_owned_count` | 三個長期成長值可先以 `[PLACEHOLDER]` 顯示，但欄位與 ID 必須存在。 |
-| `TerritoryTouchReceipt` | `territory_id`、`source_claim_receipt_id`、`touched_at_seconds`、`unlocked_crew_id` | 同一 `territory_id` 只建立一次。首次觸及新地盤必須解鎖恰好 1 名新人物。 |
+| `TerritoryTouchReceipt` | `territory_id`、`source_claim_receipt_id`、`touched_at_seconds`、既有 Unit 參照 | 同一 `territory_id` 只建立一次。首次觸及新地盤必須新增恰好 1 名獨立 roster Unit；Unit 技術 identity 的欄位與格式不由本產品規格定義。 |
 
 - 地盤觸及只能由已成功建立的 `ClaimReceipt` 及其已固定 `territory_first_touch` 描述符觸發；任務完成待收取、重看結果或背景切換不能觸發。
-- 解鎖人物時必須把新人物完整寫入 `crew_by_id`，初始狀態為可用；不能只遞增一個人數計數器。
+- 新增 roster Unit 時必須以既有可持久化的人物權威資料保存、初始狀態為可用；不能只遞增一個人數計數器。此 Unit 與其他 roster Unit 獨立可派遣，並參照已固定的 Character Type；不由本產品規格指定其技術 identity 或儲存欄位。
 - 背景、收藏與環境布置可由有效收取效果解鎖，但它們的所有權與顯示資料不得充當地盤首次觸及的唯一證據。
 
 ## 5. 文字暫代 UI 流程與阻擋理由

@@ -32,11 +32,11 @@
 
 ## 4. 小弟／人物系統
 
-玩家以 5 名相同小弟開始。每名人物同時只能參與一個任務；一個任務可派遣多名人物。
+玩家以 5 名外觀相同、但彼此獨立且可持久化的 roster Unit 開始。每名 Unit 同時只能參與一個任務；一個任務可派遣多名 Unit。這 5 名 Unit 都參照同一 Character Type `character.worker01`；Character Type 不等於 roster Unit identity。
 
-新地盤首次觸及時，玩家解鎖 1 名新人物。該地盤與人物在任務完成、進入待收取前即已固定；實際成功收取才讓玩家取得這項進度。任務最低／最高人數、團隊倍率公式與非新手人物內容均維持 `[PLACEHOLDER]`。
+`starter_18 → territory_02` 的 source 維持不變。首次成功收取時，玩家新增 1 名獨立、可持久化且可派遣的 roster Unit，同樣參照 `character.worker01`；因此 roster 由 5 名變為 6 名，不會解鎖新的 Character Type。該地盤與新增 Unit 的產品結果在任務完成、進入待收取前即已固定；實際成功收取才讓玩家取得這項進度。Unit ID 格式、生成方式、技術欄位與 descriptor schema 尚未由產品設計決定。任務最低／最高人數、團隊倍率公式與非新手人物內容均維持 `[PLACEHOLDER]`。
 
-人物狀態以可用與派遣中為核心。任務完成待收取是任務狀態，不會把原派遣人物持續鎖為忙碌。
+Unit 狀態以可用與派遣中為核心。任務完成待收取是任務狀態，不會把原派遣 Unit 持續鎖為忙碌。
 
 ## 5. 任務系統
 
@@ -48,7 +48,7 @@
 
 第一版不提供玩家取消任務。
 
-首批固定的教學任務成果以 canonical `mission_template_id` 記錄：`starter_18` 觸及 `territory_02` 並解鎖 `character_06`；`starter_19`–`starter_23` 分別取得特級金磚、水果禮盒、LED 霓虹招牌、BEMZ 豪華保母車與城市建築套組，各為固定 1 份。這些成果在任務完成時固定，成功收取才入帳。
+首批固定的教學任務成果以 canonical `mission_template_id` 記錄：`starter_18` 觸及 `territory_02` 並新增 1 名參照 `character.worker01` 的獨立 roster Unit；`starter_19`–`starter_23` 分別取得特級金磚、水果禮盒、LED 霓虹招牌、BEMZ 豪華保母車與城市建築套組，各為固定 1 份。這些成果在任務完成時固定，成功收取才入帳。
 
 另有一項已核准的正式探索任務 mapping：`mission.r01.explore_001` 在任務完成時固定 `collectible_grant`，成功收取後取得 `collectible.r01.poster_001` ×1。這只界定此任務的一次固定成果；不決定其他任務、掉落／機率、收藏用途、系列獎勵或展示／placement。
 

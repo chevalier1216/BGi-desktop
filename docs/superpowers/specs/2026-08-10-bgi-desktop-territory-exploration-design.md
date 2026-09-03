@@ -40,13 +40,13 @@
 
 ### 初始狀態
 
-- 初始小弟：5 名。
+- 初始 roster：5 名彼此獨立、可持久化且可派遣的 Unit；全數參照同一 Character Type `character.worker01`。
 - 外觀：完全相同的最低階層人物；本機買斷第一版不使用外觀特化。
 - 初始能力：統一的基礎派遣容量 1；每人可單獨執行 1 個任務。
 
 ### 人物解鎖
 
-- 首次觸及每個新地盤區域時，解鎖 1 名新人物並加入可派遣名單；不須等待該地盤完全占據。
+- 首次觸及每個新地盤區域時，新增 1 名獨立、可持久化且可派遣的 roster Unit 並加入可派遣名單；不須等待該地盤完全占據。此批已核准的 `starter_18 → territory_02` 所新增 Unit 亦參照 `character.worker01`。
 - 人物解鎖是地盤擴張的本機遊戲進度，不是付費內容。
 - 新人物在第一版的主要價值是增加可用人手與任務選擇，並與所屬地盤建立敘事連結；其基礎派遣容量同樣為 1。個別能力、外觀與成長差異不在本規格定案，後續若加入須另立角色規格。
 
@@ -190,7 +190,7 @@
 
 | `mission_template_id` | 固定效果 | 固定 identity／數量 | 收藏屬性與邊界 |
 | --- | --- | --- | --- |
-| `starter_18` | `territory_first_touch` | `territory_02`、`character_06` | 成功收取才首次觸及並解鎖人物；同一地盤不重複套用。 |
+| `starter_18` | `territory_first_touch` | `territory_02`、新增 1 名 roster Unit（Type：`character.worker01`） | 成功收取才首次觸及並新增 Unit；同一地盤不重複套用。 |
 | `starter_19` | `collectible_grant` | `collectible.r01.goldbar_001` ×1 | Unique、Pure Collectible。 |
 | `starter_20` | `collectible_grant` | `collectible.r01.gift_001` ×1 | Stackable；此數量只適用於本任務，不決定未來來源數量或用途。 |
 | `starter_21` | `collectible_grant` | `collectible.r01.neon_001` ×1 | Series 成員；不決定系列完成獎勵。 |
@@ -390,3 +390,4 @@
 | 1.0 | 2026-08-24 | 納入 `starter_18`–`starter_23` 的首批固定地盤觸及與收藏效果對照；其餘 mapping 與 deferred 系統維持未定。 |
 | 1.1 | 2026-09-02 | 納入唯一已核准的正式探索任務 mapping：`mission.r01.explore_001` 固定授與 `collectible.r01.poster_001` ×1；其餘 mapping 與 deferred 系統維持未定。 |
 | 1.2 | 2026-09-03 | 納入 `mission.r01.explore_002` 固定授與 `collectible.r01.poster_002` ×1；territory-first-touch direction 維持未核准。 |
+| 1.3 | 2026-09-03 | 校正 Character Type 與 roster Unit identity：初始 5 名與 `starter_18 → territory_02` 新增的第 6 名皆為獨立 Unit，且均參照 `character.worker01`；不定義 Unit 技術 identity。 |

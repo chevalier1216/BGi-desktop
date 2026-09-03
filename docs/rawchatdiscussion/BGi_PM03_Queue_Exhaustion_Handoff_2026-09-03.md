@@ -3,13 +3,13 @@
 ## Repository checkpoint
 
 - Repository / branch: `G:\Projects\BGi-Desktop` / `main`.
-- Published HEAD: `1c0936d511c5843407caa7a717ba2e69562789bd` (`feat: grant explore poster reward`).
+- Published HEAD: `1571f7a6c81d351f5ffc11f0662109a81406d8a4` (`feat: grant second explore poster reward`).
 - Remote verification: `origin/main` equals this HEAD.
 
 ## Verified product state
 
-- The sole authority-revision `26242fb93efef3be46e7a8357039da821e94f471` implementation mapping is delivered: `mission.r01.explore_001` fixes `collectible_grant { collectible_id: collectible.r01.poster_001, quantity: 1 }` before `completed_pending_claim`.
-- Targeted mapping and lifecycle regressions passed for completion, replay of the fixed result, and claim receipt propagation.
+- Authority revision `5624fa811f00aa5a81bed2e5219e8cb057a74c7d` mappings are delivered: `mission.r01.explore_001` fixes `collectible_grant { collectible_id: collectible.r01.poster_001, quantity: 1 }`, and `mission.r01.explore_002` fixes `collectible_grant { collectible_id: collectible.r01.poster_002, quantity: 1 }`, before `completed_pending_claim`.
+- Targeted mapping and lifecycle regressions passed for completion, fixed-result replay, and claim receipt propagation.
 
 ## Authoritative sources
 
@@ -19,9 +19,9 @@
 
 ## Approved queue and deferred validation
 
-- Queue exhaustion verified: the authority handoff exposes only `mission.r01.explore_001`; it is already delivered at `1c0936d`.
+- Queue exhaustion verified: the authority lists only `mission.r01.explore_001` and `mission.r01.explore_002`; both are delivered at `1571f7a`.
 - No deferred validation blocks this checkpoint.
-- Other formal mission mappings, collectible mappings, probabilities, quantities, classification, uses, series rewards, display/placement, economy, territory tuning, damage, and black-market content remain deferred and must not be inferred.
+- Territory-first-touch direction remains not approved. Other formal mission mappings, collectible mappings, probabilities, quantities, classification, uses, series rewards, display/placement, economy, territory tuning, damage, and black-market content remain deferred and must not be inferred.
 
 ## Dirty-work ownership
 

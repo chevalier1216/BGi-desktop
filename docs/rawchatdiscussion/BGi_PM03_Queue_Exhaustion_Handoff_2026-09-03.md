@@ -15,7 +15,7 @@
 
 - `docs/superpowers/specs/2026-08-10-bgi-desktop-full-loop-contract-supplement.md` §3.4
 - `docs/superpowers/specs/2026-08-10-bgi-desktop-territory-exploration-design.md`「已核准的單一正式探索任務效果對照」
-- Authority handoff: `C:\Users\phil\Downloads\Design Handoff for PM03.md` (revision `26242fb93efef3be46e7a8357039da821e94f471`).
+- `docs/rawchatdiscussion/BGi_PM03_Durable_Handoff_2026-09-02.md`
 
 ## Approved queue and deferred validation
 
@@ -32,4 +32,4 @@
 
 - **Decision required:** approve exactly one next `mission_template_id → ClaimEffectDescriptor` mapping, including the fixed effect type and all identity/quantity fields required by the existing snapshot contract.
 - **Why this is minimal:** without that mapping, any next reward, progression, collectible, territory, or character behavior would be an unapproved inference.
-- **Next-role instruction:** Publish one authoritative fixed mapping for the highest-priority next mission template, then return the new spec revision to PM for a bounded implementation mission.
+- **Next-role instruction:** gameplay/design discussion may propose options only within this minimal Decision Boundary; it must not approve or publish a mapping. After the user explicitly selects an option, produce a Design02-ready Change Batch for PM.

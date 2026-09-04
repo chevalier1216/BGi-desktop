@@ -54,6 +54,8 @@ Unit 狀態以可用與派遣中為核心。任務完成待收取是任務狀態
 
 另一項已核准的正式探索任務 mapping：`mission.r01.explore_002` 在任務完成時固定 `collectible_grant`，成功收取後取得 `collectible.r01.poster_002` ×1。這同樣只界定此任務的一次固定成果；不決定其他任務、掉落／機率、收藏用途、系列獎勵或展示／placement。後續 territory-first-touch direction 尚待新的設計決策，未有任務、地盤、人物或效果 identity。
 
+另一項已核准的正式探索任務 mapping：`mission.r01.explore_003` 在任務完成時固定 `collectible_grant`，成功收取後取得 `collectible.r01.poster_003` ×1。這同樣只界定此任務的一次固定成果；不決定其他任務、poster 來源、掉落／機率、收藏用途、系列獎勵或展示／placement。
+
 已核准的 Territory 03 mapping 為：`mission.r01.territory_001` 在完成時固定 `territory_first_touch`；成功收取後首次觸及 `territory_03`，並新增 1 名參照 `character.worker02` 的獨立 roster Unit。它不決定其他地盤或人物的 mapping。
 
 ## 6. 報酬與收取

@@ -223,6 +223,7 @@
 | --- | --- | --- | --- |
 | `mission.r01.explore_001` | `collectible_grant` | `collectible.r01.poster_001` ×1 | 此描述符在任務完成時固定，成功收取才套用所有權；不決定收藏類別、掉落／機率、Stackable 用途、Series 獎勵、顯示或 placement。 |
 | `mission.r01.explore_002` | `collectible_grant` | `collectible.r01.poster_002` ×1 | 此描述符在任務完成時固定，成功收取才套用所有權；不決定收藏類別、掉落／機率、Stackable 用途、Series 獎勵、顯示或 placement。 |
+| `mission.r01.explore_003` | `collectible_grant` | `collectible.r01.poster_003` ×1 | 此描述符在任務完成時固定，成功收取才套用所有權；不決定收藏類別、掉落／機率、Stackable 用途、Series 獎勵、顯示或 placement。 |
 
 上述 mapping 不產生其他 `mission.r01.explore_*` 任務或其他收藏 mapping，也不變更任何既有 starter mapping。未核准的 territory-first-touch direction 不構成任務、地盤、人物或效果 mapping。
 
@@ -410,3 +411,4 @@
 | 1.2 | 2026-09-03 | 納入 `mission.r01.explore_002` 固定授與 `collectible.r01.poster_002` ×1；territory-first-touch direction 維持未核准。 |
 | 1.3 | 2026-09-03 | 校正 Character Type 與 roster Unit identity：初始 5 名與 `starter_18 → territory_02` 新增的第 6 名皆為獨立 Unit，且均參照 `character.worker01`；不定義 Unit 技術 identity。 |
 | 1.4 | 2026-09-04 | 將舊 `region.r01` 世界／地圖命名規則標為 supersede；第一版以三張 `territory_XX` 地圖表達，並納入唯一 `mission.r01.territory_001 → territory_03 → character.worker02` 首次觸及 mapping 與 Territory 03 已核准內容範圍。 |
+| 1.5 | 2026-09-04 | 納入唯一 `mission.r01.explore_003` 固定授與 `collectible.r01.poster_003` ×1；不擴張其他 mapping 或 deferred 系統。 |

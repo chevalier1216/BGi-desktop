@@ -29,6 +29,15 @@ Do not duplicate a workflow across these layers. Resolve a conflict by escalatin
 - Cross-context handoffs contain only a Mission Brief, Design Decision Packet, or Durable Handoff. Authoritative specs and actual Git state are the durable source of truth; do not hand off full conversation history.
 - Do not treat a Codex thread as a permanent Git branch. Use short-lived Git branches only when code isolation has real value; `main` remains the verified launch baseline.
 
+## Experimental and playtest branches
+
+- `main` remains the canonical, verified launch baseline. Do not create a branch merely because work is discussed in a PM, Design, Coding, or other conversation; create one only when it provides real implementation, runtime, or persistence isolation value.
+- PM / orchestrator owns branch routing. Every branch mission must state its branch name, base revision, bounded scope, status, persistence-isolation approach, required validation, and merge authority.
+- Experimental, prototype, debug, and playtest branches are non-authoritative by default. They must not merge themselves into `main`, publish product rules, or be treated as a source of truth.
+- FAST, debug, and playtest persistence must be isolated from normal `main` runtime and saves. A branch must not read from or write to normal `main` persistence unless the approved mission explicitly provides a safe, reversible compatibility boundary.
+- After branch validation, deliver the branch result through commit, push, remote verification, and a Durable Handoff. The handoff must distinguish validated evidence, remaining limitations, and whether the branch is a candidate, rejected experiment, or ready for integration review.
+- When a user formally approves a branch candidate that changes product rules, first complete Design02 authoritative synchronization. PM / orchestrator then schedules and authorizes any `main` integration; approval of the candidate alone does not authorize a self-merge.
+
 ## Global Skills
 
 - `$continuous-mission-orchestration`: PM / orchestrator continuity between coherent mission checkpoints.

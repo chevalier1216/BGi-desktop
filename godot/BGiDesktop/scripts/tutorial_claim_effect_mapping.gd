@@ -20,6 +20,8 @@ static func for_mission_template(mission_template_id: String) -> Array[Dictionar
 			return [{"effect_type": "collectible_grant", "collectible_id": "collectible.r01.poster_001", "quantity": 1}]
 		"mission.r01.explore_002":
 			return [{"effect_type": "collectible_grant", "collectible_id": "collectible.r01.poster_002", "quantity": 1}]
+		"mission.r01.explore_003":
+			return [{"effect_type": "collectible_grant", "collectible_id": "collectible.r01.poster_003", "quantity": 1}]
 		"mission.r01.territory_001":
 			return [{"effect_type": "territory_first_touch", "territory_id": "territory_03", "character_type_id": "character.worker02"}]
 		_:

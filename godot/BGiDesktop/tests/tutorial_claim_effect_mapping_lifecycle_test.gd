@@ -47,6 +47,15 @@ func _run() -> void:
 	_expect(Array(second_explore_replayed_result["result"]["claim_effect_descriptors"]) == [second_explore_expected], "reload path must retain the fixed second poster descriptor")
 	var second_explore_claim: Dictionary = second_explore_lifecycle.claim_completed_result("mission.r01.explore_002", 305)
 	_expect(Array(second_explore_claim["receipt"]["effect_descriptors"]) == [second_explore_expected], "claim receipt must copy the fixed second poster descriptor")
+	var third_explore_lifecycle: RefCounted = LifecycleScript.new(coordinator, ExpiredReleaseScript.new(coordinator, assignments, ValidityQueryScript.new()), SnapshotCollectionScript.new(), ReceiptStoreScript.new("user://explore_third_poster_claim_effect_mapping_lifecycle_test.json"))
+	var third_explore_expected: Dictionary = {"effect_type": "collectible_grant", "collectible_id": "collectible.r01.poster_003", "quantity": 1}
+	_expect(bool(third_explore_lifecycle.accept_execution("mission.r01.explore_003", crew_ids, 400, 5)["is_accepted"]), "explore_003 must accept")
+	var third_explore_result: Dictionary = third_explore_lifecycle.resolve_completed_result("mission.r01.explore_003", 405)
+	_expect(Array(third_explore_result["result"]["claim_effect_descriptors"]) == [third_explore_expected], "completion must snapshot the approved third poster descriptor")
+	var third_explore_replayed_result: Dictionary = third_explore_lifecycle.resolve_completed_result("mission.r01.explore_003", 999)
+	_expect(Array(third_explore_replayed_result["result"]["claim_effect_descriptors"]) == [third_explore_expected], "reload path must retain the fixed third poster descriptor")
+	var third_explore_claim: Dictionary = third_explore_lifecycle.claim_completed_result("mission.r01.explore_003", 405)
+	_expect(Array(third_explore_claim["receipt"]["effect_descriptors"]) == [third_explore_expected], "claim receipt must copy the fixed third poster descriptor")
 	var territory_lifecycle: RefCounted = LifecycleScript.new(coordinator, ExpiredReleaseScript.new(coordinator, assignments, ValidityQueryScript.new()), SnapshotCollectionScript.new(), ReceiptStoreScript.new("user://territory_first_touch_claim_effect_mapping_lifecycle_test.json"))
 	var territory_expected: Dictionary = {"effect_type": "territory_first_touch", "territory_id": "territory_03", "character_type_id": "character.worker02"}
 	_expect(bool(territory_lifecycle.accept_execution("mission.r01.territory_001", crew_ids, 400, 5)["is_accepted"]), "territory_001 must accept")

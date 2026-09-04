@@ -47,6 +47,15 @@ func _run() -> void:
 	_expect(Array(second_explore_replayed_result["result"]["claim_effect_descriptors"]) == [second_explore_expected], "reload path must retain the fixed second poster descriptor")
 	var second_explore_claim: Dictionary = second_explore_lifecycle.claim_completed_result("mission.r01.explore_002", 305)
 	_expect(Array(second_explore_claim["receipt"]["effect_descriptors"]) == [second_explore_expected], "claim receipt must copy the fixed second poster descriptor")
+	var territory_lifecycle: RefCounted = LifecycleScript.new(coordinator, ExpiredReleaseScript.new(coordinator, assignments, ValidityQueryScript.new()), SnapshotCollectionScript.new(), ReceiptStoreScript.new("user://territory_first_touch_claim_effect_mapping_lifecycle_test.json"))
+	var territory_expected: Dictionary = {"effect_type": "territory_first_touch", "territory_id": "territory_03", "character_type_id": "character.worker02"}
+	_expect(bool(territory_lifecycle.accept_execution("mission.r01.territory_001", crew_ids, 400, 5)["is_accepted"]), "territory_001 must accept")
+	var territory_result: Dictionary = territory_lifecycle.resolve_completed_result("mission.r01.territory_001", 405)
+	_expect(Array(territory_result["result"]["claim_effect_descriptors"]) == [territory_expected], "completion must snapshot the approved territory first-touch descriptor")
+	var territory_replayed_result: Dictionary = territory_lifecycle.resolve_completed_result("mission.r01.territory_001", 999)
+	_expect(Array(territory_replayed_result["result"]["claim_effect_descriptors"]) == [territory_expected], "reload path must retain the fixed territory first-touch descriptor")
+	var territory_claim: Dictionary = territory_lifecycle.claim_completed_result("mission.r01.territory_001", 405)
+	_expect(Array(territory_claim["receipt"]["effect_descriptors"]) == [territory_expected], "claim receipt must copy the fixed territory first-touch descriptor")
 	state.queue_free()
 	quit(1 if _failed else 0)
 

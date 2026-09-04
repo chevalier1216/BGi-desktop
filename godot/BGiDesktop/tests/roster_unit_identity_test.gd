@@ -24,6 +24,11 @@ func _run() -> void:
 	var roster_after_claim: Array[Dictionary] = state.get_crew()
 	_expect(roster_after_claim.size() == 6, "claim roster must contain six Units")
 	_expect(str(roster_after_claim[5]["id"]) == "territory_territory_02_crew_01" and str(roster_after_claim[5]["character_type_id"]) == "character.worker01", "claimed Unit must preserve independent identity and worker type")
+	var territory_claim_add: Dictionary = state.add_available_crew("territory_territory_03_crew_01", "character.worker02")
+	_expect(bool(territory_claim_add["is_added"]), "territory_03 claim must add one independent worker02 Unit")
+	var roster_after_territory_claim: Array[Dictionary] = state.get_crew()
+	_expect(roster_after_territory_claim.size() == 7, "territory_03 claim must add exactly one additional Unit")
+	_expect(str(roster_after_territory_claim[6]["id"]) == "territory_territory_03_crew_01" and str(roster_after_territory_claim[6]["character_type_id"]) == "character.worker02", "territory_03 claimed Unit must retain the approved worker02 type")
 	var legacy_roster: Array = []
 	for index in 5:
 		legacy_roster.append({"id": "legacy_%02d" % index, "status": GameStateScript.CrewStatus.AVAILABLE})

@@ -16,6 +16,7 @@ func _init() -> void:
 	_expect(explore_descriptor == {"effect_type": "collectible_grant", "collectible_id": "collectible.r01.poster_001", "quantity": 1}, "explore_001 must preserve its approved poster grant")
 	var second_explore_descriptor: Dictionary = Array(MappingScript.for_mission_template("mission.r01.explore_002"))[0]
 	_expect(second_explore_descriptor == {"effect_type": "collectible_grant", "collectible_id": "collectible.r01.poster_002", "quantity": 1}, "explore_002 must preserve its approved poster grant")
+	_expect(Array(MappingScript.for_mission_template("mission.r01.territory_001")) == [{"effect_type": "territory_first_touch", "territory_id": "territory_03", "character_type_id": "character.worker02"}], "territory_001 must preserve the approved territory and worker type")
 	_expect(Array(MappingScript.for_mission_template("mission.r01.explore_003")).is_empty(), "unapproved formal missions must not infer effects")
 	quit(1 if _failed else 0)
 

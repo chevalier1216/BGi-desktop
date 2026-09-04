@@ -138,6 +138,16 @@
 
 初期地盤數量、每區影響力需求、解鎖順序均為 `[PLACEHOLDER]`。地盤不會被其他勢力奪回，以維持低壓放置體驗。
 
+### 第一版地圖與 `rXX` 命名
+
+舊有將 `region.r01` 作為世界／地圖命名空間的規則已被 supersede。第一版不建立 Region 或 `region_id`：`territory_01`、`territory_02`、`territory_03` 分別是第一、第二、第三張地圖。
+
+`rXX` 僅代表 playthrough／content-cycle namespace，而不是 Region、Map 或 Territory；現有 `mission.r01.*`、`collectible.r01.*`、`background.r01.*` ID 維持不變。
+
+### Territory 03 已核准內容範圍
+
+`territory_03` 是第三張地圖。其內容範圍包含 Character Type `character.worker02`、`character.handyman01`、`character.assassin01` 與 `character.gangster01`；只有 `character.worker02` 已指派為本地盤首次觸及的新增 Unit Type。其餘三個 Type 的解鎖、出現或派遣順序均未決定。
+
 ### 地盤受損與修復
 
 - 受損是已擁有地盤上的暫時 condition／事件狀態，不是第五個地盤 progression state；受損不得改變所有權，亦不得使地盤退回前一個 progression state。
@@ -181,7 +191,7 @@
 
 - 城市建築套組可包含矮公寓或高樓都市景觀等不同套組。玩家取得後永久保留所有權；套用另一套不刪除原有套組。總部大樓可有多個不同收藏，但同一背景同時只展示一棟。
 - **Unique**：單一具名收藏只能取得一次；目前例為特定金磚、寫真、總部大樓與城市建築套組。**Stackable**：同一收藏可累積數量；目前僅確認市長的水果禮盒。**Series**：多件不同收藏屬同一系列、各自具獨立 ID 與所有權；LED、懸賞令與後續多款 BEMZ 原則上採此方式，不預設為同一物品堆疊。
-- 收藏採 identity-first 穩定 ID。ID 不得編碼可變的展示能力、所有權或玩法分類；展示以獨立屬性（如 `foreground`、`scene_prop`、`scene_set`、`none`）表示，Unique／Stackable 亦為獨立屬性，Series 為內容關係。命名空間採 `region.r01`、`collectible.r01.<identity>`、`background.r01.<identity>` 與 `resource.<identity>`；不採 `item-region01-1-001`、`item-region01-2-001` 或一般資源 `item-00`。
+- 收藏採 identity-first 穩定 ID。ID 不得編碼可變的展示能力、所有權或玩法分類；展示以獨立屬性（如 `foreground`、`scene_prop`、`scene_set`、`none`）表示，Unique／Stackable 亦為獨立屬性，Series 為內容關係。地盤採 `territory_XX`；收藏與背景命名空間採 `collectible.r01.<identity>`、`background.r01.<identity>` 與 `resource.<identity>`。其中 `rXX` 僅代表 playthrough／content-cycle namespace，不代表 Region、Map 或 Territory；不採 `item-region01-1-001`、`item-region01-2-001` 或一般資源 `item-00`。
 - Resource 與 Collectible 是不同概念與命名空間。資源可由任務及放置產出；收藏的具體任務、地區、進度、掉落表與機率，以及資源類型、用途、速度、容量和收取規則，均為 `[PLACEHOLDER]`。
 
 ### 第一批固定的新手任務效果對照
@@ -196,6 +206,14 @@
 | `starter_21` | `collectible_grant` | `collectible.r01.neon_001` ×1 | Series 成員；不決定系列完成獎勵。 |
 | `starter_22` | `collectible_grant` | `collectible.r01.vehicle_001` ×1 | Scene Prop；只建立所有權，不自動放置、顯示、移動或替換。 |
 | `starter_23` | `collectible_grant` | `collectible.r01.cityset_001` ×1 | Scene Set；只建立所有權，不自動套用或切換。 |
+
+### 已核准的 Territory 03 首次觸及效果對照
+
+| `mission_template_id` | 固定效果 | 固定 identity／數量 | 邊界 |
+| --- | --- | --- | --- |
+| `mission.r01.territory_001` | `territory_first_touch` | `territory_03`、新增 1 名 roster Unit（Type：`character.worker02`） | 此描述符在任務完成時固定，成功收取才首次觸及並新增 Unit；同一地盤不重複套用。 |
+
+此 mapping 不決定 `character.handyman01`、`character.assassin01` 或 `character.gangster01` 的解鎖、出現或派遣順序，亦不產生其他地盤、人物或任務 mapping。
 
 此表不決定 `starter_01`–`starter_17`、其餘收藏 mapping、掉落／機率、Stackable 用途、Series 完成獎勵、展示／placement UX、資源經濟、地盤門檻、地盤受損或黑市。既有 `starter_01:100 → territory_02` 僅為 implementation/test fixture，不能作為產品 mapping。
 
@@ -391,3 +409,4 @@
 | 1.1 | 2026-09-02 | 納入唯一已核准的正式探索任務 mapping：`mission.r01.explore_001` 固定授與 `collectible.r01.poster_001` ×1；其餘 mapping 與 deferred 系統維持未定。 |
 | 1.2 | 2026-09-03 | 納入 `mission.r01.explore_002` 固定授與 `collectible.r01.poster_002` ×1；territory-first-touch direction 維持未核准。 |
 | 1.3 | 2026-09-03 | 校正 Character Type 與 roster Unit identity：初始 5 名與 `starter_18 → territory_02` 新增的第 6 名皆為獨立 Unit，且均參照 `character.worker01`；不定義 Unit 技術 identity。 |
+| 1.4 | 2026-09-04 | 將舊 `region.r01` 世界／地圖命名規則標為 supersede；第一版以三張 `territory_XX` 地圖表達，並納入唯一 `mission.r01.territory_001 → territory_03 → character.worker02` 首次觸及 mapping 與 Territory 03 已核准內容範圍。 |

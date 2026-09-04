@@ -122,8 +122,9 @@ P1 已核准的描述符為：
 | `starter_23` | `collectible_grant { collectible_id: collectible.r01.cityset_001, quantity: 1 }` |
 | `mission.r01.explore_001` | `collectible_grant { collectible_id: collectible.r01.poster_001, quantity: 1 }` |
 | `mission.r01.explore_002` | `collectible_grant { collectible_id: collectible.r01.poster_002, quantity: 1 }` |
+| `mission.r01.territory_001` | `territory_first_touch：觸及 territory_03，新增 1 名 roster Unit（Type：character.worker02）` |
 
-`starter_19` 的 Unique 重複處理不另給一份；`starter_20` 的 quantity 只界定該任務本身，不推導未來 gift 來源或 Stackable 用途；`starter_21` 不產生 Series 完成獎勵；`starter_22`、`starter_23` 維持 ownership-only。`mission.r01.explore_001` 與 `mission.r01.explore_002` 的 quantity 各只界定其單一 mapping，不推導其他正式任務、poster 來源、收藏類別、掉落／機率、用途、系列獎勵或展示／placement。未列在本表的 tutorial／正式任務不因此取得 mapping；未核准的 territory-first-touch direction 不構成 mapping。`starter_01:100 → territory_02` 仍僅是 implementation/test fixture，不是產品內容來源。
+`starter_19` 的 Unique 重複處理不另給一份；`starter_20` 的 quantity 只界定該任務本身，不推導未來 gift 來源或 Stackable 用途；`starter_21` 不產生 Series 完成獎勵；`starter_22`、`starter_23` 維持 ownership-only。`mission.r01.explore_001` 與 `mission.r01.explore_002` 的 quantity 各只界定其單一 mapping，不推導其他正式任務、poster 來源、收藏類別、掉落／機率、用途、系列獎勵或展示／placement。`mission.r01.territory_001` 只界定觸及 `territory_03` 及新增參照 `character.worker02` 的 1 名 roster Unit；不決定 `character.handyman01`、`character.assassin01` 或 `character.gangster01` 的解鎖、出現或派遣順序。未列在本表的 tutorial／正式任務不因此取得 mapping；未核准的 territory-first-touch direction 不構成 mapping。`starter_01:100 → territory_02` 仍僅是 implementation/test fixture，不是產品內容來源。
 
 ## 4. 刷新、地盤與人物解鎖契約
 

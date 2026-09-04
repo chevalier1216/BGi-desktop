@@ -54,6 +54,8 @@ Unit 狀態以可用與派遣中為核心。任務完成待收取是任務狀態
 
 另一項已核准的正式探索任務 mapping：`mission.r01.explore_002` 在任務完成時固定 `collectible_grant`，成功收取後取得 `collectible.r01.poster_002` ×1。這同樣只界定此任務的一次固定成果；不決定其他任務、掉落／機率、收藏用途、系列獎勵或展示／placement。後續 territory-first-touch direction 尚待新的設計決策，未有任務、地盤、人物或效果 identity。
 
+已核准的 Territory 03 mapping 為：`mission.r01.territory_001` 在完成時固定 `territory_first_touch`；成功收取後首次觸及 `territory_03`，並新增 1 名參照 `character.worker02` 的獨立 roster Unit。它不決定其他地盤或人物的 mapping。
+
 ## 6. 報酬與收取
 
 每張任務需明示：
@@ -79,6 +81,10 @@ Unit 狀態以可用與派遣中為核心。任務完成待收取是任務狀態
 4. 已占據：出現可見場景變化、開放高階探索採集任務與環境物件放置。
 
 地盤不會被其他勢力奪回，也不會倒退。地盤數量、解鎖順序、影響力門檻均為 `[PLACEHOLDER]`。
+
+第一版不建立 Region 或 `region_id`。`territory_01`、`territory_02`、`territory_03` 分別是第一、第二、第三張地圖；舊 `region.r01` 世界／地圖命名規則已被 supersede。`rXX` 只代表 playthrough／content-cycle namespace，不代表 Region、Map 或 Territory，因此既有 `mission.r01.*`、`collectible.r01.*`、`background.r01.*` ID 維持不變。
+
+Territory 03 的已核准內容範圍為 `character.worker02`、`character.handyman01`、`character.assassin01`、`character.gangster01`。只有 `character.worker02` 已指定為首次觸及新增 Unit 的 Type；其餘三者的解鎖、出現與派遣順序均尚待決策。
 
 ## 8. 收藏系統
 

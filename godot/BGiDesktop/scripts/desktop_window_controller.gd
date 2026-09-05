@@ -3,6 +3,7 @@ extends Node
 const SETTINGS_PATH := "user://desktop_preferences.cfg"
 const SECTION := "desktop_window"
 const TOPMOST_KEY := "always_on_top"
+const PLAYTEST_TRANSPARENCY_GEOMETRY_INSET := Vector2i(1, 1)
 var _always_on_top := false
 var _mouse_passthrough_polygon := PackedVector2Array()
 
@@ -50,8 +51,12 @@ func _apply_window_mode() -> void:
 
 ## Keeps native pointer coordinates and Control layout in the same desktop work-area basis.
 func _apply_native_window_geometry(window: Window, usable_rect: Rect2i) -> void:
-	window.size = usable_rect.size
-	window.content_scale_size = usable_rect.size
+	# Branch-only diagnostic: a full work-area native window can be treated as a
+	# fullscreen surface by Windows/Godot, which may suppress per-pixel alpha.
+	# This one-pixel inset is diagnostic only and is not a production layout rule.
+	var diagnostic_size := usable_rect.size - PLAYTEST_TRANSPARENCY_GEOMETRY_INSET
+	window.size = diagnostic_size
+	window.content_scale_size = diagnostic_size
 	window.position = usable_rect.position
 
 func _load_preferences() -> void:

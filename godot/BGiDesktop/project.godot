@@ -1,20 +1,19 @@
 ; Engine configuration file.
-; BGi Desktop Windows foundation.
+; Branch-only Skeleton C Windows playtest build.
 config_version=5
 
 [application]
-config/name="BGi Desktop"
-run/main_scene="res://scenes/desktop_shell.tscn"
+config/name="BGi Desktop — Skeleton C Playtest"
+run/main_scene="res://scenes/skeleton_c_playtest.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [autoload]
 DesktopWindowController="*res://scripts/desktop_window_controller.gd"
-GameState="*res://scripts/game_state.gd"
-StarterMissionCatalog="*res://scripts/starter_mission_catalog.gd"
 
 [display]
 
 [display/window]
+per_pixel_transparency/allowed=true
 size/viewport_width=1280
 size/viewport_height=450
 size/window_width_override=1280
@@ -29,3 +28,4 @@ stretch/mode="canvas_items"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 environment/defaults/default_clear_color=Color(0, 0, 0, 0)
+viewport/transparent_background=true

@@ -1,4 +1,12 @@
-# Session handoff template
+# Session handoff template — fallback only
+
+> Preferred cross-context handoff is the GitHub Issue/PR work queue defined in `docs/operations/GITHUB_WORK_QUEUE.md`.
+>
+> Use this file only when the active context genuinely cannot use the required GitHub coordination state.
+
+## Work item / authority
+
+<!-- GitHub Issue/PR reference when one exists; otherwise identify the approved source. -->
 
 ## 決策／需求
 
@@ -16,13 +24,21 @@
 
 <!-- 不可擴大的範圍、依賴與尚待確認事項。 -->
 
-## 來源討論連結
+## Authoritative sources
 
-<!-- 手機 ChatGPT Project 的相關討論連結。 -->
+<!-- Use repository-relative paths; do not paste full conversation history. -->
 
-## 建議分支
+## Branch / base revision
 
-<!-- 建議使用的現有分支或新分支名稱。 -->
+<!-- Existing/new branch only when isolation is needed; record exact base SHA when relevant. -->
+
+## Delivery state
+
+<!-- commit / PR / remote verification / validation state; distinguish authoritative vs non-authoritative. -->
+
+## Exact next role / action
+
+<!-- Short directly usable next action. Do not require the user to relay a long prompt. -->
 
 ## 日期
 

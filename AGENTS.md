@@ -5,7 +5,7 @@
 1. Approved BGi specs define product behavior and acceptance.
 2. This file defines durable BGi-specific constraints.
 3. `docs/operations/` holds mutable environment, delivery, and verification details.
-4. A current mission brief defines the active outcome, scope, and acceptance criteria.
+4. A current GitHub work item / mission brief defines the active outcome, scope, and acceptance criteria.
 
 Do not duplicate a workflow across these layers. Resolve a conflict by escalating it; do not invent product behavior.
 
@@ -26,8 +26,28 @@ Do not duplicate a workflow across these layers. Resolve a conflict by escalatin
 - Design owns product, gameplay, UX, and authoritative specifications; it does not modify production code. Completed decisions must be written to an authoritative spec, not retained only in conversation.
 - Coding implements and verifies approved specifications without changing product, gameplay, or UX behavior. A genuine implementation ambiguity is returned as `DESIGN_DECISION_REQUIRED`.
 - Art direction is used only when visual direction, assets, or art decisions are actually needed. `oplog` is used only for release checkpoints, substantial consolidation, or historical audit.
-- Cross-context handoffs contain only a Mission Brief, Design Decision Packet, or Durable Handoff. Authoritative specs and actual Git state are the durable source of truth; do not hand off full conversation history.
+- Cross-context handoffs contain only a GitHub work item, Mission Brief, Design Decision Packet, or Durable Handoff. Authoritative specs and actual Git state are the durable source of truth; do not hand off full conversation history.
 - Do not treat a Codex thread as a permanent Git branch. Use short-lived Git branches only when code isolation has real value; `main` remains the verified launch baseline.
+
+## GitHub work queue and cross-context routing
+
+- The user must not act as a clipboard between Chat/Work/PM/Design/Codex. When GitHub write access is available, the current control context creates or updates the durable GitHub work item directly.
+- GitHub Issue / PR state is the default cross-context control plane. Long specifications remain in authoritative repo documents; the Issue points to them instead of duplicating them.
+- Use these title states unless repository labels later replace them:
+  - `[NEEDS DECISION]` — product/design decision required; implementation must not proceed past the boundary.
+  - `[READY FOR CODEX]` — approved, bounded implementation mission with sufficient acceptance criteria.
+  - `[IN CODEX]` — execution started.
+  - `[READY FOR REVIEW]` — implementation delivered to a branch/PR and awaiting review.
+  - `[BLOCKED]` — genuine tooling, permission, repository-safety, or unresolved dependency blocker.
+  - `[DONE]` — merged/delivered and verified at the intended authority level.
+- A `[READY FOR CODEX]` work item must contain or link: Goal, approved authority/source, requirements, acceptance criteria, constraints/deferred boundaries, priority, expected delivery, and any required branch/isolation rule.
+- At Codex session start/resume, when GitHub Issue access is available, inspect open `[READY FOR CODEX]` work items before asking the user for another prompt. Execute the highest-priority eligible item; if multiple equal-priority items have an unresolved dependency/order, return that routing ambiguity to PM rather than asking the user to relay task text.
+- Issue creation is durable queue state; do not assume it automatically wakes an existing Codex thread unless a verified trigger is actually configured. The queue contract must remain usable whether pickup is manual session start, remote Codex resume, or future automation.
+- Coding should link its branch/PR to the work item and update durable state/results there when its GitHub tooling permits. If Coding cannot write GitHub metadata, that is a tooling/authentication boundary; do not ask the user to copy a long prompt between contexts.
+- Production-code or approved product-behavior changes use a short-lived branch + PR by default. Documentation-only operational updates may go directly to `main` when bounded, low-risk, and explicitly authorized by the active mission.
+- Review should consume the PR/diff and referenced authoritative sources directly. A passing implementation review may proceed without a new user message when the product decision was already approved and no new approval/destructive boundary exists.
+- Non-authoritative playtest/prototype branches never become approved product behavior merely because tests or review pass; their promotion follows the Experimental and playtest branch rules below.
+- Follow `docs/operations/GITHUB_WORK_QUEUE.md` for the queue contract and fallback behavior.
 
 ## Experimental and playtest branches
 
